@@ -21,6 +21,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role_id',
     ];
 
     /**
@@ -44,5 +45,55 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Relation avec le rôle
+     */
+    public function role()
+    {
+        return $this->belongsTo(Role::class);
+    }
+
+    /**
+     * Relation avec l'étudiant (si l'utilisateur est un étudiant)
+     */
+    public function etudiant()
+    {
+        return $this->hasOne(Etudiant::class, 'utilisateur_id');
+    }
+
+    /**
+     * Relation avec l'enseignant (si l'utilisateur est un enseignant)
+     */
+    public function enseignant()
+    {
+        return $this->hasOne(Enseignant::class, 'utilisateur_id');
+    }
+
+    /**
+     * Relation avec les notifications
+     */
+    public function notifications()
+    {
+        return $this->belongsToMany(Notification::class, 'notification_utilisateur')
+                    ->withTimestamps()
+                    ->withPivot('lu_a');
+    }
+
+    /**
+     * Vérifier si l'utilisateur a un rôle spécifique
+     */
+    public function hasRole($role)
+    {
+        return $this->role->nom === $role;
+    }
+
+    /**
+     * Vérifier si l'utilisateur a l'un des rôles spécifiés
+     */
+    public function hasAnyRole($roles)
+    {
+        return in_array($this->role->nom, (array) $roles);
     }
 }
