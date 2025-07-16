@@ -4,42 +4,21 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class TypeNotification extends Model
 {
     use HasFactory;
 
-    protected $table = 'types_notification';
+    protected $table = 'notification_types';
 
     protected $fillable = [
-        'nom',
-        'icone',
+        'name',
+        'display_name',
     ];
 
-    /**
-     * Relation avec les notifications
-     */
-    public function notifications()
+    public function notifications(): HasMany
     {
-        return $this->hasMany(Notification::class);
-    }
-
-    /**
-     * Constantes pour les types
-     */
-    const DROPPE = 'Droppé';
-    const ANNULATION_COURS = 'Annulation de cours';
-    const INFORMATION = 'Information';
-
-    /**
-     * Obtenir tous les types disponibles
-     */
-    public static function getTypes()
-    {
-        return [
-            self::DROPPE => 'warning',
-            self::ANNULATION_COURS => 'error',
-            self::INFORMATION => 'info',
-        ];
+        return $this->hasMany(Notification::class, 'type_notification_id');
     }
 }

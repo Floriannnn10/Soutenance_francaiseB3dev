@@ -21,7 +21,7 @@ class PresenceController extends Controller
 
         // Filtres
         if ($request->filled('session_id')) {
-            $query->where('session_de_cours_id', $request->session_id);
+            $query->where('course_session_id', $request->session_id);
         }
         if ($request->filled('etudiant_id')) {
             $query->where('etudiant_id', $request->etudiant_id);
@@ -53,15 +53,13 @@ class PresenceController extends Controller
     {
         $request->validate([
             'etudiant_id' => 'required|exists:etudiants,id',
-            'session_de_cours_id' => 'required|exists:sessions_de_cours,id',
-            'statut_presence_id' => 'required|exists:statuts_presence,id',
-            'est_justifiee' => 'boolean',
-            'motif_justification' => 'nullable|string',
+            'course_session_id' => 'required|exists:course_sessions,id',
+            'presence_status_id' => 'required|exists:presence_statuses,id',
         ]);
 
         // Vérifier si une présence existe déjà pour cet étudiant et cette session
         $existingPresence = Presence::where('etudiant_id', $request->etudiant_id)
-            ->where('session_de_cours_id', $request->session_de_cours_id)
+            ->where('course_session_id', $request->course_session_id)
             ->first();
 
         if ($existingPresence) {
@@ -71,12 +69,10 @@ class PresenceController extends Controller
 
         Presence::create([
             'etudiant_id' => $request->etudiant_id,
-            'session_de_cours_id' => $request->session_de_cours_id,
-            'statut_presence_id' => $request->statut_presence_id,
-            'enregistre_par_utilisateur_id' => auth()->id(),
-            'est_justifiee' => $request->boolean('est_justifiee'),
-            'motif_justification' => $request->motif_justification,
-            'enregistre_a' => now(),
+            'course_session_id' => $request->course_session_id,
+            'presence_status_id' => $request->presence_status_id,
+            'enregistre_par_user_id' => auth()->id(),
+            'enregistre_le' => now(),
         ]);
 
         return redirect()->route('presences.index')
@@ -107,15 +103,11 @@ class PresenceController extends Controller
     public function update(Request $request, Presence $presence): RedirectResponse
     {
         $request->validate([
-            'statut_presence_id' => 'required|exists:statuts_presence,id',
-            'est_justifiee' => 'boolean',
-            'motif_justification' => 'nullable|string',
+            'presence_status_id' => 'required|exists:presence_statuses,id',
         ]);
 
         $presence->update([
-            'statut_presence_id' => $request->statut_presence_id,
-            'est_justifiee' => $request->boolean('est_justifiee'),
-            'motif_justification' => $request->motif_justification,
+            'presence_status_id' => $request->presence_status_id,
         ]);
 
         return redirect()->route('presences.index')
@@ -142,7 +134,7 @@ class PresenceController extends Controller
         $etudiants = $sessionDeCour->classe->etudiants;
 
         // Récupérer les présences déjà enregistrées pour cette session
-        $presences = Presence::where('session_de_cours_id', $sessionDeCour->getKey())
+        $presences = Presence::where('course_session_id', $sessionDeCour->getKey())
             ->with(['etudiant', 'statutPresence'])
             ->get()
             ->keyBy('etudiant_id');
@@ -160,34 +152,28 @@ class PresenceController extends Controller
         $request->validate([
             'presences' => 'required|array',
             'presences.*.etudiant_id' => 'required|exists:etudiants,id',
-            'presences.*.statut_presence_id' => 'required|exists:statuts_presence,id',
-            'presences.*.est_justifiee' => 'boolean',
-            'presences.*.motif_justification' => 'nullable|string',
+            'presences.*.presence_status_id' => 'required|exists:presence_statuses,id',
         ]);
 
         foreach ($request->presences as $presenceData) {
             // Vérifier si une présence existe déjà
             $existingPresence = Presence::where('etudiant_id', $presenceData['etudiant_id'])
-                ->where('session_de_cours_id', $sessionDeCour->getKey())
+                ->where('course_session_id', $sessionDeCour->getKey())
                 ->first();
 
             if ($existingPresence) {
                 // Mettre à jour la présence existante
                 $existingPresence->update([
-                    'statut_presence_id' => $presenceData['statut_presence_id'],
-                    'est_justifiee' => $presenceData['est_justifiee'] ?? false,
-                    'motif_justification' => $presenceData['motif_justification'] ?? null,
+                    'presence_status_id' => $presenceData['presence_status_id'],
                 ]);
             } else {
                 // Créer une nouvelle présence
                 Presence::create([
                     'etudiant_id' => $presenceData['etudiant_id'],
-                    'session_de_cours_id' => $sessionDeCour->id,
-                    'statut_presence_id' => $presenceData['statut_presence_id'],
-                    'enregistre_par_utilisateur_id' => auth()->id(),
-                    'est_justifiee' => $presenceData['est_justifiee'] ?? false,
-                    'motif_justification' => $presenceData['motif_justification'] ?? null,
-                    'enregistre_a' => now(),
+                    'course_session_id' => $sessionDeCour->id,
+                    'presence_status_id' => $presenceData['presence_status_id'],
+                    'enregistre_par_user_id' => auth()->id(),
+                    'enregistre_le' => now(),
                 ]);
             }
         }

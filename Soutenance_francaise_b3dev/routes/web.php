@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\AnneeAcademiqueController;
 use App\Http\Controllers\SemestreController;
 use App\Http\Controllers\ClasseController;
@@ -18,9 +19,7 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/dashboard', [DashboardController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -41,6 +40,8 @@ Route::middleware('auth')->group(function () {
         'parents' => ParentEtudiantController::class,
         'coordinateurs' => CoordinateurController::class,
     ]);
+
+    Route::resource('users', App\Http\Controllers\UserController::class);
 
     // Routes supplémentaires pour des actions spécifiques
     Route::patch('/annees-academiques/{anneeAcademique}/activate', [AnneeAcademiqueController::class, 'activate'])
@@ -71,6 +72,11 @@ Route::middleware('auth')->group(function () {
     // Routes pour les coordinateurs
     Route::patch('/coordinateurs/{coordinateur}/toggle-status', [CoordinateurController::class, 'toggleStatus'])
         ->name('coordinateurs.toggle-status');
+
+    // Route pour les graphiques
+    Route::get('/graphiques', function () {
+        return view('graphiques');
+    })->name('graphiques');
 });
 
 require __DIR__.'/auth.php';

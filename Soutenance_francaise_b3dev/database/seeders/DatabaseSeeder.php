@@ -11,14 +11,17 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Exécuter les seeders dans l'ordre pour respecter les contraintes de clés étrangères
         $this->call([
             RolesSeeder::class,
+            AdminSeeder::class,
             StatutsSeeder::class,
             AnneesAcademiquesSeeder::class,
+            SemestresSeeder::class,
             ClassesSeeder::class,
             MatieresSeeder::class,
             TypesCoursSeeder::class,
+            CoordinateursSeeder::class,
+            ParentsSeeder::class,
             EtudiantsSeeder::class,
             EnseignantsSeeder::class,
             SessionsDeCoursSeeder::class,

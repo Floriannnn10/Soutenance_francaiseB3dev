@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class TypeCours extends Model
 {
@@ -13,37 +14,10 @@ class TypeCours extends Model
 
     protected $fillable = [
         'nom',
-        'description',
     ];
 
-    /**
-     * Relation avec les sessions de cours
-     */
-    public function sessionsDeCours()
+    public function sessionsDeCours(): HasMany
     {
-        return $this->hasMany(SessionDeCours::class);
-    }
-
-    /**
-     * Constantes pour les types de cours
-     */
-    const CM = 'CM';
-    const TD = 'TD';
-    const TP = 'TP';
-    const EXAMEN = 'Examen';
-    const CONTROLE = 'Contrôle';
-
-    /**
-     * Obtenir tous les types disponibles
-     */
-    public static function getTypes()
-    {
-        return [
-            self::CM => 'Cours Magistral',
-            self::TD => 'Travaux Dirigés',
-            self::TP => 'Travaux Pratiques',
-            self::EXAMEN => 'Examen',
-            self::CONTROLE => 'Contrôle',
-        ];
+        return $this->hasMany(SessionDeCours::class, 'type_cours_id');
     }
 }

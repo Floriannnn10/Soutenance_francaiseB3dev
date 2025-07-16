@@ -2,70 +2,103 @@
 
 namespace Database\Seeders;
 
+use Illuminate\Database\Seeder;
 use App\Models\Etudiant;
 use App\Models\User;
+use App\Models\Classe;
 use App\Models\Role;
-use Illuminate\Database\Seeder;
 
 class EtudiantsSeeder extends Seeder
 {
+    /**
+     * Run the database seeds.
+     */
     public function run(): void
     {
-        $etudiants = [
+        // Créer un rôle étudiant s'il n'existe pas
+        $roleEtudiant = Role::where('nom', 'Étudiant')->first();
+
+        // Créer des utilisateurs spécifiques pour les étudiants
+        $etudiantsData = [
             [
-                'name' => 'Jean Dupont',
-                'email' => 'jean.dupont@example.com',
-                'numero_etudiant' => 'ETU001',
-                'date_naissance' => '2000-05-15',
-                'lieu_naissance' => 'Paris',
-                'adresse' => '123 Rue de la Paix, Paris',
-                'telephone' => '0123456789',
-                'nationalite' => 'Française',
-                'sexe' => 'M',
+                'nom' => 'Dupont',
+                'prenom' => 'Thomas',
+                'email' => 'thomas.dupont@example.com',
+                'classe_nom' => 'Licence 1 Informatique',
             ],
             [
-                'name' => 'Marie Martin',
-                'email' => 'marie.martin@example.com',
-                'numero_etudiant' => 'ETU002',
-                'date_naissance' => '1999-08-22',
-                'lieu_naissance' => 'Lyon',
-                'adresse' => '456 Avenue des Sciences, Lyon',
-                'telephone' => '0987654321',
-                'nationalite' => 'Française',
-                'sexe' => 'F',
+                'nom' => 'Martin',
+                'prenom' => 'Emma',
+                'email' => 'emma.martin@example.com',
+                'classe_nom' => 'Licence 2 Informatique',
             ],
             [
-                'name' => 'Pierre Durand',
-                'email' => 'pierre.durand@example.com',
-                'numero_etudiant' => 'ETU003',
-                'date_naissance' => '2001-03-10',
-                'lieu_naissance' => 'Marseille',
-                'adresse' => '789 Boulevard de l\'Université, Marseille',
-                'telephone' => '0555666777',
-                'nationalite' => 'Française',
-                'sexe' => 'M',
+                'nom' => 'Durand',
+                'prenom' => 'Lucas',
+                'email' => 'lucas.durand@example.com',
+                'classe_nom' => 'Licence 3 Informatique',
+            ],
+            [
+                'nom' => 'Leroy',
+                'prenom' => 'Chloé',
+                'email' => 'chloe.leroy@example.com',
+                'classe_nom' => 'Master 1 Informatique',
+            ],
+            [
+                'nom' => 'Moreau',
+                'prenom' => 'Alexandre',
+                'email' => 'alexandre.moreau@example.com',
+                'classe_nom' => 'Master 2 Informatique',
             ],
         ];
 
-        $roleEtudiant = Role::where('nom', Role::ETUDIANT)->first();
+        // Récupérer les classes
+        $classes = Classe::all();
 
-        foreach ($etudiants as $etudiantData) {
+        // Créer les étudiants spécifiques
+        foreach ($etudiantsData as $etudiantData) {
+            $classe = $classes->where('nom', $etudiantData['classe_nom'])->first();
+            if (!$classe) {
+                $classe = $classes->first(); // Fallback
+            }
+
             $user = User::create([
-                'name' => $etudiantData['name'],
+                'nom' => $etudiantData['nom'],
+                'prenom' => $etudiantData['prenom'],
                 'email' => $etudiantData['email'],
                 'password' => bcrypt('password'),
                 'role_id' => $roleEtudiant->id,
             ]);
 
             Etudiant::create([
-                'utilisateur_id' => $user->id,
-                'numero_etudiant' => $etudiantData['numero_etudiant'],
-                'date_naissance' => $etudiantData['date_naissance'],
-                'lieu_naissance' => $etudiantData['lieu_naissance'],
-                'adresse' => $etudiantData['adresse'],
-                'telephone' => $etudiantData['telephone'],
-                'nationalite' => $etudiantData['nationalite'],
-                'sexe' => $etudiantData['sexe'],
+                'user_id' => $user->id,
+                'classe_id' => $classe->id,
+                'prenom' => $etudiantData['prenom'],
+                'nom' => $etudiantData['nom'],
+                'date_naissance' => '2000-05-15',
+                'photo' => null,
+            ]);
+        }
+
+        // Créer quelques étudiants supplémentaires aléatoires
+        for ($i = 6; $i <= 20; $i++) {
+            $user = User::create([
+                'nom' => 'Étudiant',
+                'prenom' => 'Étudiant' . $i,
+                'email' => 'etudiant' . $i . '@example.com',
+                'password' => bcrypt('password'),
+                'role_id' => $roleEtudiant->id,
+            ]);
+
+            $classe = $classes->random();
+
+            Etudiant::create([
+                'user_id' => $user->id,
+                'classe_id' => $classe->id,
+                'prenom' => $user->prenom,
+                'nom' => $user->nom,
+                'date_naissance' => '2000-05-15',
+                'photo' => null,
             ]);
         }
     }

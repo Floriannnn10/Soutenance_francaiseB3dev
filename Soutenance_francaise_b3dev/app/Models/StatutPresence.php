@@ -4,42 +4,21 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class StatutPresence extends Model
 {
     use HasFactory;
 
-    protected $table = 'statuts_presence';
+    protected $table = 'presence_statuses';
 
     protected $fillable = [
-        'nom',
-        'couleur',
+        'name',
+        'display_name',
     ];
 
-    /**
-     * Relation avec les présences
-     */
-    public function presences()
+    public function presences(): HasMany
     {
-        return $this->hasMany(Presence::class);
-    }
-
-    /**
-     * Constantes pour les statuts
-     */
-    const PRESENT = 'Présent';
-    const EN_RETARD = 'En retard';
-    const ABSENT = 'Absent';
-
-    /**
-     * Obtenir tous les statuts disponibles
-     */
-    public static function getStatuts()
-    {
-        return [
-            self::PRESENT => '#10B981', // Vert
-            self::EN_RETARD => '#F59E0B', // Orange
-            self::ABSENT => '#EF4444', // Rouge
-        ];
+        return $this->hasMany(Presence::class, 'presence_status_id');
     }
 }

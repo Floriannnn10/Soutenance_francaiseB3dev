@@ -2,33 +2,27 @@
 
 namespace Database\Seeders;
 
-use App\Models\Classe;
 use Illuminate\Database\Seeder;
+use App\Models\Classe;
 
 class ClassesSeeder extends Seeder
 {
+    /**
+     * Run the database seeds.
+     */
     public function run(): void
     {
         $classes = [
-            [
-                'nom' => 'L1 Informatique',
-                'niveau' => 'Licence 1',
-                'specialite' => 'Informatique',
-                'description' => 'Première année de licence informatique',
-            ],
-            [
-                'nom' => 'L2 Informatique',
-                'niveau' => 'Licence 2',
-                'specialite' => 'Informatique',
-                'description' => 'Deuxième année de licence informatique',
-            ],
-            [
-                'nom' => 'L3 Mathématiques',
-                'niveau' => 'Licence 3',
-                'specialite' => 'Mathématiques',
-                'description' => 'Troisième année de licence mathématiques',
-            ],
+            ['nom' => 'Licence 1 Informatique'],
+            ['nom' => 'Licence 2 Informatique'],
+            ['nom' => 'Licence 3 Informatique'],
+            ['nom' => 'Master 1 Informatique'],
+            ['nom' => 'Master 2 Informatique'],
+            ['nom' => 'Licence 1 Mathématiques'],
+            ['nom' => 'Licence 2 Mathématiques'],
+            ['nom' => 'Licence 3 Mathématiques'],
         ];
+
         foreach ($classes as $classe) {
             Classe::create($classe);
         }

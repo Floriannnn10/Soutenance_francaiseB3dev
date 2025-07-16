@@ -4,56 +4,39 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class AnneeAcademique extends Model
 {
     use HasFactory;
 
-    protected $table = 'annees_academiques';
+    protected $table = 'academic_years';
 
     protected $fillable = [
-        'nom',
+        'libelle',
         'date_debut',
         'date_fin',
-        'est_active',
+        'actif',
     ];
 
     protected $casts = [
         'date_debut' => 'date',
         'date_fin' => 'date',
-        'est_active' => 'boolean',
+        'actif' => 'boolean',
     ];
 
-    /**
-     * Relation avec les semestres
-     */
-    public function semestres()
+    public function semestres(): HasMany
     {
-        return $this->hasMany(Semestre::class);
+        return $this->hasMany(Semestre::class, 'academic_year_id');
     }
 
-    /**
-     * Relation avec les inscriptions d'étudiants
-     */
-    public function inscriptions()
+    public function sessionsDeCours(): HasMany
     {
-        return $this->hasMany(ClasseEtudiant::class);
+        return $this->hasMany(SessionDeCours::class, 'academic_year_id');
     }
 
-    /**
-     * Obtenir l'année académique active
-     */
-    public static function getActive()
+    public function presences(): HasMany
     {
-        return static::where('est_active', true)->first();
-    }
-
-    /**
-     * Activer cette année académique et désactiver les autres
-     */
-    public function activate()
-    {
-        static::where('est_active', true)->update(['est_active' => false]);
-        $this->update(['est_active' => true]);
+        return $this->hasMany(Presence::class, 'academic_year_id');
     }
 }

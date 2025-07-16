@@ -4,45 +4,41 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Semestre extends Model
 {
     use HasFactory;
 
+    protected $table = 'semesters';
+
     protected $fillable = [
-        'annee_academique_id',
-        'nom',
+        'libelle',
+        'academic_year_id',
         'date_debut',
         'date_fin',
+        'actif',
     ];
 
     protected $casts = [
         'date_debut' => 'date',
         'date_fin' => 'date',
+        'actif' => 'boolean',
     ];
 
-    /**
-     * Relation avec l'année académique
-     */
-    public function anneeAcademique()
+    public function anneeAcademique(): BelongsTo
     {
-        return $this->belongsTo(AnneeAcademique::class);
+        return $this->belongsTo(AnneeAcademique::class, 'academic_year_id');
     }
 
-    /**
-     * Relation avec les sessions de cours
-     */
-    public function sessionsDeCours()
+    public function sessionsDeCours(): HasMany
     {
-        return $this->hasMany(SessionDeCours::class);
+        return $this->hasMany(SessionDeCours::class, 'semester_id');
     }
 
-    /**
-     * Vérifier si le semestre est actif
-     */
-    public function isActive()
+    public function presences(): HasMany
     {
-        $now = now();
-        return $now->between($this->date_debut, $this->date_fin);
+        return $this->hasMany(Presence::class, 'semester_id');
     }
 }

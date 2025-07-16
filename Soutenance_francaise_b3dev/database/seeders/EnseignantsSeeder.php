@@ -2,62 +2,67 @@
 
 namespace Database\Seeders;
 
+use Illuminate\Database\Seeder;
 use App\Models\Enseignant;
 use App\Models\User;
 use App\Models\Role;
-use Illuminate\Database\Seeder;
 
 class EnseignantsSeeder extends Seeder
 {
+    /**
+     * Run the database seeds.
+     */
     public function run(): void
     {
-        $enseignants = [
+        // Créer un rôle enseignant s'il n'existe pas
+        $roleEnseignant = Role::where('nom', 'Enseignant')->first();
+
+        // Créer des utilisateurs spécifiques pour les enseignants
+        $enseignantsData = [
             [
-                'name' => 'Dr. Sophie Bernard',
-                'email' => 'sophie.bernard@example.com',
-                'numero_enseignant' => 'ENS001',
-                'grade' => 'Maître de conférences',
-                'specialite' => 'Informatique',
-                'telephone' => '0123456789',
-                'bureau' => 'Bâtiment A, Bureau 101',
+                'nom' => 'Bernard',
+                'prenom' => 'Sophie',
+                'email' => 'sophie.bernard.ens@example.com',
             ],
             [
-                'name' => 'Prof. Michel Dubois',
-                'email' => 'michel.dubois@example.com',
-                'numero_enseignant' => 'ENS002',
-                'grade' => 'Professeur',
-                'specialite' => 'Mathématiques',
-                'telephone' => '0987654321',
-                'bureau' => 'Bâtiment B, Bureau 205',
+                'nom' => 'Dubois',
+                'prenom' => 'Michel',
+                'email' => 'michel.dubois.ens@example.com',
             ],
             [
-                'name' => 'Dr. Claire Moreau',
-                'email' => 'claire.moreau@example.com',
-                'numero_enseignant' => 'ENS003',
-                'grade' => 'Maître de conférences',
-                'specialite' => 'Physique',
-                'telephone' => '0555666777',
-                'bureau' => 'Bâtiment C, Bureau 301',
+                'nom' => 'Moreau',
+                'prenom' => 'Claire',
+                'email' => 'claire.moreau.ens@example.com',
+            ],
+            [
+                'nom' => 'Leroy',
+                'prenom' => 'Jean',
+                'email' => 'jean.leroy.ens@example.com',
+            ],
+            [
+                'nom' => 'Garcia',
+                'prenom' => 'Maria',
+                'email' => 'maria.garcia.ens@example.com',
             ],
         ];
 
-        $roleEnseignant = Role::where('nom', Role::ENSEIGNANT)->first();
-
-        foreach ($enseignants as $enseignantData) {
-            $user = User::create([
-                'name' => $enseignantData['name'],
-                'email' => $enseignantData['email'],
-                'password' => bcrypt('password'),
-                'role_id' => $roleEnseignant->id,
-            ]);
-
+        // Créer les enseignants spécifiques
+        foreach (
+            $enseignantsData as $enseignantData
+        ) {
             Enseignant::create([
-                'utilisateur_id' => $user->id,
-                'numero_enseignant' => $enseignantData['numero_enseignant'],
-                'grade' => $enseignantData['grade'],
-                'specialite' => $enseignantData['specialite'],
-                'telephone' => $enseignantData['telephone'],
-                'bureau' => $enseignantData['bureau'],
+                'prenom' => $enseignantData['prenom'],
+                'nom' => $enseignantData['nom'],
+                'photo' => null,
+            ]);
+        }
+
+        // Créer quelques enseignants supplémentaires aléatoires
+        for ($i = 6; $i <= 10; $i++) {
+            Enseignant::create([
+                'prenom' => 'Enseignant' . $i,
+                'nom' => 'Enseignant',
+                'photo' => null,
             ]);
         }
     }

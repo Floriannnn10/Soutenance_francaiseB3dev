@@ -60,7 +60,7 @@ class User extends Authenticatable
      */
     public function etudiant()
     {
-        return $this->hasOne(Etudiant::class, 'utilisateur_id');
+        return $this->hasOne(Etudiant::class, 'user_id');
     }
 
     /**
@@ -68,7 +68,31 @@ class User extends Authenticatable
      */
     public function enseignant()
     {
-        return $this->hasOne(Enseignant::class, 'utilisateur_id');
+        return $this->hasOne(Enseignant::class, 'user_id');
+    }
+
+    /**
+     * Relation avec le parent (si l'utilisateur est un parent)
+     */
+    public function parent()
+    {
+        return $this->hasOne(ParentEtudiant::class, 'user_id');
+    }
+
+    /**
+     * Relation avec le coordinateur (si l'utilisateur est un coordinateur)
+     */
+    public function coordinateur()
+    {
+        return $this->hasOne(Coordinateur::class, 'user_id');
+    }
+
+    /**
+     * Relation avec l'admin (si l'utilisateur est un admin)
+     */
+    public function admin()
+    {
+        return $this->hasRole('admin');
     }
 
     /**

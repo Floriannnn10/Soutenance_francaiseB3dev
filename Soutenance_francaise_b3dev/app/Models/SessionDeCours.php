@@ -4,147 +4,82 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SessionDeCours extends Model
 {
     use HasFactory;
 
-    protected $table = 'sessions_de_cours';
+    protected $table = 'course_sessions';
 
     protected $fillable = [
-        'semestre_id',
         'classe_id',
         'matiere_id',
         'enseignant_id',
         'type_cours_id',
-        'statut_session_id',
-        'session_originale_id',
-        'date',
-        'heure_debut',
-        'heure_fin',
-        'salle',
-        'commentaire',
+        'status_id',
+        'start_time',
+        'end_time',
+        'location',
+        'notes',
+        'replacement_for_session_id',
+        'academic_year_id',
+        'semester_id',
     ];
 
     protected $casts = [
-        'date' => 'date',
-        'heure_debut' => 'datetime',
-        'heure_fin' => 'datetime',
+        'start_time' => 'datetime',
+        'end_time' => 'datetime',
     ];
 
-    /**
-     * Relation avec le semestre
-     */
-    public function semestre()
-    {
-        return $this->belongsTo(Semestre::class);
-    }
-
-    /**
-     * Relation avec la classe
-     */
-    public function classe()
+    public function classe(): BelongsTo
     {
         return $this->belongsTo(Classe::class);
     }
 
-    /**
-     * Relation avec la matière
-     */
-    public function matiere()
+    public function matiere(): BelongsTo
     {
         return $this->belongsTo(Matiere::class);
     }
 
-    /**
-     * Relation avec l'enseignant
-     */
-    public function enseignant()
+    public function enseignant(): BelongsTo
     {
         return $this->belongsTo(Enseignant::class);
     }
 
-    /**
-     * Relation avec le type de cours
-     */
-    public function typeCours()
+    public function typeCours(): BelongsTo
     {
-        return $this->belongsTo(TypeCours::class);
+        return $this->belongsTo(TypeCours::class, 'type_cours_id');
     }
 
-    /**
-     * Relation avec le statut de session
-     */
-    public function statutSession()
+    public function statutSession(): BelongsTo
     {
-        return $this->belongsTo(StatutSession::class);
+        return $this->belongsTo(StatutSession::class, 'status_id');
     }
 
-    /**
-     * Relation avec la session originale (pour les cours reportés)
-     */
-    public function sessionOriginale()
+    public function anneeAcademique(): BelongsTo
     {
-        return $this->belongsTo(SessionDeCours::class, 'session_originale_id');
+        return $this->belongsTo(AnneeAcademique::class, 'academic_year_id');
     }
 
-    /**
-     * Relation avec les sessions reportées
-     */
-    public function sessionsReportees()
+    public function semestre(): BelongsTo
     {
-        return $this->hasMany(SessionDeCours::class, 'session_originale_id');
+        return $this->belongsTo(Semestre::class, 'semester_id');
     }
 
-    /**
-     * Relation avec les présences
-     */
-    public function presences()
+    public function presences(): HasMany
     {
-        return $this->hasMany(Presence::class);
+        return $this->hasMany(Presence::class, 'course_session_id');
     }
 
-    /**
-     * Vérifier si la session est aujourd'hui
-     */
-    public function isToday()
+    public function sessionRemplacee(): BelongsTo
     {
-        return $this->date->isToday();
+        return $this->belongsTo(SessionDeCours::class, 'replacement_for_session_id');
     }
 
-    /**
-     * Vérifier si la session est en cours
-     */
-    public function isEnCours()
+    public function sessionsRemplacees(): HasMany
     {
-        $now = now();
-        return $this->date->isToday() &&
-               $now->between($this->heure_debut, $this->heure_fin);
-    }
-
-    /**
-     * Vérifier si la session est terminée
-     */
-    public function isTerminee()
-    {
-        $now = now();
-        return $this->date->isPast() ||
-               ($this->date->isToday() && $now->isAfter($this->heure_fin));
-    }
-
-    /**
-     * Obtenir la durée de la session
-     */
-    public function getDureeAttribute()
-    {
-        return $this->heure_debut->diffInMinutes($this->heure_fin);
-    }
-
-    /**
-     * Obtenir le nom complet de la session
-     */
-    public function getNomCompletAttribute()
-    {
-        return "{$this->matiere->nom} - {$this->classe->nom} - {$this->date->format('d/m/Y')}";
+        return $this->hasMany(SessionDeCours::class, 'replacement_for_session_id');
     }
 }

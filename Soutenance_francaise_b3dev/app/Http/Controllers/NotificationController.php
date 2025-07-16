@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Notification;
-use App\Models\TypeNotification;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
@@ -16,16 +15,15 @@ class NotificationController extends Controller
      */
     public function index(Request $request): View
     {
-        $query = Notification::with(['typeNotification', 'utilisateurs']);
+        $query = Notification::with(['utilisateurs']);
 
-        if ($request->filled('type_id')) {
-            $query->where('type_notification_id', $request->type_id);
+        if ($request->filled('type')) {
+            $query->where('type', $request->type);
         }
 
         $notifications = $query->orderBy('created_at', 'desc')->paginate(15);
-        $typesNotification = TypeNotification::all();
 
-        return view('notifications.index', compact('notifications', 'typesNotification'));
+        return view('notifications.index', compact('notifications'));
     }
 
     /**
@@ -33,9 +31,8 @@ class NotificationController extends Controller
      */
     public function create(): View
     {
-        $typesNotification = TypeNotification::all();
         $utilisateurs = User::all();
-        return view('notifications.create', compact('typesNotification', 'utilisateurs'));
+        return view('notifications.create', compact('utilisateurs'));
     }
 
     /**
@@ -44,20 +41,15 @@ class NotificationController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
-            'titre' => 'required|string|max:255',
-            'contenu' => 'required|string',
-            'type_notification_id' => 'required|exists:types_notification,id',
+            'message' => 'required|string',
+            'type' => 'required|string|max:255',
             'utilisateurs' => 'required|array',
             'utilisateurs.*' => 'exists:users,id',
-            'date_envoi' => 'nullable|date|after_or_equal:today',
         ]);
 
         $notification = Notification::create([
-            'titre' => $request->titre,
-            'contenu' => $request->contenu,
-            'type_notification_id' => $request->type_notification_id,
-            'date_envoi' => $request->date_envoi ?? now(),
-            'est_envoyee' => false,
+            'message' => $request->message,
+            'type' => $request->type,
         ]);
 
         // Attacher les utilisateurs
@@ -72,7 +64,7 @@ class NotificationController extends Controller
      */
     public function show(Notification $notification): View
     {
-        $notification->load(['typeNotification', 'utilisateurs']);
+        $notification->load(['utilisateurs']);
         return view('notifications.show', compact('notification'));
     }
 
@@ -81,9 +73,8 @@ class NotificationController extends Controller
      */
     public function edit(Notification $notification): View
     {
-        $typesNotification = TypeNotification::all();
         $utilisateurs = User::all();
-        return view('notifications.edit', compact('notification', 'typesNotification', 'utilisateurs'));
+        return view('notifications.edit', compact('notification', 'utilisateurs'));
     }
 
     /**
@@ -92,19 +83,15 @@ class NotificationController extends Controller
     public function update(Request $request, Notification $notification): RedirectResponse
     {
         $request->validate([
-            'titre' => 'required|string|max:255',
-            'contenu' => 'required|string',
-            'type_notification_id' => 'required|exists:types_notification,id',
+            'message' => 'required|string',
+            'type' => 'required|string|max:255',
             'utilisateurs' => 'required|array',
             'utilisateurs.*' => 'exists:users,id',
-            'date_envoi' => 'nullable|date',
         ]);
 
         $notification->update([
-            'titre' => $request->titre,
-            'contenu' => $request->contenu,
-            'type_notification_id' => $request->type_notification_id,
-            'date_envoi' => $request->date_envoi,
+            'message' => $request->message,
+            'type' => $request->type,
         ]);
 
         // Mettre à jour les utilisateurs
@@ -131,30 +118,10 @@ class NotificationController extends Controller
     public function marquerLue(Notification $notification): RedirectResponse
     {
         $notification->utilisateurs()->updateExistingPivot(auth()->id(), [
-            'est_lue' => true,
-            'lu_a' => now(),
+            'read_at' => now(),
         ]);
 
         return redirect()->back()
             ->with('success', 'Notification marquée comme lue.');
-    }
-
-    /**
-     * Envoyer une notification.
-     */
-    public function envoyer(Notification $notification): RedirectResponse
-    {
-        if ($notification->est_envoyee) {
-            return redirect()->back()
-                ->with('error', 'Cette notification a déjà été envoyée.');
-        }
-
-        $notification->update([
-            'est_envoyee' => true,
-            'envoyee_a' => now(),
-        ]);
-
-        return redirect()->route('notifications.index')
-            ->with('success', 'Notification envoyée avec succès.');
     }
 }

@@ -2,46 +2,48 @@
 
 namespace Database\Seeders;
 
-use App\Models\Notification;
-use App\Models\TypeNotification;
-use App\Models\User;
 use Illuminate\Database\Seeder;
+use App\Models\Notification;
+use App\Models\User;
 
 class NotificationsSeeder extends Seeder
 {
+    /**
+     * Run the database seeds.
+     */
     public function run(): void
     {
-        $typeDroppe = TypeNotification::where('nom', TypeNotification::DROPPE)->first();
-        $typeInfo = TypeNotification::where('nom', TypeNotification::INFORMATION)->first();
         $users = User::all();
 
         $notifications = [
             [
-                'type_notification_id' => $typeDroppe->id,
-                'message' => 'L\'étudiant Jean Dupont a un taux de présence inférieur à 30% en Mathématiques.',
-                'donnees_supplementaires' => [
-                    'etudiant_id' => 1,
-                    'matiere_id' => 1,
-                    'taux_presence' => 25,
-                ],
+                'message' => 'Cours de mathématiques annulé pour demain',
+                'type' => 'annulation',
             ],
             [
-                'type_notification_id' => $typeInfo->id,
-                'message' => 'Nouvelle session de cours programmée pour demain.',
-                'donnees_supplementaires' => [
-                    'session_id' => 1,
-                    'date' => now()->addDay()->format('Y-m-d'),
-                ],
+                'message' => 'Nouveau planning disponible',
+                'type' => 'information',
+            ],
+            [
+                'message' => 'Résultats des examens disponibles',
+                'type' => 'resultat',
+            ],
+            [
+                'message' => 'Réunion pédagogique prévue vendredi',
+                'type' => 'reunion',
+            ],
+            [
+                'message' => 'Maintenance système prévue ce weekend',
+                'type' => 'maintenance',
             ],
         ];
 
         foreach ($notifications as $notificationData) {
             $notification = Notification::create($notificationData);
 
-            // Associer la notification à tous les utilisateurs
-            foreach ($users as $user) {
-                $notification->utilisateurs()->attach($user->id);
-            }
+            // Attacher des utilisateurs aléatoires à chaque notification
+            $usersAleatoires = $users->random(rand(3, 8));
+            $notification->utilisateurs()->attach($usersAleatoires->pluck('id')->toArray());
         }
     }
 }

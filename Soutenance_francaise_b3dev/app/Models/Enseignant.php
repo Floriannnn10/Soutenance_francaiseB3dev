@@ -4,57 +4,30 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Enseignant extends Model
 {
     use HasFactory;
 
+    protected $table = 'enseignants';
+
     protected $fillable = [
-        'utilisateur_id',
-        'numero_enseignant',
-        'grade',
-        'specialite',
-        'telephone',
-        'bureau',
+        'user_id',
+        'prenom',
+        'nom',
         'photo',
     ];
 
-    /**
-     * Relation avec l'utilisateur
-     */
-    public function utilisateur()
+    public function sessionsDeCours(): HasMany
     {
-        return $this->belongsTo(User::class, 'utilisateur_id');
+        return $this->hasMany(SessionDeCours::class, 'enseignant_id');
     }
 
-    /**
-     * Relation avec les sessions de cours
-     */
-    public function sessionsDeCours()
+    public function matieres(): BelongsToMany
     {
-        return $this->hasMany(SessionDeCours::class);
-    }
-
-    /**
-     * Obtenir les sessions de cours pour une période donnée
-     */
-    public function getSessionsForPeriod($dateDebut, $dateFin)
-    {
-        return $this->sessionsDeCours()
-                    ->whereBetween('date', [$dateDebut, $dateFin])
-                    ->with(['classe', 'matiere', 'semestre.anneeAcademique'])
-                    ->orderBy('date')
-                    ->orderBy('heure_debut');
-    }
-
-    /**
-     * Obtenir les sessions de cours pour aujourd'hui
-     */
-    public function getSessionsToday()
-    {
-        return $this->sessionsDeCours()
-                    ->where('date', today())
-                    ->with(['classe', 'matiere', 'statutSession'])
-                    ->orderBy('heure_debut');
+        return $this->belongsToMany(Matiere::class, 'enseignant_matiere', 'enseignant_id', 'matiere_id');
     }
 }

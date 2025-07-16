@@ -4,44 +4,21 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class StatutSession extends Model
 {
     use HasFactory;
 
-    protected $table = 'statuts_session';
+    protected $table = 'session_statuses';
 
     protected $fillable = [
-        'nom',
-        'couleur',
+        'name',
+        'display_name',
     ];
 
-    /**
-     * Relation avec les sessions de cours
-     */
-    public function sessionsDeCours()
+    public function sessionsDeCours(): HasMany
     {
-        return $this->hasMany(SessionDeCours::class);
-    }
-
-    /**
-     * Constantes pour les statuts
-     */
-    const PREVUE = 'Prévue';
-    const ANNULEE = 'Annulée';
-    const REPORTEE = 'Reportée';
-    const TERMINEE = 'Terminée';
-
-    /**
-     * Obtenir tous les statuts disponibles
-     */
-    public static function getStatuts()
-    {
-        return [
-            self::PREVUE => '#3B82F6', // Bleu
-            self::ANNULEE => '#EF4444', // Rouge
-            self::REPORTEE => '#F59E0B', // Orange
-            self::TERMINEE => '#10B981', // Vert
-        ];
+        return $this->hasMany(SessionDeCours::class, 'status_id');
     }
 }

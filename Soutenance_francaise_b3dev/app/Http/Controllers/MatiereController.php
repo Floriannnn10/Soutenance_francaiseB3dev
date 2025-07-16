@@ -6,6 +6,7 @@ use App\Models\Matiere;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
+use App\Models\Enseignant;
 
 class MatiereController extends Controller
 {
@@ -23,7 +24,8 @@ class MatiereController extends Controller
      */
     public function create(): View
     {
-        return view('matieres.create');
+        $enseignants = Enseignant::orderBy('nom')->get();
+        return view('matieres.create', compact('enseignants'));
     }
 
     /**
@@ -34,12 +36,23 @@ class MatiereController extends Controller
         $request->validate([
             'nom' => 'required|string|max:255',
             'code' => 'required|string|max:50|unique:matieres',
-            'description' => 'nullable|string',
-            'coefficient' => 'required|numeric|min:0',
-            'volume_horaire' => 'required|integer|min:0',
+            'coefficient' => 'required|numeric|min:1',
+            'volume_horaire' => 'required|integer|min:1',
+            'enseignants' => 'array',
+            'enseignants.*' => 'exists:enseignants,id',
         ]);
 
-        Matiere::create($request->all());
+        $matiere = Matiere::create([
+            'nom' => $request->nom,
+            'code' => $request->code,
+            'coefficient' => $request->coefficient,
+            'volume_horaire' => $request->volume_horaire,
+        ]);
+
+        // Associer les enseignants sélectionnés
+        if ($request->filled('enseignants')) {
+            $matiere->enseignants()->attach($request->enseignants);
+        }
 
         return redirect()->route('matieres.index')
             ->with('success', 'Matière créée avec succès.');
@@ -59,7 +72,8 @@ class MatiereController extends Controller
      */
     public function edit(Matiere $matiere): View
     {
-        return view('matieres.edit', compact('matiere'));
+        $enseignants = Enseignant::orderBy('nom')->get();
+        return view('matieres.edit', compact('matiere', 'enseignants'));
     }
 
     /**
@@ -70,12 +84,21 @@ class MatiereController extends Controller
         $request->validate([
             'nom' => 'required|string|max:255',
             'code' => 'required|string|max:50|unique:matieres,code,' . $matiere->id,
-            'description' => 'nullable|string',
-            'coefficient' => 'required|numeric|min:0',
-            'volume_horaire' => 'required|integer|min:0',
+            'coefficient' => 'required|numeric|min:1',
+            'volume_horaire' => 'required|integer|min:1',
+            'enseignants' => 'array',
+            'enseignants.*' => 'exists:enseignants,id',
         ]);
 
-        $matiere->update($request->all());
+        $matiere->update([
+            'nom' => $request->nom,
+            'code' => $request->code,
+            'coefficient' => $request->coefficient,
+            'volume_horaire' => $request->volume_horaire,
+        ]);
+
+        // Synchroniser les enseignants
+        $matiere->enseignants()->sync($request->enseignants ?? []);
 
         return redirect()->route('matieres.index')
             ->with('success', 'Matière mise à jour avec succès.');

@@ -6,6 +6,9 @@ use App\Models\Enseignant;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
+use App\Models\Matiere;
+use App\Models\User;
+use Illuminate\Support\Facades\Storage;
 
 class EnseignantController extends Controller
 {
@@ -14,10 +17,10 @@ class EnseignantController extends Controller
      */
     public function index(): View
     {
-        $enseignants = Enseignant::with(['sessionsDeCours.matiere', 'sessionsDeCours.classe'])
+        $enseignants = Enseignant::with(['matieres'])
             ->orderBy('nom')
             ->orderBy('prenom')
-            ->paginate(15);
+            ->get();
 
         return view('enseignants.index', compact('enseignants'));
     }
@@ -27,7 +30,11 @@ class EnseignantController extends Controller
      */
     public function create(): View
     {
-        return view('enseignants.create');
+        $matieres = Matiere::orderBy('nom')->get();
+        $users = User::whereHas('role', function($q) {
+            $q->where('nom', 'Enseignant');
+        })->orderBy('nom')->get();
+        return view('enseignants.create', compact('matieres', 'users'));
     }
 
     /**
@@ -38,15 +45,26 @@ class EnseignantController extends Controller
         $request->validate([
             'nom' => 'required|string|max:255',
             'prenom' => 'required|string|max:255',
-            'email' => 'required|email|unique:enseignants',
-            'telephone' => 'nullable|string|max:20',
-            'specialite' => 'nullable|string|max:255',
-            'grade' => 'nullable|string|max:100',
-            'adresse' => 'nullable|string',
-            'numero_enseignant' => 'required|string|max:50|unique:enseignants',
+            'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'matieres' => 'array',
+            'matieres.*' => 'exists:matieres,id',
         ]);
 
-        Enseignant::create($request->all());
+        $enseignant = Enseignant::create([
+            'nom' => $request->nom,
+            'prenom' => $request->prenom,
+        ]);
+
+        // Gérer l'upload de la photo
+        if ($request->hasFile('photo')) {
+            $photoPath = $request->file('photo')->store('enseignants', 'public');
+            $enseignant->update(['photo' => $photoPath]);
+        }
+
+        // Affecter les matières sélectionnées à cet enseignant
+        if ($request->filled('matieres')) {
+            $enseignant->matieres()->attach($request->matieres);
+        }
 
         return redirect()->route('enseignants.index')
             ->with('success', 'Enseignant créé avec succès.');
@@ -66,7 +84,8 @@ class EnseignantController extends Controller
      */
     public function edit(Enseignant $enseignant): View
     {
-        return view('enseignants.edit', compact('enseignant'));
+        $matieres = Matiere::orderBy('nom')->get();
+        return view('enseignants.edit', compact('enseignant', 'matieres'));
     }
 
     /**
@@ -77,15 +96,28 @@ class EnseignantController extends Controller
         $request->validate([
             'nom' => 'required|string|max:255',
             'prenom' => 'required|string|max:255',
-            'email' => 'required|email|unique:enseignants,email,' . $enseignant->id,
-            'telephone' => 'nullable|string|max:20',
-            'specialite' => 'nullable|string|max:255',
-            'grade' => 'nullable|string|max:100',
-            'adresse' => 'nullable|string',
-            'numero_enseignant' => 'required|string|max:50|unique:enseignants,numero_enseignant,' . $enseignant->id,
+            'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'matieres' => 'array',
+            'matieres.*' => 'exists:matieres,id',
         ]);
 
-        $enseignant->update($request->all());
+        $enseignant->update([
+            'nom' => $request->nom,
+            'prenom' => $request->prenom,
+        ]);
+
+        // Gérer l'upload de la photo
+        if ($request->hasFile('photo')) {
+            // Supprimer l'ancienne photo si elle existe
+            if ($enseignant->photo) {
+                Storage::disk('public')->delete($enseignant->photo);
+            }
+            $photoPath = $request->file('photo')->store('enseignants', 'public');
+            $enseignant->update(['photo' => $photoPath]);
+        }
+
+        // Synchroniser les matières avec cet enseignant
+        $enseignant->matieres()->sync($request->matieres ?? []);
 
         return redirect()->route('enseignants.index')
             ->with('success', 'Enseignant mis à jour avec succès.');

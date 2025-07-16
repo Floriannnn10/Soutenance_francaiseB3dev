@@ -4,90 +4,61 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Presence extends Model
 {
     use HasFactory;
 
+    protected $table = 'presences';
+
     protected $fillable = [
         'etudiant_id',
-        'session_de_cours_id',
-        'statut_presence_id',
-        'enregistre_par_utilisateur_id',
-        'est_justifiee',
-        'motif_justification',
-        'enregistre_a',
+        'course_session_id',
+        'presence_status_id',
+        'enregistre_le',
+        'enregistre_par_user_id',
+        'academic_year_id',
+        'semester_id',
     ];
 
     protected $casts = [
-        'est_justifiee' => 'boolean',
-        'enregistre_a' => 'datetime',
+        'enregistre_le' => 'datetime',
     ];
 
-    /**
-     * Relation avec l'étudiant
-     */
-    public function etudiant()
+    public function etudiant(): BelongsTo
     {
         return $this->belongsTo(Etudiant::class);
     }
 
-    /**
-     * Relation avec la session de cours
-     */
-    public function sessionDeCours()
+    public function sessionDeCours(): BelongsTo
     {
-        return $this->belongsTo(SessionDeCours::class);
+        return $this->belongsTo(SessionDeCours::class, 'course_session_id');
     }
 
-    /**
-     * Relation avec le statut de présence
-     */
-    public function statutPresence()
+    public function statutPresence(): BelongsTo
     {
-        return $this->belongsTo(StatutPresence::class);
+        return $this->belongsTo(StatutPresence::class, 'presence_status_id');
     }
 
-    /**
-     * Relation avec l'utilisateur qui a enregistré la présence
-     */
-    public function enregistrePar()
+    public function enregistrePar(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'enregistre_par_utilisateur_id');
+        return $this->belongsTo(User::class, 'enregistre_par_user_id');
     }
 
-    /**
-     * Vérifier si l'étudiant est présent
-     */
-    public function isPresent()
+    public function anneeAcademique(): BelongsTo
     {
-        return $this->statutPresence->nom === StatutPresence::PRESENT;
+        return $this->belongsTo(AnneeAcademique::class, 'academic_year_id');
     }
 
-    /**
-     * Vérifier si l'étudiant est en retard
-     */
-    public function isEnRetard()
+    public function semestre(): BelongsTo
     {
-        return $this->statutPresence->nom === StatutPresence::EN_RETARD;
+        return $this->belongsTo(Semestre::class, 'semester_id');
     }
 
-    /**
-     * Vérifier si l'étudiant est absent
-     */
-    public function isAbsent()
+    public function justification(): HasOne
     {
-        return $this->statutPresence->nom === StatutPresence::ABSENT;
-    }
-
-    /**
-     * Obtenir le statut avec couleur
-     */
-    public function getStatutAvecCouleurAttribute()
-    {
-        return [
-            'nom' => $this->statutPresence->nom,
-            'couleur' => $this->statutPresence->couleur,
-        ];
+        return $this->hasOne(JustificationAbsence::class);
     }
 }

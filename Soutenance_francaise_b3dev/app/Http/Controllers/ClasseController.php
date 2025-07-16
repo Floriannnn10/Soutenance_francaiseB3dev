@@ -36,8 +36,6 @@ class ClasseController extends Controller
         $request->validate([
             'nom' => 'required|string|max:255',
             'niveau' => 'nullable|string|max:255',
-            'specialite' => 'nullable|string|max:255',
-            'description' => 'nullable|string',
         ]);
 
         Classe::create($request->all());
@@ -71,8 +69,6 @@ class ClasseController extends Controller
         $request->validate([
             'nom' => 'required|string|max:255',
             'niveau' => 'nullable|string|max:255',
-            'specialite' => 'nullable|string|max:255',
-            'description' => 'nullable|string',
         ]);
 
         $class->update($request->all());
@@ -96,5 +92,21 @@ class ClasseController extends Controller
 
         return redirect()->route('classes.index')
             ->with('success', 'Classe supprimée avec succès.');
+    }
+
+    /**
+     * Marquer un semestre comme terminé pour une classe.
+     */
+    public function semestreTermine(Request $request, Classe $classe): RedirectResponse
+    {
+        $request->validate([
+            'semestre_id' => 'required|exists:semestres,id',
+        ]);
+
+        // Logique pour marquer le semestre comme terminé
+        // Ici vous pouvez ajouter la logique métier nécessaire
+
+        return redirect()->route('classes.show', $classe)
+            ->with('success', 'Semestre marqué comme terminé avec succès.');
     }
 }

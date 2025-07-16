@@ -2,35 +2,24 @@
 
 namespace Database\Seeders;
 
-use App\Models\TypeCours;
 use Illuminate\Database\Seeder;
+use App\Models\TypeCours;
 
 class TypesCoursSeeder extends Seeder
 {
+    /**
+     * Run the database seeds.
+     */
     public function run(): void
     {
         $typesCours = [
-            [
-                'nom' => TypeCours::CM,
-                'description' => 'Cours Magistral',
-            ],
-            [
-                'nom' => TypeCours::TD,
-                'description' => 'Travaux Dirigés',
-            ],
-            [
-                'nom' => TypeCours::TP,
-                'description' => 'Travaux Pratiques',
-            ],
-            [
-                'nom' => TypeCours::EXAMEN,
-                'description' => 'Examen',
-            ],
-            [
-                'nom' => TypeCours::CONTROLE,
-                'description' => 'Contrôle',
-            ],
+            ['nom' => 'CM'],
+            ['nom' => 'TD'],
+            ['nom' => 'TP'],
+            ['nom' => 'Examen'],
+            ['nom' => 'Contrôle'],
         ];
+
         foreach ($typesCours as $type) {
             TypeCours::create($type);
         }
