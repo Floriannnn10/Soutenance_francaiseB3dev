@@ -7,6 +7,7 @@ use App\Models\AnneeAcademique;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\DB;
 
 class SemestreController extends Controller
 {
@@ -54,13 +55,34 @@ class SemestreController extends Controller
     }
 
     /**
-     * Display the specified resource.
+     * Afficher le semestre spécifié.
      */
     public function show(Semestre $semestre): View
     {
-        $semestre->load(['anneeAcademique']);
-        // Temporairement désactivé : 'sessionsDeCours.classe', 'sessionsDeCours.matiere'
-        return view('semestres.show', compact('semestre'));
+        // Charger les sessions de cours liées à ce semestre
+        $sessionsDeCours = DB::table('course_sessions')
+            ->select(
+                'course_sessions.*',
+                'matieres.nom as matiere_nom',
+                'classes.nom as classe_nom',
+                'enseignants.nom as enseignant_nom',
+                'enseignants.prenom as enseignant_prenom'
+            )
+            ->leftJoin('matieres', 'course_sessions.matiere_id', '=', 'matieres.id')
+            ->leftJoin('classes', 'course_sessions.classe_id', '=', 'classes.id')
+            ->leftJoin('enseignants', 'course_sessions.enseignant_id', '=', 'enseignants.id')
+            ->where('course_sessions.semester_id', $semestre->id)
+            ->get();
+
+        // Compter les dépendances
+        $dependancesCount = [
+            'sessions_cours' => $sessionsDeCours->count(),
+            'presences' => DB::table('presences')
+                ->whereIn('course_session_id', $sessionsDeCours->pluck('id'))
+                ->count()
+        ];
+
+        return view('semestres.show', compact('semestre', 'sessionsDeCours', 'dependancesCount'));
     }
 
     /**
@@ -91,20 +113,29 @@ class SemestreController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Supprimer le semestre spécifié du stockage.
      */
     public function destroy(Semestre $semestre): RedirectResponse
     {
-        // Temporairement désactivé la vérification des sessions de cours
-        // if ($semestre->sessionsDeCours()->count() > 0) {
-        //     return redirect()->route('semestres.index')
-        //         ->with('error', 'Impossible de supprimer ce semestre car il contient des sessions de cours.');
-        // }
+        try {
+            // Vérifier s'il y a des sessions de cours liées à ce semestre
+            $sessionsCount = DB::table('course_sessions')
+                ->where('semester_id', $semestre->id)
+                ->count();
 
-        $semestre->delete();
+            if ($sessionsCount > 0) {
+                return redirect()->route('semestres.index')
+                    ->with('error', 'Impossible de supprimer ce semestre car il contient ' . $sessionsCount . ' session(s) de cours. Veuillez d\'abord supprimer ou réassigner ces sessions.');
+            }
 
-        return redirect()->route('semestres.index')
-            ->with('success', 'Semestre supprimé avec succès.');
+            $semestre->delete();
+
+            return redirect()->route('semestres.index')
+                ->with('success', 'Semestre supprimé avec succès.');
+        } catch (\Exception $e) {
+            return redirect()->route('semestres.index')
+                ->with('error', 'Erreur lors de la suppression du semestre : ' . $e->getMessage());
+        }
     }
 
     /**

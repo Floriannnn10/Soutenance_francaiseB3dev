@@ -59,10 +59,13 @@ Route::middleware('auth')->group(function () {
         ->name('semestres.deactivate');
 
     // Routes pour les sessions de cours
-    Route::get('/sessions-de-cours/today', [SessionDeCoursController::class, 'today'])
-        ->name('sessions-de-cours.today');
-    Route::post('/sessions-de-cours/{sessionDeCour}/report', [SessionDeCoursController::class, 'report'])
-        ->name('sessions-de-cours.report');
+    Route::resource('sessions-de-cours', SessionDeCoursController::class);
+
+    // Routes spéciales pour les présences dans les sessions
+    Route::get('/sessions-de-cours/{session}/appel', [SessionDeCoursController::class, 'appel'])
+        ->name('sessions-de-cours.appel');
+    Route::post('/sessions-de-cours/{session}/presences', [SessionDeCoursController::class, 'enregistrerPresences'])
+        ->name('sessions-de-cours.enregistrer-presences');
 
     // Routes pour les présences
     Route::get('/sessions-de-cours/{sessionDeCour}/appel', [PresenceController::class, 'appel'])

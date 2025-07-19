@@ -10,15 +10,16 @@ class StatutPresence extends Model
 {
     use HasFactory;
 
-    protected $table = 'presence_statuses';
+    protected $table = 'statuts_presence';
 
     protected $fillable = [
-        'name',
-        'display_name',
+        'nom',
+        'description',
+        'couleur',
     ];
 
     public function presences(): HasMany
     {
-        return $this->hasMany(Presence::class, 'presence_status_id');
+        return $this->hasMany(Presence::class, 'status_id');
     }
 }

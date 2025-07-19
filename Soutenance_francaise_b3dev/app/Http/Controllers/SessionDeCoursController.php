@@ -12,32 +12,59 @@ use App\Models\StatutSession;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\DB;
 
 class SessionDeCoursController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Afficher la liste des sessions de cours.
      */
     public function index(Request $request): View
     {
-        $query = SessionDeCours::with(['semestre.anneeAcademique', 'classe', 'matiere', 'enseignant', 'typeCours', 'statutSession']);
+        $perPage = $request->get('per_page', 15);
+        $perPage = in_array($perPage, [10, 15, 25, 50]) ? $perPage : 15;
 
-        // Filtres
+        // Charger les sessions avec toutes les informations jointes
+        $sessionsQuery = DB::table('course_sessions')
+            ->select(
+                'course_sessions.*',
+                'matieres.nom as matiere_nom',
+                'classes.nom as classe_nom',
+                'enseignants.nom as enseignant_nom',
+                'enseignants.prenom as enseignant_prenom',
+                'statuts_session.nom as statut_nom',
+                'semestres.nom as semestre_nom',
+                'annees_academiques.nom as annee_nom'
+            )
+            ->leftJoin('matieres', 'course_sessions.matiere_id', '=', 'matieres.id')
+            ->leftJoin('classes', 'course_sessions.classe_id', '=', 'classes.id')
+            ->leftJoin('enseignants', 'course_sessions.enseignant_id', '=', 'enseignants.id')
+            ->leftJoin('statuts_session', 'course_sessions.status_id', '=', 'statuts_session.id')
+            ->leftJoin('semestres', 'course_sessions.semester_id', '=', 'semestres.id')
+            ->leftJoin('annees_academiques', 'semestres.annee_academique_id', '=', 'annees_academiques.id')
+            ->orderBy('course_sessions.start_time', 'desc');
+
+        // Appliquer les filtres si présents
         if ($request->filled('semestre_id')) {
-            $query->where('semestre_id', $request->semestre_id);
+            $sessionsQuery->where('course_sessions.semester_id', $request->semestre_id);
         }
+
         if ($request->filled('classe_id')) {
-            $query->where('classe_id', $request->classe_id);
-        }
-        if ($request->filled('date')) {
-            $query->whereDate('date', $request->date);
+            $sessionsQuery->where('course_sessions.classe_id', $request->classe_id);
         }
 
-        $sessions = $query->orderBy('date')->orderBy('heure_debut')->paginate(15);
-        $semestres = Semestre::with('anneeAcademique')->get();
-        $classes = Classe::all();
+        if ($request->filled('matiere_id')) {
+            $sessionsQuery->where('course_sessions.matiere_id', $request->matiere_id);
+        }
 
-        return view('sessions-de-cours.index', compact('sessions', 'semestres', 'classes'));
+        if ($request->filled('status_id')) {
+            $sessionsQuery->where('course_sessions.status_id', $request->status_id);
+        }
+
+        // Paginer les résultats
+        $sessions = $sessionsQuery->paginate($perPage)->appends($request->query());
+
+        return view('sessions-de-cours.index', compact('sessions'));
     }
 
     /**
@@ -68,38 +95,38 @@ class SessionDeCoursController extends Controller
             'matiere_id' => 'required|exists:matieres,id',
             'enseignant_id' => 'required|exists:enseignants,id',
             'type_cours_id' => 'required|exists:types_cours,id',
-            'statut_session_id' => 'required|exists:statuts_session,id',
-            'date' => 'required|date',
-            'heure_debut' => 'required|date_format:H:i',
-            'heure_fin' => 'required|date_format:H:i|after:heure_debut',
-            'salle' => 'nullable|string|max:255',
-            'commentaire' => 'nullable|string',
+            'status_id' => 'required|exists:statuts_session,id',
+            'start_time' => 'required|date',
+            'end_time' => 'required|date|after:start_time',
+            'location' => 'nullable|string|max:255',
+            'notes' => 'nullable|string',
         ]);
 
-        SessionDeCours::create($request->all());
+        // Créer la session de cours avec les bons noms de colonnes
+        $sessionDeCours = new \stdClass();
+        $sessionDeCours = DB::table('course_sessions')->insertGetId([
+            'semester_id' => $request->semestre_id,
+            'classe_id' => $request->classe_id,
+            'matiere_id' => $request->matiere_id,
+            'enseignant_id' => $request->enseignant_id,
+            'type_cours_id' => $request->type_cours_id,
+            'status_id' => $request->status_id,
+            'start_time' => $request->start_time,
+            'end_time' => $request->end_time,
+            'location' => $request->location,
+            'notes' => $request->notes,
+            'academic_year_id' => DB::table('semestres')
+                ->where('id', $request->semestre_id)
+                ->value('annee_academique_id'),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
 
-        return redirect()->route('sessions-de-cours.index')
+        return redirect()->route('semestres.show', $request->semestre_id)
             ->with('success', 'Session de cours créée avec succès.');
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(SessionDeCours $sessionDeCour): View
-    {
-        $sessionDeCour->load([
-            'semestre.anneeAcademique',
-            'classe',
-            'matiere',
-            'enseignant',
-            'typeCours',
-            'statutSession',
-            'presences.etudiant',
-            'presences.statutPresence'
-        ]);
 
-        return view('sessions-de-cours.show', compact('sessionDeCour'));
-    }
 
     /**
      * Show the form for editing the specified resource.
@@ -193,10 +220,179 @@ class SessionDeCoursController extends Controller
         $newSession->save();
 
         // Marquer l'ancienne session comme reportée
-        $statutReportee = StatutSession::where('nom', StatutSession::REPORTEE)->first();
+        $statutReportee = StatutSession::where('nom', 'Reportée')->first();
         $sessionDeCour->update(['statut_session_id' => $statutReportee->id]);
 
         return redirect()->route('sessions-de-cours.index')
             ->with('success', 'Session reportée avec succès.');
+    }
+
+    /**
+     * Afficher la page d'appel des présences pour une session.
+     */
+    public function appel($sessionId)
+    {
+        // Récupérer la session avec toutes les informations nécessaires
+        $session = DB::table('course_sessions')
+            ->select(
+                'course_sessions.*',
+                'matieres.nom as matiere_nom',
+                'classes.nom as classe_nom',
+                'enseignants.nom as enseignant_nom',
+                'enseignants.prenom as enseignant_prenom',
+                'semestres.nom as semestre_nom',
+                'annees_academiques.nom as annee_nom'
+            )
+            ->leftJoin('matieres', 'course_sessions.matiere_id', '=', 'matieres.id')
+            ->leftJoin('classes', 'course_sessions.classe_id', '=', 'classes.id')
+            ->leftJoin('enseignants', 'course_sessions.enseignant_id', '=', 'enseignants.id')
+            ->leftJoin('semestres', 'course_sessions.semester_id', '=', 'semestres.id')
+            ->leftJoin('annees_academiques', 'semestres.annee_academique_id', '=', 'annees_academiques.id')
+            ->where('course_sessions.id', $sessionId)
+            ->first();
+
+        if (!$session) {
+            return redirect()->route('sessions-de-cours.index')
+                ->with('error', 'Session de cours introuvable.');
+        }
+
+        // Récupérer tous les étudiants de la classe
+        $etudiants = DB::table('etudiants')
+            ->select('etudiants.*', 'users.name', 'users.email')
+            ->leftJoin('users', 'etudiants.user_id', '=', 'users.id')
+            ->where('etudiants.classe_id', $session->classe_id)
+            ->orderBy('users.name')
+            ->get();
+
+        // Récupérer les présences déjà enregistrées pour cette session
+        $presencesExistantes = DB::table('presences')
+            ->select('presences.*', 'statuts_presence.nom as statut_nom')
+            ->leftJoin('statuts_presence', 'presences.presence_status_id', '=', 'statuts_presence.id')
+            ->where('presences.course_session_id', $sessionId)
+            ->get()
+            ->keyBy('etudiant_id');
+
+        // Récupérer les statuts de présence disponibles
+        $statutsPresence = DB::table('statuts_presence')->get();
+
+        return view('sessions-de-cours.appel', compact(
+            'session', 'etudiants', 'presencesExistantes', 'statutsPresence'
+        ));
+    }
+
+    /**
+     * Enregistrer les présences d'une session.
+     */
+    public function enregistrerPresences(Request $request, $sessionId): RedirectResponse
+    {
+        $request->validate([
+            'presences' => 'required|array',
+            'presences.*' => 'required|exists:statuts_presence,id'
+        ]);
+
+        // Récupérer les informations de la session
+        $session = DB::table('course_sessions')
+            ->select('course_sessions.*', 'semestres.annee_academique_id')
+            ->leftJoin('semestres', 'course_sessions.semester_id', '=', 'semestres.id')
+            ->where('course_sessions.id', $sessionId)
+            ->first();
+
+        if (!$session) {
+            return redirect()->route('sessions-de-cours.index')
+                ->with('error', 'Session introuvable.');
+        }
+
+        // Supprimer les anciennes présences pour cette session
+        DB::table('presences')->where('course_session_id', $sessionId)->delete();
+
+        // Enregistrer les nouvelles présences
+        foreach ($request->presences as $etudiantId => $statutId) {
+            DB::table('presences')->insert([
+                'etudiant_id' => $etudiantId,
+                'course_session_id' => $sessionId,
+                'presence_status_id' => $statutId,
+                'enregistre_le' => now(),
+                'enregistre_par_user_id' => 1, // ID utilisateur par défaut
+                'academic_year_id' => $session->annee_academique_id,
+                'semester_id' => $session->semester_id,
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+        }
+
+        return redirect()->route('sessions-de-cours.show', $sessionId)
+            ->with('success', 'Présences enregistrées avec succès.');
+    }
+
+    /**
+     * Afficher les détails d'une session de cours.
+     */
+    public function show($sessionId)
+    {
+        // Récupérer la session avec toutes les informations
+        $session = DB::table('course_sessions')
+            ->select(
+                'course_sessions.*',
+                'matieres.nom as matiere_nom',
+                'classes.nom as classe_nom',
+                'enseignants.nom as enseignant_nom',
+                'enseignants.prenom as enseignant_prenom',
+                'statuts_session.nom as statut_nom',
+                'semestres.nom as semestre_nom',
+                'annees_academiques.nom as annee_nom'
+            )
+            ->leftJoin('matieres', 'course_sessions.matiere_id', '=', 'matieres.id')
+            ->leftJoin('classes', 'course_sessions.classe_id', '=', 'classes.id')
+            ->leftJoin('enseignants', 'course_sessions.enseignant_id', '=', 'enseignants.id')
+            ->leftJoin('statuts_session', 'course_sessions.status_id', '=', 'statuts_session.id')
+            ->leftJoin('semestres', 'course_sessions.semester_id', '=', 'semestres.id')
+            ->leftJoin('annees_academiques', 'semestres.annee_academique_id', '=', 'annees_academiques.id')
+            ->where('course_sessions.id', $sessionId)
+            ->first();
+
+        if (!$session) {
+            return redirect()->route('sessions-de-cours.index')
+                ->with('error', 'Session introuvable.');
+        }
+
+        // Calculer les statistiques de présence
+        $presencesStats = [
+            'total' => 0,
+            'present' => 0,
+            'absent' => 0,
+            'justified' => 0,
+            'late' => 0,
+            'left_early' => 0
+        ];
+
+        $presences = DB::table('presences')
+            ->select('presences.*', 'statuts_presence.nom as statut_nom')
+            ->leftJoin('statuts_presence', 'presences.presence_status_id', '=', 'statuts_presence.id')
+            ->where('presences.course_session_id', $sessionId)
+            ->get();
+
+        $presencesStats['total'] = $presences->count();
+
+        foreach ($presences as $presence) {
+            switch ($presence->statut_nom) {
+                case 'Présent':
+                    $presencesStats['present']++;
+                    break;
+                case 'Absent':
+                    $presencesStats['absent']++;
+                    break;
+                case 'Absent Justifié':
+                    $presencesStats['justified']++;
+                    break;
+                case 'Retard':
+                    $presencesStats['late']++;
+                    break;
+                case 'Parti Tôt':
+                    $presencesStats['left_early']++;
+                    break;
+            }
+        }
+
+        return view('sessions-de-cours.show', compact('session', 'presencesStats'));
     }
 }

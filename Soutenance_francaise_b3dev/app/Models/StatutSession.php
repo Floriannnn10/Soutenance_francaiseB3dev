@@ -10,11 +10,12 @@ class StatutSession extends Model
 {
     use HasFactory;
 
-    protected $table = 'session_statuses';
+    protected $table = 'statuts_session';
 
     protected $fillable = [
-        'name',
-        'display_name',
+        'nom',
+        'description',
+        'couleur',
     ];
 
     public function sessionsDeCours(): HasMany

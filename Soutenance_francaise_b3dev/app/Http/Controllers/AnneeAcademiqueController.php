@@ -6,6 +6,7 @@ use App\Models\AnneeAcademique;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\DB;
 
 class AnneeAcademiqueController extends Controller
 {
@@ -85,20 +86,27 @@ class AnneeAcademiqueController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Supprimer l'année académique spécifiée du stockage.
      */
     public function destroy(AnneeAcademique $anneeAcademique): RedirectResponse
     {
-        // Vérifier s'il y a des données liées
-        if ($anneeAcademique->semestres()->count() > 0) {
+        try {
+            // Vérifier s'il y a des semestres liés à cette année académique
+            $semestresCount = $anneeAcademique->semestres()->count();
+
+            if ($semestresCount > 0) {
+                return redirect()->route('annees-academiques.index')
+                    ->with('error', 'Impossible de supprimer cette année académique car elle contient ' . $semestresCount . ' semestre(s). Veuillez d\'abord supprimer ces semestres.');
+            }
+
+            $anneeAcademique->delete();
+
             return redirect()->route('annees-academiques.index')
-                ->with('error', 'Impossible de supprimer cette année académique car elle contient des données liées.');
+                ->with('success', 'Année académique supprimée avec succès.');
+        } catch (\Exception $e) {
+            return redirect()->route('annees-academiques.index')
+                ->with('error', 'Erreur lors de la suppression de l\'année académique : ' . $e->getMessage());
         }
-
-        $anneeAcademique->delete();
-
-        return redirect()->route('annees-academiques.index')
-            ->with('success', 'Année académique supprimée avec succès.');
     }
 
     /**

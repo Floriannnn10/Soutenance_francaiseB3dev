@@ -5,11 +5,11 @@
                 {{ __('Détails du Semestre') }}: {{ $semestre->nom }}
             </h2>
             <div class="flex space-x-2">
-                <a href="{{ route('semestres.edit', $semestre) }}" 
+                <a href="{{ route('semestres.edit', $semestre) }}"
                    class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
                     <i class="fas fa-edit mr-2"></i>Modifier
                 </a>
-                <a href="{{ route('semestres.index') }}" 
+                <a href="{{ route('semestres.index') }}"
                    class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
                     <i class="fas fa-arrow-left mr-2"></i>Retour
                 </a>
@@ -19,7 +19,7 @@
 
     <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
-            
+
             <!-- Informations générales -->
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900">
@@ -32,7 +32,7 @@
                         <div>
                             <label class="block text-sm font-medium text-gray-700">Année Académique</label>
                             <p class="mt-1 text-sm text-gray-900">
-                                <a href="{{ route('annees-academiques.show', $semestre->anneeAcademique) }}" 
+                                <a href="{{ route('annees-academiques.show', $semestre->anneeAcademique) }}"
                                    class="text-blue-600 hover:text-blue-800">
                                     {{ $semestre->anneeAcademique->nom }}
                                 </a>
@@ -48,7 +48,7 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700">Statut</label>
-                            <span class="mt-1 px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                            <span class="mt-1 px-2 inline-flex text-xs leading-5 font-semibold rounded-full
                                 @if($semestre->statut === 'En cours') bg-green-100 text-green-800
                                 @elseif($semestre->statut === 'À venir') bg-yellow-100 text-yellow-800
                                 @else bg-gray-100 text-gray-800
@@ -58,7 +58,7 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700">État</label>
-                            <span class="mt-1 px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                            <span class="mt-1 px-2 inline-flex text-xs leading-5 font-semibold rounded-full
                                 @if($semestre->actif) bg-green-100 text-green-800
                                 @else bg-gray-100 text-gray-800
                                 @endif">
@@ -79,14 +79,29 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900">
                     <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-semibold">Sessions de Cours ({{ $semestre->sessionsDeCours->count() }})</h3>
-                        <a href="{{ route('sessions-de-cours.create', ['semestre_id' => $semestre->id]) }}" 
+                        <h3 class="text-lg font-semibold">Sessions de Cours ({{ $dependancesCount['sessions_cours'] }})</h3>
+                        <a href="{{ route('sessions-de-cours.create', ['semestre_id' => $semestre->id]) }}"
                            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded text-sm">
                             <i class="fas fa-plus mr-2"></i>Nouvelle Session
                         </a>
                     </div>
-                    
-                    @if($semestre->sessionsDeCours->count() > 0)
+
+                    @if($dependancesCount['sessions_cours'] > 0)
+                        <div class="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                            <div class="flex items-center">
+                                <i class="fas fa-exclamation-triangle text-yellow-600 mr-2"></i>
+                                <p class="text-sm text-yellow-800">
+                                    <strong>Attention :</strong> Ce semestre contient {{ $dependancesCount['sessions_cours'] }} session(s) de cours
+                                    @if($dependancesCount['presences'] > 0)
+                                        avec {{ $dependancesCount['presences'] }} présence(s) enregistrée(s).
+                                    @endif
+                                    Il ne peut pas être supprimé tant que ces éléments existent.
+                                </p>
+                            </div>
+                        </div>
+                    @endif
+
+                    @if($dependancesCount['sessions_cours'] > 0)
                         <div class="overflow-x-auto">
                             <table class="min-w-full divide-y divide-gray-200">
                                 <thead class="bg-gray-50">
@@ -98,10 +113,13 @@
                                             Classe
                                         </th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Date/Heure
+                                            Enseignant
                                         </th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Statut
+                                            Horaires
+                                        </th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Lieu
                                         </th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Actions
@@ -109,39 +127,32 @@
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
-                                    @foreach($semestre->sessionsDeCours as $session)
-                                        <tr class="hover:bg-gray-50">
-                                            <td class="px-6 py-4 whitespace-nowrap">
-                                                <div class="text-sm font-medium text-gray-900">
-                                                    {{ $session->matiere->nom ?? 'N/A' }}
-                                                </div>
+                                    @foreach($sessionsDeCours as $session)
+                                        <tr>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                {{ $session->matiere_nom ?? 'N/A' }}
                                             </td>
-                                            <td class="px-6 py-4 whitespace-nowrap">
-                                                <div class="text-sm text-gray-900">
-                                                    {{ $session->classe->nom ?? 'N/A' }}
-                                                </div>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                {{ $session->classe_nom ?? 'N/A' }}
                                             </td>
-                                            <td class="px-6 py-4 whitespace-nowrap">
-                                                <div class="text-sm text-gray-900">
-                                                    {{ $session->date_session->format('d/m/Y H:i') }}
-                                                </div>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                {{ $session->enseignant_prenom ?? '' }} {{ $session->enseignant_nom ?? 'N/A' }}
                                             </td>
-                                            <td class="px-6 py-4 whitespace-nowrap">
-                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                                                    {{ $session->statut->nom ?? 'N/A' }}
-                                                </span>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                @if($session->start_time && $session->end_time)
+                                                    {{ \Carbon\Carbon::parse($session->start_time)->format('d/m/Y H:i') }} -
+                                                    {{ \Carbon\Carbon::parse($session->end_time)->format('H:i') }}
+                                                @else
+                                                    Non programmé
+                                                @endif
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                {{ $session->location ?? 'N/A' }}
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                <div class="flex space-x-2">
-                                                    <a href="{{ route('sessions-de-cours.show', $session) }}" 
-                                                       class="text-blue-600 hover:text-blue-900">
-                                                        <i class="fas fa-eye"></i>
-                                                    </a>
-                                                    <a href="{{ route('sessions-de-cours.edit', $session) }}" 
-                                                       class="text-indigo-600 hover:text-indigo-900">
-                                                        <i class="fas fa-edit"></i>
-                                                    </a>
-                                                </div>
+                                                <a href="#" class="text-blue-600 hover:text-blue-900 mr-3">Voir</a>
+                                                <a href="#" class="text-orange-600 hover:text-orange-900 mr-3">Éditer</a>
+                                                <a href="#" class="text-red-600 hover:text-red-900">Supprimer</a>
                                             </td>
                                         </tr>
                                     @endforeach
@@ -201,4 +212,4 @@
             </div>
         </div>
     </div>
-</x-app-layout> 
+</x-app-layout>
