@@ -71,7 +71,6 @@ class UserController extends Controller
             ]);
         } elseif ($role === 'Enseignant') {
             \App\Models\Enseignant::create([
-                'user_id' => $user->id,
                 'prenom' => $user->prenom,
                 'nom' => $user->nom,
             ]);
@@ -95,7 +94,7 @@ class UserController extends Controller
 
     public function show(User $user)
     {
-        $user->load(['role', 'etudiant.classe', 'enseignant', 'parent', 'coordinateur']);
+        $user->load(['role', 'etudiant.classe', 'parent', 'coordinateur']); // On retire 'enseignant'
         return view('users.show', compact('user'));
     }
 

@@ -9,7 +9,8 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <!-- Informations de l'enseignant -->
             @php
-                $enseignant = auth()->user()->enseignant;
+                // On tente de retrouver l'enseignant par l'email de l'utilisateur connecté
+                $enseignant = \App\Models\Enseignant::where('email', auth()->user()->email ?? null)->first();
             @endphp
             @if($enseignant)
             <div class="bg-white dark:bg-gray-800 shadow-sm rounded-lg mb-6">
@@ -195,7 +196,7 @@
             @else
             <div class="bg-white dark:bg-gray-800 shadow-sm rounded-lg">
                 <div class="p-6 text-center">
-                    <p class="text-gray-500 dark:text-gray-400">Aucune information d'enseignant trouvée</p>
+                    <p class="text-gray-500 dark:text-gray-400">Aucune information d'enseignant trouvée. Veuillez contacter l'administrateur ou vérifier vos informations.</p>
                 </div>
             </div>
             @endif

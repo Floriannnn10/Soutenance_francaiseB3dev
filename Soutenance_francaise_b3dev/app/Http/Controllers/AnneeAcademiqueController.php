@@ -10,11 +10,17 @@ use Illuminate\View\View;
 class AnneeAcademiqueController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Afficher la liste des années académiques.
      */
-    public function index(): View
+    public function index(Request $request): View
     {
-        $anneesAcademiques = AnneeAcademique::orderBy('nom', 'desc')->paginate(10);
+        $perPage = $request->get('per_page', 10);
+        $perPage = in_array($perPage, [5, 10, 25, 50]) ? $perPage : 10;
+
+        $anneesAcademiques = AnneeAcademique::orderBy('date_debut', 'desc')
+            ->paginate($perPage)
+            ->appends($request->query());
+
         return view('annees-academiques.index', compact('anneesAcademiques'));
     }
 
@@ -48,7 +54,8 @@ class AnneeAcademiqueController extends Controller
      */
     public function show(AnneeAcademique $anneeAcademique): View
     {
-        $anneeAcademique->load(['semestres', 'inscriptions.classe', 'inscriptions.etudiant']);
+        $anneeAcademique->load(['semestres']);
+        // Temporairement désactivé : 'inscriptions.classe', 'inscriptions.etudiant'
         return view('annees-academiques.show', compact('anneeAcademique'));
     }
 
@@ -83,7 +90,7 @@ class AnneeAcademiqueController extends Controller
     public function destroy(AnneeAcademique $anneeAcademique): RedirectResponse
     {
         // Vérifier s'il y a des données liées
-        if ($anneeAcademique->semestres()->count() > 0 || $anneeAcademique->inscriptions()->count() > 0) {
+        if ($anneeAcademique->semestres()->count() > 0) {
             return redirect()->route('annees-academiques.index')
                 ->with('error', 'Impossible de supprimer cette année académique car elle contient des données liées.');
         }
@@ -103,5 +110,16 @@ class AnneeAcademiqueController extends Controller
 
         return redirect()->route('annees-academiques.index')
             ->with('success', 'Année académique activée avec succès.');
+    }
+
+    /**
+     * Désactiver une année académique.
+     */
+    public function deactivate(AnneeAcademique $anneeAcademique): RedirectResponse
+    {
+        $anneeAcademique->update(['actif' => false]);
+
+        return redirect()->route('annees-academiques.index')
+            ->with('success', 'Année académique désactivée avec succès.');
     }
 }

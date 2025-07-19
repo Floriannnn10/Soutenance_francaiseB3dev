@@ -64,14 +64,6 @@ class User extends Authenticatable
     }
 
     /**
-     * Relation avec l'enseignant (si l'utilisateur est un enseignant)
-     */
-    public function enseignant()
-    {
-        return $this->hasOne(Enseignant::class, 'user_id');
-    }
-
-    /**
      * Relation avec le parent (si l'utilisateur est un parent)
      */
     public function parent()

@@ -15,7 +15,6 @@ class Enseignant extends Model
     protected $table = 'enseignants';
 
     protected $fillable = [
-        'user_id',
         'prenom',
         'nom',
         'photo',

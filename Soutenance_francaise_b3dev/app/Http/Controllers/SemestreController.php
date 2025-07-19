@@ -11,11 +11,18 @@ use Illuminate\View\View;
 class SemestreController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Afficher la liste des semestres.
      */
-    public function index(): View
+    public function index(Request $request): View
     {
-        $semestres = Semestre::with('anneeAcademique')->orderBy('nom')->paginate(10);
+        $perPage = $request->get('per_page', 10);
+        $perPage = in_array($perPage, [5, 10, 25, 50]) ? $perPage : 10;
+
+        $semestres = Semestre::with('anneeAcademique')
+            ->orderBy('date_debut', 'desc')
+            ->paginate($perPage)
+            ->appends($request->query());
+
         return view('semestres.index', compact('semestres'));
     }
 
@@ -51,7 +58,8 @@ class SemestreController extends Controller
      */
     public function show(Semestre $semestre): View
     {
-        $semestre->load(['anneeAcademique', 'sessionsDeCours.classe', 'sessionsDeCours.matiere']);
+        $semestre->load(['anneeAcademique']);
+        // Temporairement désactivé : 'sessionsDeCours.classe', 'sessionsDeCours.matiere'
         return view('semestres.show', compact('semestre'));
     }
 
@@ -87,14 +95,37 @@ class SemestreController extends Controller
      */
     public function destroy(Semestre $semestre): RedirectResponse
     {
-        if ($semestre->sessionsDeCours()->count() > 0) {
-            return redirect()->route('semestres.index')
-                ->with('error', 'Impossible de supprimer ce semestre car il contient des sessions de cours.');
-        }
+        // Temporairement désactivé la vérification des sessions de cours
+        // if ($semestre->sessionsDeCours()->count() > 0) {
+        //     return redirect()->route('semestres.index')
+        //         ->with('error', 'Impossible de supprimer ce semestre car il contient des sessions de cours.');
+        // }
 
         $semestre->delete();
 
         return redirect()->route('semestres.index')
             ->with('success', 'Semestre supprimé avec succès.');
+    }
+
+    /**
+     * Activer un semestre.
+     */
+    public function activate(Semestre $semestre): RedirectResponse
+    {
+        $semestre->activate();
+
+        return redirect()->route('semestres.index')
+            ->with('success', 'Semestre activé avec succès.');
+    }
+
+    /**
+     * Désactiver un semestre.
+     */
+    public function deactivate(Semestre $semestre): RedirectResponse
+    {
+        $semestre->update(['actif' => false]);
+
+        return redirect()->route('semestres.index')
+            ->with('success', 'Semestre désactivé avec succès.');
     }
 }

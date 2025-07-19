@@ -27,8 +27,11 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     // Routes Resource pour la gestion des données
+    Route::resource('annees-academiques', AnneeAcademiqueController::class)->parameters([
+        'annees-academiques' => 'anneeAcademique'
+    ]);
+
     Route::resources([
-        'annees-academiques' => AnneeAcademiqueController::class,
         'semestres' => SemestreController::class,
         'classes' => ClasseController::class,
         'matieres' => MatiereController::class,
@@ -46,6 +49,14 @@ Route::middleware('auth')->group(function () {
     // Routes supplémentaires pour des actions spécifiques
     Route::patch('/annees-academiques/{anneeAcademique}/activate', [AnneeAcademiqueController::class, 'activate'])
         ->name('annees-academiques.activate');
+    Route::patch('/annees-academiques/{anneeAcademique}/deactivate', [AnneeAcademiqueController::class, 'deactivate'])
+        ->name('annees-academiques.deactivate');
+
+    // Routes pour les semestres
+    Route::patch('/semestres/{semestre}/activate', [SemestreController::class, 'activate'])
+        ->name('semestres.activate');
+    Route::patch('/semestres/{semestre}/deactivate', [SemestreController::class, 'deactivate'])
+        ->name('semestres.deactivate');
 
     // Routes pour les sessions de cours
     Route::get('/sessions-de-cours/today', [SessionDeCoursController::class, 'today'])
