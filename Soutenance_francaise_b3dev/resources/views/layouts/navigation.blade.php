@@ -15,6 +15,155 @@
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                         {{ __('Dashboard') }}
                     </x-nav-link>
+
+                    @php
+                        $user = Auth::user();
+                        $userRole = $user->role ? $user->role->nom : null;
+                    @endphp
+
+                    <!-- Menu Admin uniquement -->
+                    @if($userRole === 'admin')
+                    <x-dropdown align="left" width="48">
+                        <x-slot name="trigger">
+                            <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none transition ease-in-out duration-150">
+                                <div>Administration</div>
+                                <div class="ms-1">
+                                    <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                    </svg>
+                                </div>
+                            </button>
+                        </x-slot>
+
+                        <x-slot name="content">
+                            <x-dropdown-link :href="route('annees-academiques.index')">
+                                Années Académiques
+                            </x-dropdown-link>
+                            <x-dropdown-link :href="route('semestres.index')">
+                                Semestres
+                            </x-dropdown-link>
+                            <x-dropdown-link :href="route('users.index')">
+                                Utilisateurs
+                            </x-dropdown-link>
+                        </x-slot>
+                    </x-dropdown>
+                    @endif
+
+                    <!-- Menu Coordinateur et Admin -->
+                    @if(in_array($userRole, ['admin', 'coordinateur']))
+                    <x-dropdown align="left" width="48">
+                        <x-slot name="trigger">
+                            <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none transition ease-in-out duration-150">
+                                <div>Gestion Académique</div>
+                                <div class="ms-1">
+                                    <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                    </svg>
+                                </div>
+                            </button>
+                        </x-slot>
+
+                        <x-slot name="content">
+                            <x-dropdown-link :href="route('classes.index')">
+                                Classes
+                            </x-dropdown-link>
+                            <x-dropdown-link :href="route('matieres.index')">
+                                Matières
+                            </x-dropdown-link>
+                            <x-dropdown-link :href="route('etudiants.index')">
+                                Étudiants
+                            </x-dropdown-link>
+                            <x-dropdown-link :href="route('enseignants.index')">
+                                Enseignants
+                            </x-dropdown-link>
+                            <x-dropdown-link :href="route('parents.index')">
+                                Parents
+                            </x-dropdown-link>
+                            @if($userRole === 'admin')
+                            <x-dropdown-link :href="route('coordinateurs.index')">
+                                Coordinateurs
+                            </x-dropdown-link>
+                            @endif
+                        </x-slot>
+                    </x-dropdown>
+                    @endif
+
+                    <!-- Menu Sessions et Présences - Coordinateur uniquement -->
+                    @if($userRole === 'coordinateur')
+                    <x-dropdown align="left" width="48">
+                        <x-slot name="trigger">
+                            <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none transition ease-in-out duration-150">
+                                <div>Sessions & Présences</div>
+                                <div class="ms-1">
+                                    <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                    </svg>
+                                </div>
+                            </button>
+                        </x-slot>
+
+                        <x-slot name="content">
+                            <x-dropdown-link :href="route('sessions-de-cours.index')">
+                                Sessions de Cours
+                            </x-dropdown-link>
+                            <x-dropdown-link :href="route('sessions-de-cours.create')">
+                                Nouvelle Session
+                            </x-dropdown-link>
+                            <x-dropdown-link :href="route('presences.index')">
+                                Présences
+                            </x-dropdown-link>
+                        </x-slot>
+                    </x-dropdown>
+                    @endif
+
+                    <!-- Menu Présences - Admin, Coordinateur, Enseignant -->
+                    @if(in_array($userRole, ['admin', 'coordinateur', 'enseignant']))
+                    <x-dropdown align="left" width="48">
+                        <x-slot name="trigger">
+                            <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none transition ease-in-out duration-150">
+                                <div>Présences</div>
+                                <div class="ms-1">
+                                    <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                    </svg>
+                                </div>
+                            </button>
+                        </x-slot>
+
+                        <x-slot name="content">
+                            <x-dropdown-link :href="route('presences.index')">
+                                Liste des Présences
+                            </x-dropdown-link>
+                            @if($userRole === 'coordinateur')
+                            <x-dropdown-link :href="route('sessions-de-cours.index')">
+                                Sessions de Cours
+                            </x-dropdown-link>
+                            @endif
+                        </x-slot>
+                    </x-dropdown>
+                    @endif
+
+                    <!-- Menu Notifications - Admin et Coordinateur -->
+                    @if(in_array($userRole, ['admin', 'coordinateur']))
+                    <x-dropdown align="left" width="48">
+                        <x-slot name="trigger">
+                            <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none transition ease-in-out duration-150">
+                                <div>Notifications</div>
+                                <div class="ms-1">
+                                    <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                    </svg>
+                                </div>
+                            </button>
+                        </x-slot>
+
+                        <x-slot name="content">
+                            <x-dropdown-link :href="route('notifications.index')">
+                                Gérer les Notifications
+                            </x-dropdown-link>
+                        </x-slot>
+                    </x-dropdown>
+                    @endif
                 </div>
             </div>
 

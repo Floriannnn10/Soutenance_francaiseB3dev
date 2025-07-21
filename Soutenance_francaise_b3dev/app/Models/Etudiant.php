@@ -15,10 +15,11 @@ class Etudiant extends Model
     protected $table = 'etudiants';
 
     protected $fillable = [
-        'user_id',
         'classe_id',
         'prenom',
         'nom',
+        'email',
+        'password',
         'date_naissance',
         'photo',
     ];
@@ -27,14 +28,12 @@ class Etudiant extends Model
         'date_naissance' => 'date',
     ];
 
-    public function user(): BelongsTo
+    /**
+     * Relation : un étudiant appartient à une seule classe
+     */
+    public function classe()
     {
-        return $this->belongsTo(User::class);
-    }
-
-    public function classe(): BelongsTo
-    {
-        return $this->belongsTo(Classe::class);
+        return $this->belongsTo(Classe::class, 'classe_id');
     }
 
     public function presences(): HasMany

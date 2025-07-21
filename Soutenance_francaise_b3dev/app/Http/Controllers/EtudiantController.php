@@ -7,6 +7,7 @@ use App\Models\Classe;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\Storage;
 
 class EtudiantController extends Controller
 {
@@ -15,12 +16,10 @@ class EtudiantController extends Controller
      */
     public function index(Request $request): View
     {
-        $query = Etudiant::with(['classes', 'presences']);
+        $query = Etudiant::with(['classe', 'presences']);
 
         if ($request->filled('classe_id')) {
-            $query->whereHas('classes', function ($q) use ($request) {
-                $q->where('classes.id', $request->classe_id);
-            });
+            $query->where('classe_id', $request->classe_id);
         }
 
         $etudiants = $query->orderBy('nom')->orderBy('prenom')->paginate(15);
@@ -47,19 +46,20 @@ class EtudiantController extends Controller
             'nom' => 'required|string|max:255',
             'prenom' => 'required|string|max:255',
             'email' => 'required|email|unique:etudiants',
+            'password' => 'required|string|min:6|confirmed',
             'telephone' => 'nullable|string|max:20',
             'date_naissance' => 'nullable|date',
             'adresse' => 'nullable|string',
-            'numero_etudiant' => 'required|string|max:50|unique:etudiants',
             'classe_id' => 'required|exists:classes,id',
+            'photo' => 'nullable|image|max:2048',
         ]);
 
-        $etudiant = Etudiant::create($request->except('classe_id'));
-
-        // Attacher à la classe
-        if ($request->classe_id) {
-            $etudiant->classes()->attach($request->classe_id);
+        $data = $request->all();
+        $data['password'] = bcrypt($request->password);
+        if ($request->hasFile('photo')) {
+            $data['photo'] = $request->file('photo')->store('etudiants', 'public');
         }
+        $etudiant = Etudiant::create($data);
 
         return redirect()->route('etudiants.index')
             ->with('success', 'Étudiant créé avec succès.');
@@ -70,7 +70,7 @@ class EtudiantController extends Controller
      */
     public function show(Etudiant $etudiant): View
     {
-        $etudiant->load(['classes', 'presences.sessionDeCours.matiere', 'presences.statutPresence']);
+        $etudiant->load(['classe', 'presences.sessionDeCours.matiere', 'presences.statutPresence']);
         return view('etudiants.show', compact('etudiant'));
     }
 
@@ -95,16 +95,26 @@ class EtudiantController extends Controller
             'telephone' => 'nullable|string|max:20',
             'date_naissance' => 'nullable|date',
             'adresse' => 'nullable|string',
-            'numero_etudiant' => 'required|string|max:50|unique:etudiants,numero_etudiant,' . $etudiant->id,
             'classe_id' => 'required|exists:classes,id',
+            'photo' => 'nullable|image|max:2048',
         ]);
 
-        $etudiant->update($request->except('classe_id'));
-
-        // Mettre à jour la classe
-        if ($request->classe_id) {
-            $etudiant->classes()->sync([$request->classe_id]);
+        $data = $request->all();
+        if ($request->filled('password')) {
+            $request->validate([
+                'password' => 'string|min:6|confirmed',
+            ]);
+            $data['password'] = bcrypt($request->password);
+        } else {
+            unset($data['password']);
         }
+        if ($request->hasFile('photo')) {
+            if ($etudiant->photo) {
+                Storage::disk('public')->delete($etudiant->photo);
+            }
+            $data['photo'] = $request->file('photo')->store('etudiants', 'public');
+        }
+        $etudiant->update($data);
 
         return redirect()->route('etudiants.index')
             ->with('success', 'Étudiant mis à jour avec succès.');

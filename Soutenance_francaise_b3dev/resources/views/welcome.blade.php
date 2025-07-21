@@ -18,9 +18,9 @@
 
 <body class="font-sans antialiased bg-white overflow-hidden">
     <main
-        class="h-screen flex items-center justify-start bg-gradient-to-b from-[#E8EDF5] from-100% to-white to-50% overflow-hidden">
+        class="h-screen flex items-center justify-center md:justify-start bg-gradient-to-b from-[#E8EDF5] from-100% to-white to-50% overflow-hidden">
         <div
-            class="relative w-full max-w-none mx-auto flex flex-col md:flex-row items-center justify-start px-0 h-screen overflow-hidden">
+            class="relative w-full max-w-none mx-auto flex flex-col md:flex-row items-center justify-center md:justify-start px-0 h-screen overflow-hidden">
             <!-- Left Image (Visible on desktop) -->
             <div class="hidden md:block md:w-1/2 flex items-center justify-start pl-0">
                 <img src="{{ asset('Images\welwoce_page-removebg-preview.png') }}" alt="Illustration de bienvenue"
