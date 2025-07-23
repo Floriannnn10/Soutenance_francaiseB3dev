@@ -34,7 +34,8 @@ class SessionDeCoursController extends Controller
                 'enseignants.prenom as enseignant_prenom',
                 'statuts_session.nom as statut_nom',
                 'semestres.nom as semestre_nom',
-                'annees_academiques.nom as annee_nom'
+                'annees_academiques.nom as annee_nom',
+                'types_cours.nom as type_cours_nom' // Ajout du nom du type de cours
             )
             ->leftJoin('matieres', 'course_sessions.matiere_id', '=', 'matieres.id')
             ->leftJoin('classes', 'course_sessions.classe_id', '=', 'classes.id')
@@ -42,6 +43,7 @@ class SessionDeCoursController extends Controller
             ->leftJoin('statuts_session', 'course_sessions.status_id', '=', 'statuts_session.id')
             ->leftJoin('semestres', 'course_sessions.semester_id', '=', 'semestres.id')
             ->leftJoin('annees_academiques', 'semestres.annee_academique_id', '=', 'annees_academiques.id')
+            ->leftJoin('types_cours', 'course_sessions.type_cours_id', '=', 'types_cours.id') // Jointure ajoutée
             ->orderBy('course_sessions.start_time', 'desc');
 
         // Appliquer les filtres si présents
@@ -258,10 +260,9 @@ class SessionDeCoursController extends Controller
 
         // Récupérer tous les étudiants de la classe
         $etudiants = DB::table('etudiants')
-            ->select('etudiants.*', 'users.name', 'users.email')
-            ->leftJoin('users', 'etudiants.user_id', '=', 'users.id')
+            ->select('etudiants.*')
             ->where('etudiants.classe_id', $session->classe_id)
-            ->orderBy('users.name')
+            ->orderBy('nom')
             ->get();
 
         // Récupérer les présences déjà enregistrées pour cette session

@@ -63,7 +63,6 @@ class UserController extends Controller
         $role = $user->role->nom ?? null;
         if ($role === 'Étudiant' || $role === 'Etudiant') {
             \App\Models\Etudiant::create([
-                'user_id' => $user->id,
                 'prenom' => $user->prenom,
                 'nom' => $user->nom,
                 'classe_id' => $request->classe_id,

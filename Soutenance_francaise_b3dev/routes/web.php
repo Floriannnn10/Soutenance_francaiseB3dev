@@ -20,77 +20,88 @@ Route::get('/', function () {
 });
 
 Route::get('/dashboard', [DashboardController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/dashboard/coordinateur', [CoordinateurController::class, 'dashboard'])->middleware(['auth', 'verified', 'role:coordinateur'])->name('dashboard.coordinateur');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    // Routes Resource pour la gestion des données
-    Route::resource('annees-academiques', AnneeAcademiqueController::class)->parameters([
-        'annees-academiques' => 'anneeAcademique'
-    ]);
+    // Routes pour l'Administrateur (accès complet)
+    Route::middleware('role:admin')->group(function () {
+        Route::resource('annees-academiques', AnneeAcademiqueController::class)->parameters([
+            'annees-academiques' => 'anneeAcademique'
+        ]);
+        Route::resource('semestres', SemestreController::class);
+        Route::resource('classes', ClasseController::class);
+        Route::resource('matieres', MatiereController::class);
+        Route::resource('etudiants', EtudiantController::class);
+        Route::resource('enseignants', EnseignantController::class);
+        Route::resource('coordinateurs', CoordinateurController::class);
+        Route::resource('parents', ParentEtudiantController::class);
+        Route::resource('users', App\Http\Controllers\UserController::class);
 
-    Route::resources([
-        'semestres' => SemestreController::class,
-        'classes' => ClasseController::class,
-        'matieres' => MatiereController::class,
-        'etudiants' => EtudiantController::class,
-        'enseignants' => EnseignantController::class,
-        'sessions-de-cours' => SessionDeCoursController::class,
-        'presences' => PresenceController::class,
-        'notifications' => NotificationController::class,
-        'parents' => ParentEtudiantController::class,
-        'coordinateurs' => CoordinateurController::class,
-    ]);
+        // Routes supplémentaires pour des actions spécifiques
+        Route::patch('/annees-academiques/{anneeAcademique}/activate', [AnneeAcademiqueController::class, 'activate'])
+            ->name('annees-academiques.activate');
+        Route::patch('/annees-academiques/{anneeAcademique}/deactivate', [AnneeAcademiqueController::class, 'deactivate'])
+            ->name('annees-academiques.deactivate');
 
-    Route::resource('users', App\Http\Controllers\UserController::class);
+        // Routes pour les semestres
+        Route::patch('/semestres/{semestre}/activate', [SemestreController::class, 'activate'])
+            ->name('semestres.activate');
+        Route::patch('/semestres/{semestre}/deactivate', [SemestreController::class, 'deactivate'])
+            ->name('semestres.deactivate');
 
-    // Routes supplémentaires pour des actions spécifiques
-    Route::patch('/annees-academiques/{anneeAcademique}/activate', [AnneeAcademiqueController::class, 'activate'])
-        ->name('annees-academiques.activate');
-    Route::patch('/annees-academiques/{anneeAcademique}/deactivate', [AnneeAcademiqueController::class, 'deactivate'])
-        ->name('annees-academiques.deactivate');
+        // Routes pour les coordinateurs
+        Route::patch('/coordinateurs/{coordinateur}/toggle-status', [CoordinateurController::class, 'toggleStatus'])
+            ->name('coordinateurs.toggle-status');
 
-    // Routes pour les semestres
-    Route::patch('/semestres/{semestre}/activate', [SemestreController::class, 'activate'])
-        ->name('semestres.activate');
-    Route::patch('/semestres/{semestre}/deactivate', [SemestreController::class, 'deactivate'])
-        ->name('semestres.deactivate');
+        // Routes pour les parents
+        Route::patch('/parents/{parent}/toggle-status', [ParentEtudiantController::class, 'toggleStatus'])
+            ->name('parents.toggle-status');
+    });
 
-    // Routes pour les sessions de cours
-    Route::resource('sessions-de-cours', SessionDeCoursController::class);
+    // Routes pour le Coordinateur (gestion des emplois du temps, présences e-learning/workshops, justifications)
+    Route::middleware('role:coordinateur')->group(function () {
+        Route::resource('sessions-de-cours', SessionDeCoursController::class);
+        Route::get('/sessions-de-cours/{session}/appel', [SessionDeCoursController::class, 'appel'])
+            ->name('sessions-de-cours.appel');
+        Route::post('/sessions-de-cours/{session}/presences', [SessionDeCoursController::class, 'enregistrerPresences'])
+            ->name('sessions-de-cours.enregistrer-presences');
+        Route::get('/presences', [PresenceController::class, 'index'])->name('presences.index');
+        Route::get('/sessions-de-cours/{sessionDeCour}/appel', [PresenceController::class, 'appel'])
+            ->name('presences.appel');
+        Route::post('/sessions-de-cours/{sessionDeCour}/appel', [PresenceController::class, 'storeAppel'])
+            ->name('presences.store-appel');
+    });
 
-    // Routes spéciales pour les présences dans les sessions
-    Route::get('/sessions-de-cours/{session}/appel', [SessionDeCoursController::class, 'appel'])
-        ->name('sessions-de-cours.appel');
-    Route::post('/sessions-de-cours/{session}/presences', [SessionDeCoursController::class, 'enregistrerPresences'])
-        ->name('sessions-de-cours.enregistrer-presences');
+    // Routes pour l'Enseignant (emploi du temps personnel, présences présentiel)
+    Route::middleware('role:enseignant')->group(function () {
+        Route::get('/sessions-de-cours', [SessionDeCoursController::class, 'index'])->name('sessions-de-cours.index');
+        Route::get('/sessions-de-cours/{session}/appel', [SessionDeCoursController::class, 'appel'])
+            ->name('sessions-de-cours.appel');
+        Route::post('/sessions-de-cours/{session}/presences', [SessionDeCoursController::class, 'enregistrerPresences'])
+            ->name('sessions-de-cours.enregistrer-presences');
+        Route::get('/presences', [PresenceController::class, 'index'])->name('presences.index');
+    });
 
-    // Routes pour les présences
-    Route::get('/sessions-de-cours/{sessionDeCour}/appel', [PresenceController::class, 'appel'])
-        ->name('presences.appel');
-    Route::post('/sessions-de-cours/{sessionDeCour}/appel', [PresenceController::class, 'storeAppel'])
-        ->name('presences.store-appel');
+    // Routes pour les Étudiants et Parents (consultation uniquement)
+    Route::middleware('role:etudiant,parent')->group(function () {
+        Route::get('/sessions-de-cours', [SessionDeCoursController::class, 'index'])->name('sessions-de-cours.index');
+    });
 
-    // Routes pour les notifications
+    // Routes communes pour tous les utilisateurs authentifiés
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::patch('/notifications/{notification}/marquer-lue', [NotificationController::class, 'marquerLue'])
         ->name('notifications.marquer-lue');
     Route::patch('/notifications/{notification}/envoyer', [NotificationController::class, 'envoyer'])
         ->name('notifications.envoyer');
 
-    // Routes pour les parents
-    Route::patch('/parents/{parent}/toggle-status', [ParentEtudiantController::class, 'toggleStatus'])
-        ->name('parents.toggle-status');
-
-    // Routes pour les coordinateurs
-    Route::patch('/coordinateurs/{coordinateur}/toggle-status', [CoordinateurController::class, 'toggleStatus'])
-        ->name('coordinateurs.toggle-status');
-
-    // Route pour les graphiques
+    // Route pour les graphiques (uniquement pour les coordinateurs)
     Route::get('/graphiques', function () {
         return view('graphiques');
-    })->name('graphiques');
+    })->middleware('role:coordinateur')->name('graphiques');
 });
 
 require __DIR__.'/auth.php';

@@ -190,4 +190,89 @@ class CoordinateurController extends Controller
         return redirect()->route('coordinateurs.index')
             ->with('success', "Coordinateur {$status} avec succès.");
     }
+
+    /**
+     * Dashboard coordinateur avec graphes dynamiques
+     */
+    public function dashboard(Request $request)
+    {
+        // Période sélectionnée (par défaut : tout)
+        $periodeDebut = $request->input('debut');
+        $periodeFin = $request->input('fin');
+        $classeId = $request->input('classe_id');
+
+        // 1. Taux de présence par étudiant (pour une classe et une période)
+        $etudiants = \App\Models\Etudiant::query();
+        if ($classeId) {
+            $etudiants->where('classe_id', $classeId);
+        }
+        $etudiants = $etudiants->get();
+        $presenceParEtudiant = [];
+        foreach ($etudiants as $etudiant) {
+            $presences = $etudiant->presences();
+            if ($periodeDebut) $presences->where('enregistre_le', '>=', $periodeDebut);
+            if ($periodeFin) $presences->where('enregistre_le', '<=', $periodeFin);
+            $total = $presences->count();
+            $presents = $presences->whereHas('statutPresence', function($q){ $q->where('nom', 'Présent'); })->count();
+            $taux = $total > 0 ? round($presents / $total * 100, 1) : 0;
+            $presenceParEtudiant[] = [
+                'nom' => $etudiant->prenom . ' ' . $etudiant->nom,
+                'taux' => $taux,
+            ];
+        }
+        usort($presenceParEtudiant, fn($a, $b) => $b['taux'] <=> $a['taux']);
+
+        // 2. Taux de présence par classe
+        $classes = \App\Models\Classe::all();
+        $presenceParClasse = [];
+        foreach ($classes as $classe) {
+            $etudiants = $classe->etudiants;
+            $total = 0; $presents = 0;
+            foreach ($etudiants as $etudiant) {
+                $presences = $etudiant->presences();
+                if ($periodeDebut) $presences->where('enregistre_le', '>=', $periodeDebut);
+                if ($periodeFin) $presences->where('enregistre_le', '<=', $periodeFin);
+                $total += $presences->count();
+                $presents += $presences->whereHas('statutPresence', function($q){ $q->where('nom', 'Présent'); })->count();
+            }
+            $taux = $total > 0 ? round($presents / $total * 100, 1) : 0;
+            $presenceParClasse[] = [
+                'nom' => $classe->nom,
+                'taux' => $taux,
+            ];
+        }
+
+        // 3. Volume de cours dispensés par type
+        $types = \App\Models\TypeCours::whereIn('nom', ['Workshop', 'E-learning', 'Présentiel'])->get();
+        $volumeParType = [];
+        foreach ($types as $type) {
+            $sessions = $type->sessionsDeCours();
+            if ($periodeDebut) $sessions->where('start_time', '>=', $periodeDebut);
+            if ($periodeFin) $sessions->where('end_time', '<=', $periodeFin);
+            $volumeParType[] = [
+                'type' => $type->nom,
+                'nb' => $sessions->count(),
+            ];
+        }
+
+        // 4. Volume cumulé de cours dispensés par semestre
+        $volumeCumule = [];
+        $semestres = \App\Models\Semestre::orderBy('date_debut')->get();
+        foreach ($semestres as $semestre) {
+            $sessions = \App\Models\SessionDeCours::where('semester_id', $semestre->id);
+            if ($classeId) {
+                $sessions->where('classe_id', $classeId);
+            }
+            if ($periodeDebut) $sessions->where('start_time', '>=', $periodeDebut);
+            if ($periodeFin) $sessions->where('end_time', '<=', $periodeFin);
+            $volumeCumule[] = [
+                'periode' => $semestre->nom,
+                'nb' => $sessions->count(),
+            ];
+        }
+
+        return view('dashboard.coordinateur', compact(
+            'presenceParEtudiant', 'presenceParClasse', 'volumeParType', 'volumeCumule', 'classes', 'classeId', 'periodeDebut', 'periodeFin'
+        ));
+    }
 }

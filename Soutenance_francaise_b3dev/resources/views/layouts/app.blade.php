@@ -64,10 +64,10 @@
             }
         </style>
     </head>
-    <body class="font-sans antialiased bg-gray-100 dark:bg-gray-900">
+    <body class="min-h-screen" style="background: linear-gradient(to bottom, #E8EDF5 100%, #FFFFFF 50%);">
         <div class="flex h-screen bg-gray-100">
             <!-- Sidebar -->
-            <aside class="w-64 bg-gray-900 flex flex-col justify-between">
+            <aside class="w-64 bg-gray-900 flex flex-col justify-between" style="background: linear-gradient(to bottom, #E8EDF5 100%, #FFFFFF 50%);">
                 <div>
                     <!-- Logo -->
                     <div class="flex items-center justify-center h-20 border-b border-gray-800">
@@ -78,12 +78,22 @@
                     </div>
                     <!-- Menu -->
                     <nav class="mt-8">
+                        @php $role = Auth::user()->role->nom ?? null; @endphp
+                        @if($role === 'coordinateur')
+                        <a href="{{ route('dashboard.coordinateur') }}" class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors {{ request()->routeIs('dashboard.coordinateur') ? 'bg-gray-800 text-white' : '' }}">
+                            <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M13 5v6h6"/>
+                                    </svg>
+                            Tableau de bord
+                        </a>
+                        @else
                         <a href="{{ route('dashboard') }}" class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors {{ request()->routeIs('dashboard') ? 'bg-gray-800 text-white' : '' }}">
                             <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M13 5v6h6"/>
                                     </svg>
                             Tableau de bord
                         </a>
+                        @endif
                         <a href="{{ route('users.create') }}" class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors {{ request()->routeIs('users.create') ? 'bg-gray-800 text-white' : '' }}">
                             <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
@@ -114,6 +124,8 @@
                                     </svg>
                             Liste des enseignants
                         </a>
+                        @php $role = Auth::user()->role->nom ?? null; @endphp
+                        @if($role !== 'coordinateur')
                         <a href="{{ route('annees-academiques.index') }}" class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors {{ request()->routeIs('annees-academiques.*') ? 'bg-gray-800 text-white' : '' }}">
                             <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3a1 1 0 011-1h6a1 1 0 011 1v4h3a1 1 0 011 1v8a1 1 0 01-1 1H5a1 1 0 01-1-1V8a1 1 0 011-1h3z"/>
@@ -126,6 +138,7 @@
                                     </svg>
                             Semestres
                         </a>
+                        @endif
                         <a href="{{ route('profile.edit') }}" class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors {{ request()->routeIs('profile.edit') ? 'bg-gray-800 text-white' : '' }}">
                             <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 15c2.485 0 4.797.657 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0z"/>

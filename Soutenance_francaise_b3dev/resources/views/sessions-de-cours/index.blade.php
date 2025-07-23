@@ -133,10 +133,12 @@
                                                    class="text-blue-600 hover:text-blue-900 flex items-center" title="Voir">
                                                     <i class="fas fa-eye mr-2"></i>Voir
                                                 </a>
-                                                <a href="{{ route('sessions-de-cours.appel', $session->id) }}"
-                                                   class="text-green-600 hover:text-green-900 flex items-center" title="Faire l'Appel">
-                                                    <i class="fas fa-clipboard-check mr-2"></i>Faire l'Appel
-                                                </a>
+                                                @if(isset($session->type_cours_nom) && (strtolower($session->type_cours_nom) === 'workshop' || strtolower($session->type_cours_nom) === 'e-learning'))
+                                                    <a href="{{ route('sessions-de-cours.appel', $session->id) }}"
+                                                       class="text-green-600 hover:text-green-900 flex items-center" title="Faire l'Appel">
+                                                        <i class="fas fa-clipboard-check mr-2"></i>Faire l'Appel
+                                                    </a>
+                                                @endif
                                                 <a href="{{ route('sessions-de-cours.edit', $session->id) }}"
                                                    class="text-orange-600 hover:text-orange-900 flex items-center" title="Éditer">
                                                     <i class="fas fa-edit mr-2"></i>Éditer

@@ -11,20 +11,25 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
 
-        // Rediriger vers le dashboard approprié selon le rôle
-        if ($user->role && $user->role->nom === 'admin') {
+        if (!$user->role) {
             return view('dashboard');
-        } elseif ($user->etudiant) {
-            return view('dashboard.etudiant');
-        } elseif ($user->enseignant) {
-            return view('dashboard.enseignant');
-        } elseif ($user->parent) {
-            return view('dashboard.parent');
-        } elseif ($user->coordinateur) {
-            return view('dashboard.coordinateur');
         }
 
-        // Par défaut, retourner le dashboard admin
-        return view('dashboard');
+        $role = strtolower($user->role->nom);
+
+        switch ($role) {
+            case 'admin':
+                return view('dashboard.utilisateurs');
+            case 'coordinateur':
+                return redirect()->route('dashboard.coordinateur');
+            case 'enseignant':
+                return view('dashboard.enseignant');
+            case 'etudiant':
+                return view('dashboard.etudiant');
+            case 'parent':
+                return view('dashboard.parent');
+            default:
+                return view('dashboard');
+        }
     }
 }

@@ -13,11 +13,9 @@ class TypesCoursSeeder extends Seeder
     public function run(): void
     {
         $typesCours = [
-            ['nom' => 'CM'],
-            ['nom' => 'TD'],
-            ['nom' => 'TP'],
-            ['nom' => 'Examen'],
-            ['nom' => 'Contrôle'],
+            ['nom' => 'Workshop'],
+            ['nom' => 'E-learning'],
+            ['nom' => 'Présentiel'],
         ];
 
         foreach ($typesCours as $type) {

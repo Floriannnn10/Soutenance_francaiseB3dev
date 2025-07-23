@@ -56,30 +56,6 @@ class User extends Authenticatable
     }
 
     /**
-     * Relation avec l'étudiant (si l'utilisateur est un étudiant)
-     */
-    public function etudiant()
-    {
-        return $this->hasOne(Etudiant::class, 'user_id');
-    }
-
-    /**
-     * Relation avec le parent (si l'utilisateur est un parent)
-     */
-    public function parent()
-    {
-        return $this->hasOne(ParentEtudiant::class, 'user_id');
-    }
-
-    /**
-     * Relation avec le coordinateur (si l'utilisateur est un coordinateur)
-     */
-    public function coordinateur()
-    {
-        return $this->hasOne(Coordinateur::class, 'user_id');
-    }
-
-    /**
      * Relation avec l'admin (si l'utilisateur est un admin)
      */
     public function admin()
