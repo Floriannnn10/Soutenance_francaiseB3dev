@@ -44,6 +44,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'last_login_at' => 'datetime',
         ];
     }
 
@@ -71,6 +72,31 @@ class User extends Authenticatable
         return $this->belongsToMany(Notification::class, 'notification_utilisateur')
                     ->withTimestamps()
                     ->withPivot('lu_a');
+    }
+
+    /**
+     * Relation avec l'étudiant (si l'utilisateur est un étudiant)
+     */
+    public function etudiant()
+    {
+        // Adapter la clé étrangère si besoin (par défaut par email)
+        return $this->hasOne(\App\Models\Etudiant::class, 'email', 'email');
+    }
+
+    /**
+     * Relation avec le parent (si l'utilisateur est un parent)
+     */
+    public function parent()
+    {
+        return $this->hasOne(\App\Models\ParentEtudiant::class, 'user_id', 'id');
+    }
+
+    /**
+     * Relation avec le coordinateur (si l'utilisateur est un coordinateur)
+     */
+    public function coordinateur()
+    {
+        return $this->hasOne(\App\Models\Coordinateur::class, 'user_id', 'id');
     }
 
     /**

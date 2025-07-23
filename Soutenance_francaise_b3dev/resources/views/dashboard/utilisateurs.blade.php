@@ -1,106 +1,91 @@
 <x-app-layout>
-    <div class="flex h-screen bg-gray-100">
-        <!-- Sidebar incluse par le layout principal -->
-        <main class="flex-1 overflow-y-auto p-8">
-            @if(session('success'))
-                <div class="mb-4 p-4 rounded bg-green-100 text-green-800 border border-green-200 flex items-center animate-fade-in">
-                    <svg class="w-5 h-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                    </svg>
-                    <span>{{ session('success') }}</span>
+    <div class="py-8 px-8 max-w-7xl mx-auto">
+        <!-- Header et statistiques -->
+        <h1 class="text-3xl font-bold text-gray-900 mb-8">Tableau de bord</h1>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow flex items-center p-6">
+                <div class="bg-indigo-100 p-3 rounded-full mr-4">
+                    <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                 </div>
-            @endif
-            @if($errors->any())
-                <div class="mb-4 p-4 rounded bg-red-100 text-red-800 border border-red-200 flex items-center animate-fade-in">
-                    <svg class="w-5 h-5 mr-2 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                    <span>{{ $errors->first() }}</span>
-                </div>
-            @endif
-            <div class="flex items-center justify-between mb-6">
-                <h1 class="text-3xl font-bold text-gray-900">Liste des utilisateurs</h1>
-                <a href="{{ route('users.create') }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-md shadow transition">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                    </svg>
-                    Nouvel utilisateur
-                </a>
-            </div>
-            <!-- Barre de recherche -->
-            <form method="GET" action="{{ route('users.index') }}" class="mb-4">
-                <div class="relative max-w-xs">
-                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Rechercher..." class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-sm">
-                    <span class="absolute left-3 top-2.5 text-gray-400">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4-4m0 0A7 7 0 1010 17a7 7 0 007-7z" />
-                        </svg>
-                    </span>
-                </div>
-            </form>
-            <!-- Tableau des utilisateurs -->
-            <div class="bg-white rounded-lg shadow overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Photo</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nom</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rôle</th>
-                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        @forelse($users as $user)
-                        <tr>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                @if($user->photo)
-                                    <img src="{{ asset('storage/'.$user->photo) }}" alt="Photo" class="w-10 h-10 rounded-full object-cover border">
-                                @else
-                                    <img src="https://ui-avatars.com/api/?name={{ urlencode($user->prenom ?? $user->nom) }}" alt="Avatar" class="w-10 h-10 rounded-full object-cover border">
-                                @endif
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900">{{ $user->nom }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-gray-600">{{ $user->email }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-gray-600 capitalize">{{ $user->role->nom ?? '-' }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-right space-x-2">
-                                <a href="{{ route('users.show', $user) }}" class="inline-flex items-center px-2 py-1 text-xs text-indigo-600 hover:underline">
-                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                    </svg>
-                                    Voir
-                                </a>
-                                <a href="{{ route('users.edit', $user) }}" class="inline-flex items-center px-2 py-1 text-xs text-yellow-600 hover:underline">
-                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536M9 13h3l8-8a2.828 2.828 0 10-4-4l-8 8v3z" />
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7l-1.5-1.5" />
-                                    </svg>
-                                    Éditer
-                                </a>
-                                <form action="{{ route('users.destroy', $user) }}" method="POST" class="inline">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="inline-flex items-center px-2 py-1 text-xs text-red-600 hover:underline" onclick="return confirm('Supprimer cet utilisateur ?')">
-                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                        </svg>
-                                        Supprimer
-                                    </button>
-                                </form>
-                            </td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="4" class="px-6 py-4 text-center text-gray-500">Aucun utilisateur trouvé.</td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-                <div class="p-4">
-                    {{ $users->links() }}
+                <div>
+                    <div class="text-xs text-gray-500">Années académiques</div>
+                    <div class="text-2xl font-bold text-gray-900">{{ $nbAnnees }}</div>
                 </div>
             </div>
-        </main>
+            <div class="bg-white rounded-lg shadow flex items-center p-6">
+                <div class="bg-blue-100 p-3 rounded-full mr-4">
+                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-6a2 2 0 012-2h2a2 2 0 012 2v6m-6 0h6"/></svg>
+                </div>
+                <div>
+                    <div class="text-xs text-gray-500">Semestre</div>
+                    <div class="text-2xl font-bold text-gray-900">{{ $nbSemestres }}</div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow flex items-center p-6">
+                <div class="bg-purple-100 p-3 rounded-full mr-4">
+                    <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m9-4V6a4 4 0 00-8 0v4m8 0a4 4 0 01-8 0"/></svg>
+                </div>
+                <div>
+                    <div class="text-xs text-gray-500">Coordinateurs</div>
+                    <div class="text-2xl font-bold text-gray-900">{{ $nbCoordinateurs }}</div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow flex items-center p-6">
+                <div class="bg-teal-100 p-3 rounded-full mr-4">
+                    <svg class="w-6 h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m9-4V6a4 4 0 00-8 0v4m8 0a4 4 0 01-8 0"/></svg>
+                </div>
+                <div>
+                    <div class="text-xs text-gray-500">Utilisateurs</div>
+                    <div class="text-2xl font-bold text-gray-900">{{ $nbUtilisateurs }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions rapides -->
+        <div class="bg-white rounded-lg shadow p-6 mb-10">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">Actions rapides - Administrateur</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <a href="{{ route('annees-academiques.index') }}" class="flex items-center p-3 rounded-lg bg-indigo-50 hover:bg-indigo-100 transition"><svg class="w-5 h-5 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg> Années académiques</a>
+                <a href="{{ route('semestres.index') }}" class="flex items-center p-3 rounded-lg bg-blue-50 hover:bg-blue-100 transition"><svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-6a2 2 0 012-2h2a2 2 0 012 2v6m-6 0h6"/></svg> Semestre</a>
+                <a href="{{ route('coordinateurs.index') }}" class="flex items-center p-3 rounded-lg bg-purple-50 hover:bg-purple-100 transition"><svg class="w-5 h-5 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m9-4V6a4 4 0 00-8 0v4m8 0a4 4 0 01-8 0"/></svg> Coordinateur</a>
+                <a href="{{ route('users.index') }}" class="flex items-center p-3 rounded-lg bg-teal-50 hover:bg-teal-100 transition"><svg class="w-5 h-5 mr-2 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m9-4V6a4 4 0 00-8 0v4m8 0a4 4 0 01-8 0"/></svg> Utilisateurs</a>
+                <a href="{{ route('promotions.index') }}" class="flex items-center p-3 rounded-lg bg-pink-50 hover:bg-pink-100 transition"><svg class="w-5 h-5 mr-2 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg> Promotions</a>
+                <a href="{{ route('classes.index') }}" class="flex items-center p-3 rounded-lg bg-yellow-50 hover:bg-yellow-100 transition"><svg class="w-5 h-5 mr-2 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M3 12h18M3 17h18"/></svg> classes</a>
+                <a href="{{ route('matieres.index') }}" class="flex items-center p-3 rounded-lg bg-red-50 hover:bg-red-100 transition"><svg class="w-5 h-5 mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg> Matières</a>
+                <a href="{{ route('enseignants.index') }}" class="flex items-center p-3 rounded-lg bg-green-50 hover:bg-green-100 transition"><svg class="w-5 h-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg> Enseignant</a>
+                <a href="{{ route('etudiants.index') }}" class="flex items-center p-3 rounded-lg bg-orange-50 hover:bg-orange-100 transition"><svg class="w-5 h-5 mr-2 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"/></svg> Étudiant</a>
+            </div>
+        </div>
+
+        <!-- Liste des utilisateurs récents -->
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">Liste des utilisateurs récents</h2>
+        <div class="bg-white rounded-lg shadow overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nom</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rôle</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dernière activité</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    @forelse($recentUsers as $recent)
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900">{{ $recent->nom }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-indigo-600 hover:underline">
+                            {{ ucfirst($recent->role->nom ?? '-') }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-gray-500">
+                            {{ $recent->updated_at ? $recent->updated_at->diffForHumans() : '-' }}
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="3" class="px-6 py-4 text-center text-gray-500">Aucun utilisateur récent.</td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
     </div>
 </x-app-layout>

@@ -35,12 +35,6 @@
                                     <dt class="text-sm font-medium text-gray-500">Nom de la classe</dt>
                                     <dd class="text-sm text-gray-900">{{ $class->nom }}</dd>
                                 </div>
-                                @if($class->niveau)
-                                <div>
-                                    <dt class="text-sm font-medium text-gray-500">Niveau</dt>
-                                    <dd class="text-sm text-gray-900">{{ $class->niveau }}</dd>
-                                </div>
-                                @endif
                                 @if($class->specialite)
                                 <div>
                                     <dt class="text-sm font-medium text-gray-500">Spécialité</dt>

@@ -18,6 +18,7 @@ class Coordinateur extends Model
         'prenom',
         'nom',
         'photo',
+        'promotion_id',
     ];
 
     public function user(): BelongsTo
@@ -25,8 +26,18 @@ class Coordinateur extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function classes(): BelongsToMany
+    public function promotion()
     {
-        return $this->belongsToMany(Classe::class, 'coordinateur_classe', 'coordinateur_id', 'classe_id');
+        return $this->belongsTo(Promotion::class);
+    }
+
+    public function classes()
+    {
+        return $this->promotion ? $this->promotion->classes() : collect();
+    }
+
+    public function anneesAcademiques()
+    {
+        return $this->classes()->with('anneeAcademique')->get()->pluck('anneeAcademique')->unique('id');
     }
 }

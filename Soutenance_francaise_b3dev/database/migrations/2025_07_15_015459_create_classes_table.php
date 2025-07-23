@@ -16,7 +16,6 @@ return new class extends Migration
             $table->string('nom')->nullable(false);
             $table->timestamp('created_at');
             $table->timestamp('updated_at');
-            $table->string('niveau');
         });
     }
 

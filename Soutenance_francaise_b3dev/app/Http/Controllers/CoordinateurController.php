@@ -8,6 +8,7 @@ use App\Models\AnneeAcademique;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\Auth;
 
 class CoordinateurController extends Controller
 {
@@ -16,7 +17,7 @@ class CoordinateurController extends Controller
      */
     public function index(Request $request): View
     {
-        $query = Coordinateur::with(['classes', 'anneesAcademiques']);
+        $query = Coordinateur::with('promotion');
 
         if ($request->filled('specialite')) {
             $query->where('specialite', $request->specialite);
@@ -38,9 +39,8 @@ class CoordinateurController extends Controller
      */
     public function create(): View
     {
-        $classes = Classe::all();
-        $anneesAcademiques = AnneeAcademique::all();
-        return view('coordinateurs.create', compact('classes', 'anneesAcademiques'));
+        $promotions = \App\Models\Promotion::all();
+        return view('coordinateurs.create', compact('promotions'));
     }
 
     /**
@@ -51,46 +51,28 @@ class CoordinateurController extends Controller
         $request->validate([
             'nom' => 'required|string|max:255',
             'prenom' => 'required|string|max:255',
-            'email' => 'required|email|unique:coordinateurs',
-            'telephone' => 'nullable|string|max:20',
-            'adresse' => 'nullable|string',
-            'specialite' => 'nullable|string|max:255',
-            'grade' => 'nullable|string|max:100',
-            'numero_coordinateur' => 'required|string|max:50|unique:coordinateurs',
-            'responsabilites' => 'nullable|string',
-            'classes' => 'required|array',
-            'classes.*' => 'exists:classes,id',
-            'annee_academique_id' => 'required|exists:annees_academiques,id',
-            'date_debut' => 'nullable|date',
-            'date_fin' => 'nullable|date|after:date_debut',
+            'promotion_id' => 'required|exists:promotions,id',
+            'photo' => 'nullable|image|max:2048',
         ]);
 
+        // Vérifier unicité de la promotion
+        if (\App\Models\Coordinateur::where('promotion_id', $request->promotion_id)->exists()) {
+            return back()->withInput()->withErrors(['promotion_id' => 'Cette promotion est déjà attribuée à un autre coordinateur.']);
+        }
+
         $coordinateur = Coordinateur::create([
+            'user_id' => Auth::id(),
             'nom' => $request->nom,
             'prenom' => $request->prenom,
-            'email' => $request->email,
-            'telephone' => $request->telephone,
-            'adresse' => $request->adresse,
-            'specialite' => $request->specialite,
-            'grade' => $request->grade,
-            'numero_coordinateur' => $request->numero_coordinateur,
-            'responsabilites' => $request->responsabilites,
+            'promotion_id' => $request->promotion_id,
             'est_actif' => true,
         ]);
 
-        // Attacher les classes avec les options
-        $classesData = [];
-        foreach ($request->classes as $classeId) {
-            $classesData[$classeId] = [
-                'annee_academique_id' => $request->annee_academique_id,
-                'date_debut' => $request->date_debut,
-                'date_fin' => $request->date_fin,
-                'commentaire' => $request->commentaire,
-                'est_actif' => true,
-            ];
+        // Gérer l'upload de photo si fournie
+        if ($request->hasFile('photo')) {
+            $photoPath = $request->file('photo')->store('coordinateurs', 'public');
+            $coordinateur->update(['photo' => $photoPath]);
         }
-
-        $coordinateur->classes()->attach($classesData);
 
         return redirect()->route('coordinateurs.index')
             ->with('success', 'Coordinateur créé avec succès.');
@@ -101,7 +83,7 @@ class CoordinateurController extends Controller
      */
     public function show(Coordinateur $coordinateur): View
     {
-        $coordinateur->load(['classes.etudiants', 'anneesAcademiques']);
+        $coordinateur->load(['promotion']);
         return view('coordinateurs.show', compact('coordinateur'));
     }
 
@@ -110,10 +92,8 @@ class CoordinateurController extends Controller
      */
     public function edit(Coordinateur $coordinateur): View
     {
-        $classes = Classe::all();
-        $anneesAcademiques = AnneeAcademique::all();
-        $coordinateur->load('classes');
-        return view('coordinateurs.edit', compact('coordinateur', 'classes', 'anneesAcademiques'));
+        $promotions = \App\Models\Promotion::all();
+        return view('coordinateurs.edit', compact('coordinateur', 'promotions'));
     }
 
     /**
@@ -122,49 +102,30 @@ class CoordinateurController extends Controller
     public function update(Request $request, Coordinateur $coordinateur): RedirectResponse
     {
         $request->validate([
-            'nom' => 'required|string|max:255',
             'prenom' => 'required|string|max:255',
-            'email' => 'required|email|unique:coordinateurs,email,' . $coordinateur->id,
-            'telephone' => 'nullable|string|max:20',
-            'adresse' => 'nullable|string',
-            'specialite' => 'nullable|string|max:255',
-            'grade' => 'nullable|string|max:100',
-            'numero_coordinateur' => 'required|string|max:50|unique:coordinateurs,numero_coordinateur,' . $coordinateur->id,
-            'responsabilites' => 'nullable|string',
-            'classes' => 'required|array',
-            'classes.*' => 'exists:classes,id',
-            'annee_academique_id' => 'required|exists:annees_academiques,id',
-            'date_debut' => 'nullable|date',
-            'date_fin' => 'nullable|date|after:date_debut',
+            'nom' => 'required|string|max:255',
+            'promotion_id' => 'required|exists:promotions,id',
+            'photo' => 'nullable|image|max:2048',
         ]);
-
-        $coordinateur->update([
-            'nom' => $request->nom,
-            'prenom' => $request->prenom,
-            'email' => $request->email,
-            'telephone' => $request->telephone,
-            'adresse' => $request->adresse,
-            'specialite' => $request->specialite,
-            'grade' => $request->grade,
-            'numero_coordinateur' => $request->numero_coordinateur,
-            'responsabilites' => $request->responsabilites,
-        ]);
-
-        // Mettre à jour les relations avec les classes
-        $classesData = [];
-        foreach ($request->classes as $classeId) {
-            $classesData[$classeId] = [
-                'annee_academique_id' => $request->annee_academique_id,
-                'date_debut' => $request->date_debut,
-                'date_fin' => $request->date_fin,
-                'commentaire' => $request->commentaire,
-                'est_actif' => true,
-            ];
+        // Vérifier unicité de la promotion (hors coordinateur actuel)
+        if (\App\Models\Coordinateur::where('promotion_id', $request->promotion_id)->where('id', '!=', $coordinateur->id)->exists()) {
+            return back()->withInput()->withErrors(['promotion_id' => 'Cette promotion est déjà attribuée à un autre coordinateur.']);
         }
 
-        $coordinateur->classes()->sync($classesData);
+        $data = [
+            'prenom' => $request->prenom,
+            'nom' => $request->nom,
+            'promotion_id' => $request->promotion_id,
+        ];
 
-        return redirect()->route('coordinateurs.index')
+        if ($request->hasFile('photo')) {
+            $photoPath = $request->file('photo')->store('coordinateurs', 'public');
+            $data['photo'] = $photoPath;
+        }
+
+        $coordinateur->update($data);
+
+        return redirect()->route('coordinateurs.show', $coordinateur->id)
             ->with('success', 'Coordinateur mis à jour avec succès.');
     }
 
@@ -263,8 +224,8 @@ class CoordinateurController extends Controller
             if ($classeId) {
                 $sessions->where('classe_id', $classeId);
             }
-            if ($periodeDebut) $sessions->where('start_time', '>=', $periodeDebut);
-            if ($periodeFin) $sessions->where('end_time', '<=', $periodeFin);
+        if ($periodeDebut) $sessions->where('start_time', '>=', $periodeDebut);
+        if ($periodeFin) $sessions->where('end_time', '<=', $periodeFin);
             $volumeCumule[] = [
                 'periode' => $semestre->nom,
                 'nb' => $sessions->count(),

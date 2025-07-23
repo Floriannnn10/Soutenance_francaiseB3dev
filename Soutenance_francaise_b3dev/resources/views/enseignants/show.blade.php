@@ -40,6 +40,13 @@
                 <div class="bg-gray-50 rounded-lg p-6">
                     <h3 class="text-lg font-medium text-gray-900 mb-4">Informations personnelles</h3>
                     <div class="space-y-3">
+                        <div class="flex items-center space-x-4 mb-4">
+                            @if($enseignant->photo)
+                                <img src="{{ asset('storage/'.$enseignant->photo) }}" alt="Photo de l'enseignant" class="w-20 h-20 rounded-full object-cover border">
+                            @else
+                                <img src="https://ui-avatars.com/api/?name={{ urlencode($enseignant->prenom.' '.$enseignant->nom) }}" alt="Avatar" class="w-20 h-20 rounded-full object-cover border">
+                            @endif
+                        </div>
                         <div>
                             <span class="text-sm font-medium text-gray-500">Nom :</span>
                             <p class="text-gray-900">{{ $enseignant->nom }}</p>
@@ -112,4 +119,4 @@
             </div>
         </div>
     </div>
-</x-app-layout> 
+</x-app-layout>

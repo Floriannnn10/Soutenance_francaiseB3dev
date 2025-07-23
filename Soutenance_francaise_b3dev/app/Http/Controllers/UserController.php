@@ -24,7 +24,7 @@ class UserController extends Controller
             });
         }
         $users = $query->orderBy('nom')->paginate(10)->withQueryString();
-        return view('dashboard.utilisateurs', compact('users'));
+        return view('users.index', compact('users'));
     }
 
     public function create()

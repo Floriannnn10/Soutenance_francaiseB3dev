@@ -6,25 +6,19 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::table('classes', function (Blueprint $table) {
-            //
-            $table->string('niveau')->nullable();
+            $table->unsignedBigInteger('promotion_id')->nullable()->after('id');
+            $table->foreign('promotion_id')->references('id')->on('promotions')->onDelete('set null');
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::table('classes', function (Blueprint $table) {
-            //
-            $table->dropColumn('niveau');
+            $table->dropForeign(['promotion_id']);
+            $table->dropColumn('promotion_id');
         });
     }
 };

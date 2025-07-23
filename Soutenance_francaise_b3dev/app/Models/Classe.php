@@ -15,7 +15,7 @@ class Classe extends Model
 
     protected $fillable = [
         'nom',
-        "niveau",
+        'promotion_id',
     ];
 
     public function etudiants(): HasMany
@@ -28,11 +28,6 @@ class Classe extends Model
         return $this->hasMany(SessionDeCours::class, 'classe_id');
     }
 
-    public function coordinateurs(): BelongsToMany
-    {
-        return $this->belongsToMany(Coordinateur::class, 'coordinateur_classe', 'classe_id', 'coordinateur_id');
-    }
-
     public function anneeAcademique()
     {
         return $this->belongsTo(AnneeAcademique::class, 'annee_academique_id');
@@ -41,5 +36,10 @@ class Classe extends Model
     public function semestre()
     {
         return $this->belongsTo(Semestre::class, 'semestre_id');
+    }
+
+    public function promotion()
+    {
+        return $this->belongsTo(Promotion::class);
     }
 }

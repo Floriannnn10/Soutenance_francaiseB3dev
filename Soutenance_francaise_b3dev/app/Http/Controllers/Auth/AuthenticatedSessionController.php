@@ -8,6 +8,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use App\Models\User;
 
 class AuthenticatedSessionController extends Controller
 {
@@ -27,6 +28,13 @@ class AuthenticatedSessionController extends Controller
         $request->authenticate();
 
         $request->session()->regenerate();
+
+        // Mettre à jour la date de dernière connexion
+        $user = User::find(Auth::id());
+        if ($user) {
+            $user->last_login_at = now();
+            $user->save();
+        }
 
         return redirect()->intended(route('dashboard', absolute: false));
     }

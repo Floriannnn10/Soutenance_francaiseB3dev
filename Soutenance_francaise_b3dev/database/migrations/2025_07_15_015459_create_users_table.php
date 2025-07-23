@@ -23,6 +23,7 @@ return new class extends Migration
             $table->string('remember_token');
             $table->timestamp('created_at');
             $table->timestamp('updated_at');
+            $table->timestamp('last_login_at')->nullable();
         });
     }
 

@@ -24,8 +24,9 @@ class ClasseController extends Controller
      */
     public function create(): View
     {
-        $anneesAcademiques = AnneeAcademique::all();
-        return view('classes.create', compact('anneesAcademiques'));
+        $anneesAcademiques = \App\Models\AnneeAcademique::all();
+        $promotions = \App\Models\Promotion::all();
+        return view('classes.create', compact('anneesAcademiques', 'promotions'));
     }
 
     /**
@@ -35,11 +36,9 @@ class ClasseController extends Controller
     {
         $request->validate([
             'nom' => 'required|string|max:255',
-            'niveau' => 'nullable|string|max:255',
+            'promotion_id' => 'required|exists:promotions,id',
         ]);
-
         Classe::create($request->all());
-
         return redirect()->route('classes.index')
             ->with('success', 'Classe créée avec succès.');
     }
@@ -58,7 +57,8 @@ class ClasseController extends Controller
      */
     public function edit(Classe $class): View
     {
-        return view('classes.edit', compact('class'));
+        $promotions = \App\Models\Promotion::all();
+        return view('classes.edit', compact('class', 'promotions'));
     }
 
     /**
@@ -68,11 +68,9 @@ class ClasseController extends Controller
     {
         $request->validate([
             'nom' => 'required|string|max:255',
-            'niveau' => 'nullable|string|max:255',
+            'promotion_id' => 'required|exists:promotions,id',
         ]);
-
         $class->update($request->all());
-
         return redirect()->route('classes.index')
             ->with('success', 'Classe mise à jour avec succès.');
     }
