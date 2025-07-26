@@ -133,7 +133,10 @@
                                                    class="text-blue-600 hover:text-blue-900 flex items-center" title="Voir">
                                                     <i class="fas fa-eye mr-2"></i>Voir
                                                 </a>
-                                                @if(isset($session->type_cours_nom) && (strtolower($session->type_cours_nom) === 'workshop' || strtolower($session->type_cours_nom) === 'e-learning'))
+                                                @php
+                                                    $type = strtolower(str_replace(['é', 'è', 'ê', 'ë'], 'e', $session->type_cours_nom ?? ''));
+                                                @endphp
+                                                @if($type === 'workshop' || $type === 'e-learning' || $type === 'elearning')
                                                     <a href="{{ route('sessions-de-cours.appel', $session->id) }}"
                                                        class="text-green-600 hover:text-green-900 flex items-center" title="Faire l'Appel">
                                                         <i class="fas fa-clipboard-check mr-2"></i>Faire l'Appel

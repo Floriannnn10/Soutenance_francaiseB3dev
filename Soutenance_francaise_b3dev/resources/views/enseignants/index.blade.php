@@ -1,3 +1,6 @@
+@php
+use Illuminate\Support\Facades\Storage;
+@endphp
 <x-app-layout>
     <div class="max-w-5xl mx-auto py-10">
         <div class="bg-white rounded-lg shadow p-8">
@@ -43,7 +46,7 @@
                     @forelse($enseignants as $enseignant)
                         <tr>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                @if($enseignant->photo)
+                                @if($enseignant->photo && Storage::disk('public')->exists($enseignant->photo))
                                     <img src="{{ asset('storage/' . $enseignant->photo) }}" alt="Photo de {{ $enseignant->prenom }}" class="w-10 h-10 rounded-full object-cover border border-gray-200">
                                 @else
                                     <span class="inline-block w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-400">

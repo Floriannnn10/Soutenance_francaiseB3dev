@@ -15,6 +15,7 @@ class Enseignant extends Model
     protected $table = 'enseignants';
 
     protected $fillable = [
+        'user_id',
         'prenom',
         'nom',
         'photo',
@@ -28,5 +29,10 @@ class Enseignant extends Model
     public function matieres(): BelongsToMany
     {
         return $this->belongsToMany(Matiere::class, 'enseignant_matiere', 'enseignant_id', 'matiere_id');
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 }

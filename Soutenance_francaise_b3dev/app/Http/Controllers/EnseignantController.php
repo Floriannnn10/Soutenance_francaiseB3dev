@@ -31,9 +31,9 @@ class EnseignantController extends Controller
     public function create(): View
     {
         $matieres = Matiere::orderBy('nom')->get();
-        $users = User::whereHas('role', function($q) {
+        $users = User::whereHas('roles', function($q) {
             $q->where('nom', 'Enseignant');
-        })->orderBy('nom')->get();
+        })->orderBy('name')->get();
         return view('enseignants.create', compact('matieres', 'users'));
     }
 
@@ -45,12 +45,28 @@ class EnseignantController extends Controller
         $request->validate([
             'nom' => 'required|string|max:255',
             'prenom' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|string|min:8|confirmed',
             'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'matieres' => 'array',
             'matieres.*' => 'exists:matieres,id',
         ]);
 
+        // Créer l'utilisateur
+        $user = \App\Models\User::create([
+            'name' => $request->prenom . ' ' . $request->nom,
+            'email' => $request->email,
+            'password' => bcrypt($request->password),
+        ]);
+
+        // Attacher le rôle enseignant
+        $roleEnseignant = \App\Models\Role::where('nom', 'Enseignant')->first();
+        if ($roleEnseignant) {
+            $user->roles()->attach($roleEnseignant->id);
+        }
+
         $enseignant = Enseignant::create([
+            'user_id' => $user->id,
             'nom' => $request->nom,
             'prenom' => $request->prenom,
         ]);
@@ -96,10 +112,24 @@ class EnseignantController extends Controller
         $request->validate([
             'nom' => 'required|string|max:255',
             'prenom' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email,' . $enseignant->user_id,
+            'password' => 'nullable|string|min:8|confirmed',
             'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'matieres' => 'array',
             'matieres.*' => 'exists:matieres,id',
         ]);
+
+        // Mettre à jour l'utilisateur
+        $user = $enseignant->user;
+        $user->update([
+            'name' => $request->prenom . ' ' . $request->nom,
+            'email' => $request->email,
+        ]);
+
+        // Mettre à jour le mot de passe si fourni
+        if ($request->filled('password')) {
+            $user->update(['password' => bcrypt($request->password)]);
+        }
 
         $enseignant->update([
             'nom' => $request->nom,

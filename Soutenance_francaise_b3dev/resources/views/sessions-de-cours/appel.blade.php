@@ -22,11 +22,19 @@
                     </div>
                     <div>
                         <p class="text-sm text-gray-600">Classe :</p>
-                        <p class="font-medium">{{ $session->classe->nom }}</p>
+                        <p class="font-medium">{{ $session->classe_nom }}</p>
                     </div>
                     <div>
                         <p class="text-sm text-gray-600">Type de cours :</p>
-                        <p class="font-medium">{{ $session->typeCours->nom }}</p>
+                        <p class="font-medium">{{ $session->type_cours_nom }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600">Matière :</p>
+                        <p class="font-medium">{{ $session->matiere_nom }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600">Enseignant :</p>
+                        <p class="font-medium">{{ $session->enseignant_prenom }} {{ $session->enseignant_nom }}</p>
                     </div>
                 </div>
             </div>
@@ -44,7 +52,10 @@
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
-                            @foreach($session->classe->etudiants as $etudiant)
+                            @foreach($etudiants as $etudiant)
+                                @php
+                                    $presenceExistante = $presencesExistantes->get($etudiant->id);
+                                @endphp
                                 <tr>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="text-sm font-medium text-gray-900">
@@ -54,7 +65,7 @@
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <select name="presences[{{ $etudiant->id }}][statut_id]" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
                                             @foreach($statutsPresence as $statut)
-                                                <option value="{{ $statut->id }}" {{ $etudiant->presences->where('course_session_id', $session->id)->first()?->statut_presence_id === $statut->id ? 'selected' : '' }}>
+                                                <option value="{{ $statut->id }}" {{ $presenceExistante && $presenceExistante->statut_presence_id == $statut->id ? 'selected' : '' }}>
                                                     {{ $statut->nom }}
                                                 </option>
                                             @endforeach

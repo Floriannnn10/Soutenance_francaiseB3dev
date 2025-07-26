@@ -57,11 +57,11 @@ class User extends Authenticatable
     }
 
     /**
-     * Relation avec le rôle
+     * Relation avec le rôle (many-to-many)
      */
     public function role()
     {
-        return $this->belongsTo(Role::class);
+        return $this->roles()->first();
     }
 
     /**
@@ -112,7 +112,7 @@ class User extends Authenticatable
      */
     public function hasRole($role)
     {
-        return $this->role->nom === $role;
+        return $this->roles()->where('nom', $role)->exists();
     }
 
     /**
@@ -120,6 +120,6 @@ class User extends Authenticatable
      */
     public function hasAnyRole($roles)
     {
-        return in_array($this->role->nom, (array) $roles);
+        return $this->roles()->whereIn('nom', (array) $roles)->exists();
     }
 }

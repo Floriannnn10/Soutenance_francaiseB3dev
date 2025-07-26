@@ -17,7 +17,7 @@ class CoordinateurController extends Controller
      */
     public function index(Request $request): View
     {
-        $query = Coordinateur::with('promotion');
+        $query = Coordinateur::with(['promotion', 'user']);
 
         if ($request->filled('specialite')) {
             $query->where('specialite', $request->specialite);
@@ -51,6 +51,8 @@ class CoordinateurController extends Controller
         $request->validate([
             'nom' => 'required|string|max:255',
             'prenom' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|string|min:8|confirmed',
             'promotion_id' => 'required|exists:promotions,id',
             'photo' => 'nullable|image|max:2048',
         ]);
@@ -60,8 +62,22 @@ class CoordinateurController extends Controller
             return back()->withInput()->withErrors(['promotion_id' => 'Cette promotion est déjà attribuée à un autre coordinateur.']);
         }
 
+        // Créer l'utilisateur
+        $user = \App\Models\User::create([
+            'name' => $request->prenom . ' ' . $request->nom,
+            'email' => $request->email,
+            'password' => bcrypt($request->password),
+        ]);
+
+        // Attacher le rôle coordinateur
+        $roleCoordinateur = \App\Models\Role::where('nom', 'Coordinateur')->first();
+        if ($roleCoordinateur) {
+            $user->roles()->attach($roleCoordinateur->id);
+        }
+
         $coordinateur = Coordinateur::create([
-            'user_id' => Auth::id(),
+            'user_id' => $user->id,
+            'email' => $user->email,
             'nom' => $request->nom,
             'prenom' => $request->prenom,
             'promotion_id' => $request->promotion_id,
@@ -104,6 +120,8 @@ class CoordinateurController extends Controller
         $request->validate([
             'prenom' => 'required|string|max:255',
             'nom' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email,' . $coordinateur->user_id,
+            'password' => 'nullable|string|min:8|confirmed',
             'promotion_id' => 'required|exists:promotions,id',
             'photo' => 'nullable|image|max:2048',
         ]);
@@ -112,10 +130,23 @@ class CoordinateurController extends Controller
             return back()->withInput()->withErrors(['promotion_id' => 'Cette promotion est déjà attribuée à un autre coordinateur.']);
         }
 
+        // Mettre à jour l'utilisateur
+        $user = $coordinateur->user;
+        $user->update([
+            'name' => $request->prenom . ' ' . $request->nom,
+            'email' => $request->email,
+        ]);
+
+        // Mettre à jour le mot de passe si fourni
+        if ($request->filled('password')) {
+            $user->update(['password' => bcrypt($request->password)]);
+        }
+
         $data = [
             'prenom' => $request->prenom,
             'nom' => $request->nom,
             'promotion_id' => $request->promotion_id,
+            'email' => $user->email,
         ];
 
         if ($request->hasFile('photo')) {

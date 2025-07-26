@@ -73,7 +73,7 @@
                     <tr>
                         <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900">{{ $recent->nom }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-indigo-600 hover:underline">
-                            {{ ucfirst($recent->role->nom ?? '-') }}
+                            {{ ucfirst($recent->roles->first()->nom ?? '-') }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-gray-500">
                             {{ $recent->updated_at ? $recent->updated_at->diffForHumans() : '-' }}

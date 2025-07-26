@@ -23,11 +23,11 @@ class PresenceController extends Controller
         $user = auth()->user();
 
         // Vérifier que l'utilisateur est autorisé à faire l'appel
-        if ($user->role->code === 'enseignant' && $session->enseignant_id !== $user->enseignant->id) {
+        if ($user->roles->first()->code === 'enseignant' && $session->enseignant_id !== $user->enseignant->id) {
             return redirect()->back()->with('error', 'Vous n\'êtes pas autorisé à faire l\'appel pour cette session.');
         }
 
-        if ($user->role->code === 'coordinateur' && !in_array($session->typeCours->code, ['workshop', 'e_learning'])) {
+        if ($user->roles->first()->code === 'coordinateur' && !in_array($session->typeCours->code, ['workshop', 'e_learning'])) {
             return redirect()->back()->with('error', 'Les coordinateurs ne peuvent faire l\'appel que pour les workshops et les cours en e-learning.');
         }
 
@@ -62,11 +62,11 @@ class PresenceController extends Controller
         $user = auth()->user();
 
         // Vérifier que l'utilisateur est autorisé à modifier la présence
-        if ($user->role->code === 'enseignant' && $presence->sessionDeCours->enseignant_id !== $user->enseignant->id) {
+        if ($user->roles->first()->code === 'enseignant' && $presence->sessionDeCours->enseignant_id !== $user->enseignant->id) {
             return redirect()->back()->with('error', 'Vous n\'êtes pas autorisé à modifier cette présence.');
         }
 
-        if ($user->role->code === 'coordinateur' && !in_array($presence->sessionDeCours->typeCours->code, ['workshop', 'e_learning'])) {
+        if ($user->roles->first()->code === 'coordinateur' && !in_array($presence->sessionDeCours->typeCours->code, ['workshop', 'e_learning'])) {
             return redirect()->back()->with('error', 'Les coordinateurs ne peuvent modifier les présences que pour les workshops et les cours en e-learning.');
         }
 

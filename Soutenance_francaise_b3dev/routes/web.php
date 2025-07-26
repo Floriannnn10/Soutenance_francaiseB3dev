@@ -17,6 +17,7 @@ use App\Http\Controllers\StatistiquesController;
 use App\Http\Controllers\EmploiDuTempsController;
 use App\Http\Controllers\JustificationAbsenceController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\PromotionController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -52,6 +53,7 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('enseignants', EnseignantController::class);
         Route::resource('etudiants', EtudiantController::class);
         Route::resource('parents', ParentEtudiantController::class);
+        Route::resource('promotions', PromotionController::class);
 
         // Routes pour activer/désactiver les années académiques et semestres
         Route::patch('/annees-academiques/{anneeAcademique}/activate', [AnneeAcademiqueController::class, 'activate'])->name('annees-academiques.activate');
@@ -63,6 +65,7 @@ Route::middleware(['auth'])->group(function () {
     // Routes pour le coordinateur
     Route::middleware(['role:coordinateur'])->group(function () {
         Route::resource('sessions-de-cours', SessionDeCoursController::class);
+        Route::get('/sessions-de-cours/{session}/appel', [SessionDeCoursController::class, 'appel'])->name('sessions-de-cours.appel');
         Route::resource('emplois-du-temps', EmploiDuTempsController::class);
         Route::resource('justifications', JustificationAbsenceController::class);
         Route::get('/statistiques', [StatistiquesController::class, 'index'])->name('statistiques.index');
@@ -70,6 +73,7 @@ Route::middleware(['auth'])->group(function () {
 
         // Routes pour la gestion des présences
         Route::get('/presences', [PresenceController::class, 'index'])->name('presences.index');
+        Route::post('/presences/store', [PresenceController::class, 'store'])->name('presences.store');
         Route::post('/presences/workshop-elearning', [PresenceController::class, 'storeWorkshopElearning'])->name('presences.workshop-elearning');
     });
 

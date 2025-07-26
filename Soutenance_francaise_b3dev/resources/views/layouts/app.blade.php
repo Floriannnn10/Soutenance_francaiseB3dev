@@ -92,92 +92,138 @@
         <!-- Sidebar -->
         <aside class="w-64 bg-gray-900 flex flex-col justify-between"
             style="background: linear-gradient(to bottom, #E8EDF5 100%, #FFFFFF 50%);">
+            @php
+                $user = Auth::user();
+                $roleCode = $user->roles->first()->code;
+            @endphp
             <div>
                 <!-- Logo -->
                 <div class="flex items-center justify-center h-20 border-b border-gray-800">
                     <svg class="w-10 h-10 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                     </svg>
-                    <span class="ml-3 text-2xl font-bold text-white">Admin</span>
+                    <span class="ml-3 text-2xl font-bold text-white">
+                        @if($roleCode === 'admin')
+                            Admin
+                        @elseif($roleCode === 'coordinateur')
+                            Coordinateur
+                        @else
+                            Utilisateur
+                        @endif
+                    </span>
                 </div>
                 <!-- Menu -->
                 <nav class="mt-8">
-                    <a href="{{ route('dashboard') }}"
-                        class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors {{ request()->routeIs('dashboard') ? 'bg-gray-800 text-white' : '' }}">
-                        <span class="mr-3">🏠</span> Tableau de bord
-                    </a>
-                    <a href="{{ route('annees-academiques.index') }}"
-                        class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors {{ request()->routeIs('annees-academiques.*') ? 'bg-gray-800 text-white' : '' }}">
-                        <span class="mr-3">📅</span> Années académiques
-                    </a>
-                    <a href="{{ route('semestres.index') }}"
-                        class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors {{ request()->routeIs('semestres.*') ? 'bg-gray-800 text-white' : '' }}">
-                        <span class="mr-3">🔒</span> Semestre
-                    </a>
-                    <a href="{{ route('coordinateurs.index') }}"
-                        class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors {{ request()->routeIs('coordinateurs.*') ? 'bg-gray-800 text-white' : '' }}">
-                        <span class="mr-3">👥</span> Coordinateur
-                    </a>
-                    <a href="{{ route('users.index') }}"
-                        class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors {{ request()->routeIs('users.index') ? 'bg-gray-800 text-white' : '' }}">
-                        <span class="mr-3">👤</span> Utilisateurs
-                    </a>
-                    <a href="{{ route('classes.index') }}"
-                        class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors {{ request()->routeIs('classes.*') ? 'bg-gray-800 text-white' : '' }}">
-                        <span class="mr-3">📚</span> classes
-                    </a>
-                    <a href="{{ route('matieres.index') }}"
-                        class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors {{ request()->routeIs('matieres.*') ? 'bg-gray-800 text-white' : '' }}">
-                        <span class="mr-3">📄</span> Matières
-                    </a>
-                    <a href="{{ route('enseignants.index') }}"
-                        class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors {{ request()->routeIs('enseignants.*') ? 'bg-gray-800 text-white' : '' }}">
-                        <span class="mr-3">🧑‍🏫</span> Enseignant
-                    </a>
-                    <a href="{{ route('etudiants.index') }}"
-                        class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors {{ request()->routeIs('etudiants.*') ? 'bg-gray-800 text-white' : '' }}">
-                        <span class="mr-3">🎓</span> Étudiant
-                    </a>
-                    <a href="{{ route('users.create') }}"
-                        class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors {{ request()->routeIs('users.create') ? 'bg-gray-800 text-white' : '' }}">
-                        <span class="mr-3">➕</span> Créer un utilisateur
-                    </a>
-                    @if (auth()->user() && auth()->user()->role && auth()->user()->role->nom === 'admin')
-                    <a href="{{ route('promotions.index') }}"
-                        class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors {{ request()->routeIs('promotions.*') ? 'bg-gray-800 text-white' : '' }}">
-                        <span class="mr-3">🏷️</span> Promotions
-                    </a>
-                @endif
-                    <a href="{{ route('profile.edit') }}"
-                        class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors {{ request()->routeIs('profile.edit') ? 'bg-gray-800 text-white' : '' }}">
-                        <span class="mr-3">👤</span> Profil
-                    </a>
+                    @if($roleCode === 'admin')
+                        <a href="{{ route('dashboard') }}"
+                            class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors {{ request()->routeIs('dashboard') ? 'bg-gray-800 text-white' : '' }}">
+                            <span class="mr-3">🏠</span> Tableau de bord
+                        </a>
+                        <a href="{{ route('annees-academiques.index') }}"
+                            class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors {{ request()->routeIs('annees-academiques.*') ? 'bg-gray-800 text-white' : '' }}">
+                            <span class="mr-3">📅</span> Années académiques
+                        </a>
+                        <a href="{{ route('semestres.index') }}"
+                            class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors {{ request()->routeIs('semestres.*') ? 'bg-gray-800 text-white' : '' }}">
+                            <span class="mr-3">🔒</span> Semestre
+                        </a>
+                        <a href="{{ route('coordinateurs.index') }}"
+                            class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors {{ request()->routeIs('coordinateurs.*') ? 'bg-gray-800 text-white' : '' }}">
+                            <span class="mr-3">👥</span> Coordinateur
+                        </a>
+                        <a href="{{ route('users.index') }}"
+                            class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors {{ request()->routeIs('users.index') ? 'bg-gray-800 text-white' : '' }}">
+                            <span class="mr-3">👤</span> Utilisateurs
+                        </a>
+                        <a href="{{ route('classes.index') }}"
+                            class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors {{ request()->routeIs('classes.*') ? 'bg-gray-800 text-white' : '' }}">
+                            <span class="mr-3">📚</span> classes
+                        </a>
+                        <a href="{{ route('matieres.index') }}"
+                            class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors {{ request()->routeIs('matieres.*') ? 'bg-gray-800 text-white' : '' }}">
+                            <span class="mr-3">📄</span> Matières
+                        </a>
+                        <a href="{{ route('enseignants.index') }}"
+                            class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors {{ request()->routeIs('enseignants.*') ? 'bg-gray-800 text-white' : '' }}">
+                            <span class="mr-3">🧑‍🏫</span> Enseignant
+                        </a>
+                        <a href="{{ route('etudiants.index') }}"
+                            class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors {{ request()->routeIs('etudiants.*') ? 'bg-gray-800 text-white' : '' }}">
+                            <span class="mr-3">🎓</span> Étudiant
+                        </a>
+                        <a href="{{ route('users.create') }}"
+                            class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors {{ request()->routeIs('users.create') ? 'bg-gray-800 text-white' : '' }}">
+                            <span class="mr-3">➕</span> Créer un utilisateur
+                        </a>
+                        @if (auth()->user() && auth()->user()->roles->first() && auth()->user()->roles->first()->code === 'admin')
+                        <a href="{{ route('promotions.index') }}"
+                            class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors {{ request()->routeIs('promotions.*') ? 'bg-gray-800 text-white' : '' }}">
+                            <span class="mr-3">��️</span> Promotions
+                        </a>
+                        <a href="{{ route('promotions.create') }}"
+                            class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors {{ request()->routeIs('promotions.create') ? 'bg-gray-800 text-white' : '' }}">
+                            <span class="mr-3">➕</span> Créer une promotion
+                        </a>
+                    @endif
+                    @elseif($roleCode === 'coordinateur')
+                        <a href="{{ route('dashboard') }}"
+                            class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors {{ request()->routeIs('dashboard') ? 'bg-gray-800 text-white' : '' }}">
+                            <span class="mr-3">🏠</span> Tableau de bord
+                        </a>
+                        <a href="{{ route('emplois-du-temps.index') }}"
+                            class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors {{ request()->routeIs('emplois-du-temps.*') ? 'bg-gray-800 text-white' : '' }}">
+                            <span class="mr-3">📅</span> Emplois du temps
+                        </a>
+                        <a href="{{ route('sessions-de-cours.index') }}"
+                            class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors {{ request()->routeIs('sessions-de-cours.*') ? 'bg-gray-800 text-white' : '' }}">
+                            <span class="mr-3">📚</span> Sessions de cours
+                        </a>
+                        <a href="{{ route('justifications.index') }}"
+                            class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors {{ request()->routeIs('justifications.*') ? 'bg-gray-800 text-white' : '' }}">
+                            <span class="mr-3">📝</span> Justifications d'absence
+                        </a>
+                        <a href="{{ route('statistiques.index') }}"
+                            class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors {{ request()->routeIs('statistiques.index') ? 'bg-gray-800 text-white' : '' }}">
+                            <span class="mr-3">📊</span> Statistiques
+                        </a>
+                        <a href="{{ route('graphiques') }}"
+                            class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors {{ request()->routeIs('graphiques') ? 'bg-gray-800 text-white' : '' }}">
+                            <span class="mr-3">📈</span> Graphiques
+                        </a>
+                        <a href="{{ route('presences.index') }}"
+                            class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors {{ request()->routeIs('presences.index') ? 'bg-gray-800 text-white' : '' }}">
+                            <span class="mr-3">✅</span> Présences
+                        </a>
+                        <a href="{{ route('profile.edit') }}"
+                            class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors {{ request()->routeIs('profile.edit') ? 'bg-gray-800 text-white' : '' }}">
+                            <span class="mr-3">👤</span> Profil
+                        </a>
+                        @if($user->coordinateur && $user->coordinateur->promotion)
+                            <div class="text-xs text-gray-300 mt-1 px-6 py-2">Promotion : {{ $user->coordinateur->promotion->nom }}</div>
+                        @endif
+                    @endif
                 </nav>
             </div>
             <!-- Utilisateur connecté + Déconnexion -->
             <div class="flex flex-col items-center p-6 border-t border-gray-800">
                 @php
-                    $user = Auth::user();
                     $photo = null;
                     if ($user->photo) {
                         $photo = asset('storage/' . $user->photo);
-                    } elseif ($user->enseignant && $user->enseignant->photo) {
-                        $photo = asset('storage/' . $user->enseignant->photo);
-                    } elseif ($user->parent && $user->parent->photo) {
-                        $photo = asset('storage/' . $user->parent->photo);
                     } elseif ($user->coordinateur && $user->coordinateur->photo) {
                         $photo = asset('storage/' . $user->coordinateur->photo);
                     } else {
-                        $photo =
-                            'https://ui-avatars.com/api/?name=' .
-                            urlencode($user->prenom ?? ($user->name ?? $user->nom));
+                        $photo = 'https://ui-avatars.com/api/?name=' . urlencode($user->name);
                     }
                 @endphp
                 <img class="w-12 h-12 rounded-full object-cover" src="{{ $photo }}" alt="Photo">
                 <div class="mt-3 text-center">
-                    <div class="text-white font-semibold">{{ Auth::user()->nom }}</div>
-                    <div class="text-gray-400 text-xs">{{ Auth::user()->email }}</div>
-                    <div class="text-indigo-400 text-xs capitalize">{{ Auth::user()->role->nom ?? 'Admin' }}</div>
+                    <div class="text-white font-semibold">{{ $user->name }}</div>
+                    <div class="text-gray-400 text-xs">{{ $user->email }}</div>
+                    <div class="text-indigo-400 text-xs capitalize">{{ $user->roles->first()->nom ?? '' }}</div>
+                    @if($roleCode === 'coordinateur' && $user->coordinateur && $user->coordinateur->promotion)
+                        <div class="text-xs text-gray-300 mt-1">Promotion : {{ $user->coordinateur->promotion->nom }}</div>
+                    @endif
                 </div>
                 <form method="POST" action="{{ route('logout') }}" class="w-full mt-4">
                     @csrf
@@ -215,6 +261,7 @@
             <span class="mr-2">🏷️</span> Promotions
         </a>
     @endif --}}
+    @stack('scripts')
 </body>
 
 </html>

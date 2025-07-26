@@ -39,6 +39,21 @@
                     </select>
                 </div>
                 <div>
+                    <label for="password" class="block text-sm font-medium text-gray-700">Nouveau mot de passe (optionnel)</label>
+                    <input type="password" name="password" id="password" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500" minlength="6">
+                    <p class="text-xs text-gray-500 mt-1">Laissez vide pour ne pas changer le mot de passe. Minimum 6 caractères.</p>
+                    @error('password')
+                        <span class="text-red-500 text-xs">{{ $message }}</span>
+                    @enderror
+                </div>
+                <div>
+                    <label for="password_confirmation" class="block text-sm font-medium text-gray-700">Confirmer le nouveau mot de passe</label>
+                    <input type="password" name="password_confirmation" id="password_confirmation" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500" minlength="6">
+                    @error('password_confirmation')
+                        <span class="text-red-500 text-xs">{{ $message }}</span>
+                    @enderror
+                </div>
+                <div>
                     <label for="photo" class="block text-sm font-medium text-gray-700">Photo (optionnelle)</label>
                     <input type="file" name="photo" id="photo" accept="image/*" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
                     @if($user->photo)

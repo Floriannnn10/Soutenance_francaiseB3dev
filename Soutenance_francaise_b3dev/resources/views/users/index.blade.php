@@ -1,3 +1,6 @@
+@php
+use Illuminate\Support\Facades\Storage;
+@endphp
 <x-app-layout>
     <div class="py-8 px-8 max-w-7xl mx-auto">
         @if(session('success'))
@@ -52,10 +55,12 @@
                     @forelse($users as $user)
                     <tr>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            @if($user->photo)
+                            @if($user->photo && Storage::disk('public')->exists($user->photo))
                                 <img src="{{ asset('storage/'.$user->photo) }}" alt="Photo" class="w-10 h-10 rounded-full object-cover border">
                             @else
-                                <img src="https://ui-avatars.com/api/?name={{ urlencode($user->name) }}" alt="Avatar" class="w-10 h-10 rounded-full object-cover border">
+                                <span class="inline-block w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-400">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 15c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                                </span>
                             @endif
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900">{{ $user->name }}</td>

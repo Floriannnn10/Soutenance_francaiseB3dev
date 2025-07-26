@@ -24,7 +24,7 @@ class CheckAcademicStatus
         // Si c'est une action de modification et que l'année est terminée
         if ($isModificationAction && $anneeAcademique->date_fin < Carbon::now()) {
             // Exception pour les coordinateurs qui peuvent toujours créer des justifications
-            if (Auth::user()->role->code === 'coordinateur' && $request->routeIs('justifications.*')) {
+            if (Auth::user()->roles->first()->code === 'coordinateur' && $request->routeIs('justifications.*')) {
                 return $next($request);
             }
 

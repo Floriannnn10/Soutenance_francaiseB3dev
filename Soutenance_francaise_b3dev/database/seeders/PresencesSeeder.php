@@ -38,7 +38,7 @@ class PresencesSeeder extends Seeder
                 Presence::create([
                     'etudiant_id' => $etudiant->id,
                     'course_session_id' => $session->id,
-                    'presence_status_id' => $statut->id,
+                    'statut_presence_id' => $statut->id,
                     'enregistre_par_user_id' => $user->id,
                     'enregistre_le' => now(),
                     'academic_year_id' => $anneeAcademique->id,

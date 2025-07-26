@@ -1,7 +1,7 @@
 @php
     // Redirection ou inclusion dynamique selon le rôle
     $user = Auth::user();
-    $role = strtolower($user->role->nom ?? '');
+    $role = strtolower($user->roles->first()->nom ?? '');
 @endphp
 @if($role === 'admin')
     @include('dashboard.utilisateurs')

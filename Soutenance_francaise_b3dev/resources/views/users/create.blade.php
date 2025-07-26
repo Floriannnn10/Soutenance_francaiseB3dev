@@ -58,6 +58,24 @@
                     <label for="telephone" class="block text-sm font-medium text-gray-700">Téléphone (pour les parents)</label>
                     <input type="text" name="telephone" id="telephone" value="{{ old('telephone') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
                 </div>
+                <div id="promotion-field" style="display: none;">
+                    <label for="promotion_id" class="block text-sm font-medium text-gray-700">Promotion (pour les coordinateurs)</label>
+                    <select name="promotion_id" id="promotion_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                        <option value="">Sélectionner une promotion</option>
+                        @foreach($promotions as $promotion)
+                            <option value="{{ $promotion->id }}" {{ old('promotion_id') == $promotion->id ? 'selected' : '' }}>{{ $promotion->nom }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div id="matieres-field" style="display: none;">
+                    <label for="matieres" class="block text-sm font-medium text-gray-700">Matières enseignées (pour les enseignants)</label>
+                    <select name="matieres[]" id="matieres" multiple class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                        @foreach($matieres as $matiere)
+                            <option value="{{ $matiere->id }}" {{ (collect(old('matieres'))->contains($matiere->id)) ? 'selected' : '' }}>{{ $matiere->nom }} ({{ $matiere->code }})</option>
+                        @endforeach
+                    </select>
+                    <p class="text-xs text-gray-500 mt-1">Maintenez Ctrl (Windows) ou Cmd (Mac) pour sélectionner plusieurs matières.</p>
+                </div>
                 <div>
                     <label for="photo" class="block text-sm font-medium text-gray-700">Photo (optionnelle)</label>
                     <input type="file" name="photo" id="photo" accept="image/*" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
@@ -78,6 +96,20 @@
                                 telephoneField.style.display = '';
                             } else {
                                 telephoneField.style.display = 'none';
+                            }
+                            // Affichage du champ promotion pour coordinateur
+                            const promotionField = document.getElementById('promotion-field');
+                            if(selected && selected.includes('coordinateur')) {
+                                promotionField.style.display = '';
+                            } else {
+                                promotionField.style.display = 'none';
+                            }
+                            // Affichage du champ matières pour enseignant
+                            const matieresField = document.getElementById('matieres-field');
+                            if(selected && selected.includes('enseignant')) {
+                                matieresField.style.display = '';
+                            } else {
+                                matieresField.style.display = 'none';
                             }
                         }
                         roleSelect.addEventListener('change', toggleFields);

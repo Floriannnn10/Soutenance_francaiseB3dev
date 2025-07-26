@@ -30,6 +30,28 @@
                 @enderror
             </div>
             <div class="mb-4">
+                <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+                <input type="email" name="email" id="email" value="{{ old('email', $coordinateur->user->email ?? '') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
+                @error('email')
+                    <span class="text-red-500 text-xs">{{ $message }}</span>
+                @enderror
+            </div>
+            <div class="mb-4">
+                <label for="password" class="block text-sm font-medium text-gray-700">Nouveau mot de passe (optionnel)</label>
+                <input type="password" name="password" id="password" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" minlength="8">
+                <p class="text-xs text-gray-500 mt-1">Laissez vide pour ne pas changer le mot de passe. Minimum 8 caractères.</p>
+                @error('password')
+                    <span class="text-red-500 text-xs">{{ $message }}</span>
+                @enderror
+            </div>
+            <div class="mb-4">
+                <label for="password_confirmation" class="block text-sm font-medium text-gray-700">Confirmer le nouveau mot de passe</label>
+                <input type="password" name="password_confirmation" id="password_confirmation" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" minlength="8">
+                @error('password_confirmation')
+                    <span class="text-red-500 text-xs">{{ $message }}</span>
+                @enderror
+            </div>
+            <div class="mb-4">
                 <label for="promotion_id" class="block text-sm font-medium text-gray-700">Promotion</label>
                 <select name="promotion_id" id="promotion_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
                     <option value="">Sélectionner une promotion</option>

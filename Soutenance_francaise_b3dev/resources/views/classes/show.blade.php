@@ -93,12 +93,12 @@
                                                     <img src="{{ asset('storage/' . $etudiant->user->photo) }}" alt="Photo" class="h-10 w-10 rounded-full object-cover">
                                                 @else
                                                     <div class="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                                                        <span class="text-gray-600 text-sm font-medium">{{ substr($etudiant->user->nom, 0, 1) }}{{ substr($etudiant->user->prenom, 0, 1) }}</span>
+                                                        <span class="text-gray-600 text-sm font-medium">{{ substr($etudiant->user->name, 0, 2) }}</span>
                                                     </div>
                                                 @endif
                                             </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $etudiant->user->nom }}</td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $etudiant->user->prenom }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $etudiant->user->name }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $etudiant->user->name }}</td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $etudiant->user->email }}</td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                                 <a href="#" class="text-indigo-600 hover:text-indigo-900">Voir</a>
@@ -132,7 +132,7 @@
                                         @foreach($class->sessionsDeCours as $session)
                                         <tr>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $session->matiere->nom ?? 'N/A' }}</td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $session->enseignant->user->nom ?? 'N/A' }} {{ $session->enseignant->user->prenom ?? '' }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $session->enseignant->user->name ?? 'N/A' }}</td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $session->date ? $session->date->format('d/m/Y') : 'N/A' }}</td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $session->heure_debut ?? 'N/A' }} - {{ $session->heure_fin ?? 'N/A' }}</td>
                                             <td class="px-6 py-4 whitespace-nowrap">

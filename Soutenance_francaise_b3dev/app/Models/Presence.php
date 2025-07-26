@@ -16,7 +16,7 @@ class Presence extends Model
     protected $fillable = [
         'etudiant_id',
         'course_session_id',
-        'presence_status_id',
+        'statut_presence_id',
         'enregistre_le',
         'enregistre_par_user_id',
     ];
@@ -37,7 +37,7 @@ class Presence extends Model
 
     public function statutPresence(): BelongsTo
     {
-        return $this->belongsTo(StatutPresence::class, 'presence_status_id');
+        return $this->belongsTo(StatutPresence::class, 'statut_presence_id');
     }
 
     public function enregistrePar(): BelongsTo

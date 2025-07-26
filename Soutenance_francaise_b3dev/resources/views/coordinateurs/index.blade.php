@@ -1,5 +1,9 @@
 @extends('layouts.app')
 
+@php
+use Illuminate\Support\Facades\Storage;
+@endphp
+
 @section('content')
 <div class="container mx-auto py-8">
     <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4">
@@ -25,6 +29,7 @@
                 <tr>
                     <th class="px-4 py-3 border text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Photo</th>
                     <th class="px-4 py-3 border text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Nom</th>
+                    <th class="px-4 py-3 border text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Email</th>
                     <th class="px-4 py-3 border text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Promotion</th>
                     <th class="px-4 py-3 border text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
                 </tr>
@@ -33,9 +38,18 @@
                 @forelse($coordinateurs as $coordinateur)
                     <tr class="hover:bg-indigo-50 transition">
                         <td class="px-4 py-3 border text-center">
-                            <img src="{{ $coordinateur->photo ? asset('storage/'.$coordinateur->photo) : asset('images/default-avatar.png') }}" alt="Photo" class="w-12 h-12 rounded-full mx-auto border-2 border-indigo-200 shadow-sm">
+                            @if($coordinateur->photo && Storage::disk('public')->exists($coordinateur->photo))
+                                <img src="{{ asset('storage/'.$coordinateur->photo) }}" alt="Photo" class="w-12 h-12 rounded-full mx-auto border-2 border-indigo-200 shadow-sm object-cover">
+                            @else
+                                <div class="w-12 h-12 rounded-full mx-auto border-2 border-indigo-200 shadow-sm bg-indigo-100 flex items-center justify-center">
+                                    <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                    </svg>
+                                </div>
+                            @endif
                         </td>
                         <td class="px-4 py-3 border font-semibold text-gray-900">{{ $coordinateur->prenom }} {{ $coordinateur->nom }}</td>
+                        <td class="px-4 py-3 border text-gray-600">{{ $coordinateur->user->email ?? '-' }}</td>
                         <td class="px-4 py-3 border">
                             @if($coordinateur->promotion)
                                 <span class="inline-block px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-medium">{{ $coordinateur->promotion->nom }}</span>
@@ -61,7 +75,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="4" class="text-center text-gray-400 py-8">Aucun coordinateur trouvé.</td>
+                        <td colspan="5" class="text-center text-gray-400 py-8">Aucun coordinateur trouvé.</td>
                     </tr>
                 @endforelse
             </tbody>

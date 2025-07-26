@@ -24,7 +24,7 @@ class SessionDeCours extends Model
         'location',
         'notes',
         'replacement_for_session_id',
-        'academic_year_id',
+        'annee_academique_id',
         'semester_id',
     ];
 
@@ -60,7 +60,7 @@ class SessionDeCours extends Model
 
     public function anneeAcademique(): BelongsTo
     {
-        return $this->belongsTo(AnneeAcademique::class, 'academic_year_id');
+        return $this->belongsTo(AnneeAcademique::class, 'annee_academique_id');
     }
 
     public function semestre(): BelongsTo

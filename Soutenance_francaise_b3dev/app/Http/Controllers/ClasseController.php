@@ -45,31 +45,31 @@ class ClasseController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Classe $classe)
+    public function show(Classe $class)
     {
-        return view('classes.show', compact('classe'));
+        return view('classes.show', compact('class'));
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Classe $classe)
+    public function edit(Classe $class)
     {
         $promotions = Promotion::all();
-        return view('classes.edit', compact('classe', 'promotions'));
+        return view('classes.edit', compact('class', 'promotions'));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Classe $classe)
+    public function update(Request $request, Classe $class)
     {
         $validated = $request->validate([
             'nom' => 'required|string|max:255',
             'promotion_id' => 'required|exists:promotions,id',
         ]);
 
-        $classe->update($validated);
+        $class->update($validated);
 
         return redirect()->route('classes.index')
             ->with('success', 'Classe mise à jour avec succès.');
@@ -78,9 +78,9 @@ class ClasseController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Classe $classe)
+    public function destroy(Classe $class)
     {
-        $classe->delete();
+        $class->delete();
 
         return redirect()->route('classes.index')
             ->with('success', 'Classe supprimée avec succès.');

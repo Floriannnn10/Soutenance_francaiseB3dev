@@ -243,13 +243,15 @@ class SessionDeCoursController extends Controller
                 'enseignants.nom as enseignant_nom',
                 'enseignants.prenom as enseignant_prenom',
                 'semestres.nom as semestre_nom',
-                'annees_academiques.nom as annee_nom'
+                'annees_academiques.nom as annee_nom',
+                'types_cours.nom as type_cours_nom'
             )
             ->leftJoin('matieres', 'course_sessions.matiere_id', '=', 'matieres.id')
             ->leftJoin('classes', 'course_sessions.classe_id', '=', 'classes.id')
             ->leftJoin('enseignants', 'course_sessions.enseignant_id', '=', 'enseignants.id')
             ->leftJoin('semestres', 'course_sessions.semester_id', '=', 'semestres.id')
             ->leftJoin('annees_academiques', 'semestres.annee_academique_id', '=', 'annees_academiques.id')
+            ->leftJoin('types_cours', 'course_sessions.type_cours_id', '=', 'types_cours.id')
             ->where('course_sessions.id', $sessionId)
             ->first();
 
@@ -268,7 +270,7 @@ class SessionDeCoursController extends Controller
         // Récupérer les présences déjà enregistrées pour cette session
         $presencesExistantes = DB::table('presences')
             ->select('presences.*', 'statuts_presence.nom as statut_nom')
-            ->leftJoin('statuts_presence', 'presences.presence_status_id', '=', 'statuts_presence.id')
+            ->leftJoin('statuts_presence', 'presences.statut_presence_id', '=', 'statuts_presence.id')
             ->where('presences.course_session_id', $sessionId)
             ->get()
             ->keyBy('etudiant_id');
@@ -311,7 +313,7 @@ class SessionDeCoursController extends Controller
             DB::table('presences')->insert([
                 'etudiant_id' => $etudiantId,
                 'course_session_id' => $sessionId,
-                'presence_status_id' => $statutId,
+                'statut_presence_id' => $statutId,
                 'enregistre_le' => now(),
                 'enregistre_par_user_id' => 1, // ID utilisateur par défaut
                 'academic_year_id' => $session->annee_academique_id,
@@ -368,7 +370,7 @@ class SessionDeCoursController extends Controller
 
         $presences = DB::table('presences')
             ->select('presences.*', 'statuts_presence.nom as statut_nom')
-            ->leftJoin('statuts_presence', 'presences.presence_status_id', '=', 'statuts_presence.id')
+            ->leftJoin('statuts_presence', 'presences.statut_presence_id', '=', 'statuts_presence.id')
             ->where('presences.course_session_id', $sessionId)
             ->get();
 

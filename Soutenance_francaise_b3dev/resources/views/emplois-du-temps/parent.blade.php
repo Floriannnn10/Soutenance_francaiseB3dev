@@ -15,7 +15,7 @@
         <span class="font-semibold">Classe :</span> {{ $etudiant->classe->nom ?? '-' }}
     </div>
 
-    @if(Auth::user()->role && Auth::user()->role->nom === 'coordinateur')
+    @if(Auth::user()->roles->first() && Auth::user()->roles->first()->nom === 'coordinateur')
         <div class="mb-6">
             <a href="{{ route('emplois-du-temps.create') }}" class="bg-blue-600 hover:bg-blue-800 text-white px-4 py-2 rounded">
                 Modifier l'emploi du temps
@@ -64,4 +64,4 @@
         </div>
     @endif
 </div>
-@endsection 
+@endsection

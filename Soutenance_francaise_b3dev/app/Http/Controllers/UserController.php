@@ -2,6 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Classe;
+use App\Models\Coordinateur;
+use App\Models\Enseignant;
+use App\Models\Etudiant;
+use App\Models\Matiere;
+use App\Models\ParentEtudiant;
+use App\Models\Promotion;
 use App\Models\User;
 use App\Models\Role;
 use Illuminate\Http\Request;
@@ -30,8 +37,10 @@ class UserController extends Controller
     public function create()
     {
         $roles = Role::all();
-        $classes = \App\Models\Classe::all();
-        return view('users.create', compact('roles', 'classes'));
+        $classes =Classe::all();
+        $promotions =Promotion::all();
+        $matieres =Matiere::all();
+        return view('users.create', compact('roles', 'classes', 'promotions', 'matieres'));
     }
 
     public function store(Request $request)
@@ -43,8 +52,8 @@ class UserController extends Controller
             'role_id' => 'required|exists:roles,id',
             'photo' => 'nullable|image|max:2048',
             'date_naissance' => 'nullable|date',
-            'classe_id' => 'required_if:role_id,' . (\App\Models\Role::where('nom', 'like', '%etudiant%')->first()?->id ?? ''),
-            'telephone' => 'required_if:role_id,' . (\App\Models\Role::where('nom', 'like', '%parent%')->first()?->id ?? ''),
+            'classe_id' => 'required_if:role_id,' . (Role::where('nom', 'like', '%etudiant%')->first()?->id ?? ''),
+            'telephone' => 'required_if:role_id,' . (Role::where('nom', 'like', '%parent%')->first()?->id ?? ''),
         ]);
 
         $user = new User();
@@ -62,31 +71,35 @@ class UserController extends Controller
         $user->roles()->attach($request->role_id);
 
         // Création de l'entité liée selon le rôle
-        $role = \App\Models\Role::find($request->role_id);
+        $role =Role::find($request->role_id);
         if ($role && ($role->nom === 'Étudiant' || $role->nom === 'Etudiant')) {
-            \App\Models\Etudiant::create([
+            Etudiant::create([
                 'prenom' => $request->prenom ?? '',
                 'nom' => $request->nom ?? '',
                 'classe_id' => $request->classe_id,
                 'date_naissance' => $request->date_naissance,
             ]);
         } elseif ($role && $role->nom === 'Enseignant') {
-            \App\Models\Enseignant::create([
+            $enseignant = Enseignant::create([
                 'prenom' => $request->prenom ?? '',
                 'nom' => $request->nom ?? '',
             ]);
+            if ($request->filled('matieres')) {
+                $enseignant->matieres()->attach($request->matieres);
+            }
         } elseif ($role && $role->nom === 'Parent') {
-            \App\Models\ParentEtudiant::create([
+            ParentEtudiant::create([
                 'user_id' => $user->id,
                 'prenom' => $request->prenom ?? '',
                 'nom' => $request->nom ?? '',
                 'telephone' => $request->telephone,
             ]);
         } elseif ($role && $role->nom === 'Coordinateur') {
-            \App\Models\Coordinateur::create([
+            Coordinateur::create([
                 'user_id' => $user->id,
                 'prenom' => $request->prenom ?? '',
                 'nom' => $request->nom ?? '',
+                'promotion_id' => $request->promotion_id,
             ]);
         }
 
@@ -95,7 +108,7 @@ class UserController extends Controller
 
     public function show(User $user)
     {
-        $user->load(['role', 'etudiant.classe', 'parent', 'coordinateur']); // On retire 'enseignant'
+        $user->load(['roles', 'etudiant.classe', 'parent', 'coordinateur']); // On retire 'enseignant'
         return view('users.show', compact('user'));
     }
 
@@ -112,10 +125,15 @@ class UserController extends Controller
             'email' => 'required|email|unique:users,email,' . $user->id,
             'role_id' => 'required|exists:roles,id',
             'photo' => 'nullable|image|max:2048',
+            'password' => 'nullable|min:6|confirmed',
         ]);
 
         $user->name = $request->name;
         $user->email = $request->email;
+
+        if ($request->filled('password')) {
+            $user->password = Hash::make($request->password);
+        }
 
         if ($request->hasFile('photo')) {
             // Supprimer l'ancienne photo si elle existe

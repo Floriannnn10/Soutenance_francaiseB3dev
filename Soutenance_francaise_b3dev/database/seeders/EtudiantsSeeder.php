@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Role;
 use App\Models\Etudiant;
 use App\Models\Classe;
+use Illuminate\Support\Facades\DB;
 
 class EtudiantsSeeder extends Seeder
 {
@@ -27,25 +28,61 @@ class EtudiantsSeeder extends Seeder
             throw new \Exception('Aucune classe n\'existe. Veuillez exécuter le seeder ClassesSeeder d\'abord.');
         }
 
-        foreach ($classes as $classe) {
-            for ($i = 1; $i <= 20; $i++) {
-                $user = User::create([
-                    'name' => "Étudiant {$i} {$classe->nom}",
-                    'email' => "etudiant{$i}.{$classe->nom}@example.com",
-                    'password' => bcrypt('password'),
-                    'role_id' => $roleEtudiant->id
-                ]);
+        // Créer quelques étudiants de test pour chaque classe
+        $etudiantsTest = [
+            ['prenom' => 'Jean', 'nom' => 'Dupont'],
+            ['prenom' => 'Marie', 'nom' => 'Martin'],
+            ['prenom' => 'Pierre', 'nom' => 'Bernard'],
+            ['prenom' => 'Sophie', 'nom' => 'Petit'],
+            ['prenom' => 'Paul', 'nom' => 'Robert'],
+            ['prenom' => 'Julie', 'nom' => 'Richard'],
+            ['prenom' => 'Thomas', 'nom' => 'Durand'],
+            ['prenom' => 'Camille', 'nom' => 'Leroy'],
+            ['prenom' => 'Lucas', 'nom' => 'Moreau'],
+            ['prenom' => 'Emma', 'nom' => 'Simon'],
+        ];
 
-                Etudiant::create([
-                    'classe_id' => $classe->id,
-                    'prenom' => "Étudiant {$i}",
-                    'nom' => $classe->nom,
-                    'email' => $user->email,
-                    'password' => $user->password,
-                    'date_naissance' => now()->subYears(rand(18, 25))->format('Y-m-d'),
-                    'photo' => null
-                ]);
+        $etudiantCount = 0;
+
+        foreach ($classes as $classe) {
+            foreach ($etudiantsTest as $index => $etudiant) {
+                $timestamp = time() + $etudiantCount;
+                $email = strtolower($etudiant['prenom'] . '.' . $etudiant['nom'] . $timestamp . '@example.com');
+
+                // Vérifier si l'email existe déjà
+                if (User::where('email', $email)->exists() || Etudiant::where('email', $email)->exists()) {
+                    continue;
+                }
+
+                try {
+                    // Créer l'utilisateur
+                    $user = User::create([
+                        'name' => $etudiant['prenom'] . ' ' . $etudiant['nom'],
+                        'email' => $email,
+                        'password' => bcrypt('password'),
+                    ]);
+
+                    // Associer le rôle étudiant
+                    $user->roles()->attach($roleEtudiant->id);
+
+                    // Créer l'étudiant
+                    Etudiant::create([
+                        'classe_id' => $classe->id,
+                        'nom' => $etudiant['nom'],
+                        'prenom' => $etudiant['prenom'],
+                        'email' => $email,
+                        'password' => bcrypt('password'),
+                        'date_naissance' => now()->subYears(rand(18, 25))->format('Y-m-d'),
+                        'photo' => null
+                    ]);
+
+                    $etudiantCount++;
+                } catch (\Exception $e) {
+                    continue;
+                }
             }
         }
+
+        $this->command->info("{$etudiantCount} étudiants créés avec succès !");
     }
 }
