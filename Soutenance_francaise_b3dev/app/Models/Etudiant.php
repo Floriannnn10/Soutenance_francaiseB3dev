@@ -7,13 +7,10 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens;
 
-class Etudiant extends Authenticatable
+class Etudiant extends Model
 {
-    use HasFactory, Notifiable, HasApiTokens;
+    use HasFactory;
 
     protected $table = 'etudiants';
 
@@ -27,15 +24,8 @@ class Etudiant extends Authenticatable
         'photo',
     ];
 
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
-
     protected $casts = [
         'date_naissance' => 'date',
-        'email_verified_at' => 'datetime',
-        'password' => 'hashed',
     ];
 
     /**

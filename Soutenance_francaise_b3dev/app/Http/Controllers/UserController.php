@@ -6,24 +6,24 @@ use App\Models\User;
 use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 
 class UserController extends Controller
 {
     public function index(Request $request)
     {
-        $query = User::with('role');
+        $query = User::with('roles');
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
-                $q->where('nom', 'like', "%$search%")
-                  ->orWhere('nom', 'like', "%$search%")
+                $q->where('name', 'like', "%$search%")
                   ->orWhere('email', 'like', "%$search%")
-                  ->orWhereHas('role', function($q2) use ($search) {
+                  ->orWhereHas('roles', function($q2) use ($search) {
                       $q2->where('nom', 'like', "%$search%") ;
                   });
             });
         }
-        $users = $query->orderBy('nom')->paginate(10)->withQueryString();
+        $users = $query->orderBy('name')->paginate(10)->withQueryString();
         return view('users.index', compact('users'));
     }
 
@@ -37,8 +37,7 @@ class UserController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'prenom' => 'required',
-            'nom' => 'required',
+            'name' => 'required',
             'email' => 'required|email|unique:users',
             'password' => 'required|min:6',
             'role_id' => 'required|exists:roles,id',
@@ -49,42 +48,45 @@ class UserController extends Controller
         ]);
 
         $user = new User();
-        $user->prenom = $request->prenom;
-        $user->nom = $request->nom;
+        $user->name = $request->name;
         $user->email = $request->email;
         $user->password = Hash::make($request->password);
-        $user->role_id = $request->role_id;
+
         if ($request->hasFile('photo')) {
             $user->photo = $request->file('photo')->store('photos', 'public');
         }
+
         $user->save();
 
+        // Attacher le rôle à l'utilisateur
+        $user->roles()->attach($request->role_id);
+
         // Création de l'entité liée selon le rôle
-        $role = $user->role->nom ?? null;
-        if ($role === 'Étudiant' || $role === 'Etudiant') {
+        $role = \App\Models\Role::find($request->role_id);
+        if ($role && ($role->nom === 'Étudiant' || $role->nom === 'Etudiant')) {
             \App\Models\Etudiant::create([
-                'prenom' => $user->prenom,
-                'nom' => $user->nom,
+                'prenom' => $request->prenom ?? '',
+                'nom' => $request->nom ?? '',
                 'classe_id' => $request->classe_id,
                 'date_naissance' => $request->date_naissance,
             ]);
-        } elseif ($role === 'Enseignant') {
+        } elseif ($role && $role->nom === 'Enseignant') {
             \App\Models\Enseignant::create([
-                'prenom' => $user->prenom,
-                'nom' => $user->nom,
+                'prenom' => $request->prenom ?? '',
+                'nom' => $request->nom ?? '',
             ]);
-        } elseif ($role === 'Parent') {
+        } elseif ($role && $role->nom === 'Parent') {
             \App\Models\ParentEtudiant::create([
                 'user_id' => $user->id,
-                'prenom' => $user->prenom,
-                'nom' => $user->nom,
+                'prenom' => $request->prenom ?? '',
+                'nom' => $request->nom ?? '',
                 'telephone' => $request->telephone,
             ]);
-        } elseif ($role === 'Coordinateur') {
+        } elseif ($role && $role->nom === 'Coordinateur') {
             \App\Models\Coordinateur::create([
                 'user_id' => $user->id,
-                'prenom' => $user->prenom,
-                'nom' => $user->nom,
+                'prenom' => $request->prenom ?? '',
+                'nom' => $request->nom ?? '',
             ]);
         }
 
@@ -106,21 +108,27 @@ class UserController extends Controller
     public function update(Request $request, User $user)
     {
         $request->validate([
-            'prenom' => 'required',
-            'nom' => 'required',
+            'name' => 'required',
             'email' => 'required|email|unique:users,email,' . $user->id,
             'role_id' => 'required|exists:roles,id',
             'photo' => 'nullable|image|max:2048',
         ]);
 
-        $user->prenom = $request->prenom;
-        $user->nom = $request->nom;
+        $user->name = $request->name;
         $user->email = $request->email;
-        $user->role_id = $request->role_id;
+
         if ($request->hasFile('photo')) {
+            // Supprimer l'ancienne photo si elle existe
+            if ($user->photo) {
+                Storage::disk('public')->delete($user->photo);
+            }
             $user->photo = $request->file('photo')->store('photos', 'public');
         }
+
         $user->save();
+
+        // Mettre à jour le rôle de l'utilisateur
+        $user->roles()->sync([$request->role_id]);
 
         return redirect()->route('users.index')->with('success', 'Utilisateur modifié avec succès.');
     }

@@ -55,12 +55,12 @@
                             @if($user->photo)
                                 <img src="{{ asset('storage/'.$user->photo) }}" alt="Photo" class="w-10 h-10 rounded-full object-cover border">
                             @else
-                                <img src="https://ui-avatars.com/api/?name={{ urlencode($user->prenom ?? $user->nom) }}" alt="Avatar" class="w-10 h-10 rounded-full object-cover border">
+                                <img src="https://ui-avatars.com/api/?name={{ urlencode($user->name) }}" alt="Avatar" class="w-10 h-10 rounded-full object-cover border">
                             @endif
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900">{{ $user->nom }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900">{{ $user->name }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-gray-600">{{ $user->email }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-gray-600 capitalize">{{ $user->role->nom ?? '-' }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-gray-600 capitalize">{{ $user->roles->first()->nom ?? '-' }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-right space-x-2">
                             <a href="{{ route('users.show', $user) }}" class="inline-flex items-center px-2 py-1 text-xs text-indigo-600 hover:underline">
                                 <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
