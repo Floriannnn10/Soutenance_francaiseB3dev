@@ -190,7 +190,7 @@
                                 </div>
                                 <div class="ml-4">
                                     <p class="text-sm font-medium text-gray-600">Présences</p>
-                                    <p class="text-2xl font-bold text-gray-900">{{ $semestre->presences->count() }}</p>
+                                    <p class="text-2xl font-bold text-gray-900">{{ $presencesCount ?? 0 }}</p>
                                 </div>
                             </div>
                         </div>

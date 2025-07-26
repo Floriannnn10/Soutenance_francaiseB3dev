@@ -82,7 +82,8 @@ class SemestreController extends Controller
                 ->count()
         ];
 
-        return view('semestres.show', compact('semestre', 'sessionsDeCours', 'dependancesCount'));
+        $presencesCount = $dependancesCount['presences'];
+        return view('semestres.show', compact('semestre', 'sessionsDeCours', 'dependancesCount', 'presencesCount'));
     }
 
     /**

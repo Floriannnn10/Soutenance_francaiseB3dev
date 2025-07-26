@@ -44,13 +44,7 @@ class Semestre extends Model
         return $this->hasMany(SessionDeCours::class, 'semester_id');
     }
 
-    /**
-     * Relation avec les présences
-     */
-    public function presences(): HasMany
-    {
-        return $this->hasMany(Presence::class, 'semester_id');
-    }
+
 
     /**
      * Activer ce semestre et désactiver les autres de la même année académique

@@ -10,7 +10,7 @@ use App\Http\Controllers\ClasseController;
 use App\Http\Controllers\MatiereController;
 use App\Http\Controllers\EnseignantController;
 use App\Http\Controllers\EtudiantController;
-use App\Http\Controllers\ParentController;
+use App\Http\Controllers\ParentEtudiantController;
 use App\Http\Controllers\SessionDeCoursController;
 use App\Http\Controllers\PresenceController;
 use App\Http\Controllers\StatistiquesController;
@@ -42,24 +42,26 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     // Routes pour l'administrateur
-    Route::middleware(['check.role:admin'])->group(function () {
+    Route::middleware(['role:admin'])->group(function () {
         Route::resource('users', UserController::class);
-        Route::resource('annees-academiques', AnneeAcademiqueController::class);
+        Route::resource('annees-academiques', AnneeAcademiqueController::class)->parameters(['annees-academiques' => 'anneeAcademique']);
         Route::resource('semestres', SemestreController::class);
         Route::resource('coordinateurs', CoordinateurController::class);
         Route::resource('classes', ClasseController::class);
         Route::resource('matieres', MatiereController::class);
         Route::resource('enseignants', EnseignantController::class);
         Route::resource('etudiants', EtudiantController::class);
-        Route::resource('parents', ParentController::class);
+        Route::resource('parents', ParentEtudiantController::class);
 
         // Routes pour activer/désactiver les années académiques et semestres
-        Route::patch('/annees-academiques/{anneeAcademique}/activer', [AnneeAcademiqueController::class, 'activer'])->name('annees-academiques.activer');
-        Route::patch('/semestres/{semestre}/activer', [SemestreController::class, 'activer'])->name('semestres.activer');
+        Route::patch('/annees-academiques/{anneeAcademique}/activate', [AnneeAcademiqueController::class, 'activate'])->name('annees-academiques.activate');
+        Route::patch('/annees-academiques/{anneeAcademique}/deactivate', [AnneeAcademiqueController::class, 'deactivate'])->name('annees-academiques.deactivate');
+        Route::patch('/semestres/{semestre}/activate', [SemestreController::class, 'activate'])->name('semestres.activate');
+        Route::patch('/semestres/{semestre}/deactivate', [SemestreController::class, 'deactivate'])->name('semestres.deactivate');
     });
 
     // Routes pour le coordinateur
-    Route::middleware(['check.role:coordinateur'])->group(function () {
+    Route::middleware(['role:coordinateur'])->group(function () {
         Route::resource('sessions-de-cours', SessionDeCoursController::class);
         Route::resource('emplois-du-temps', EmploiDuTempsController::class);
         Route::resource('justifications', JustificationAbsenceController::class);
@@ -72,19 +74,19 @@ Route::middleware(['auth'])->group(function () {
     });
 
     // Routes pour l'enseignant
-    Route::middleware(['check.role:enseignant'])->group(function () {
+    Route::middleware(['role:enseignant'])->group(function () {
         Route::get('/emplois-du-temps/enseignant', [EmploiDuTempsController::class, 'enseignant'])->name('emplois-du-temps.enseignant');
         Route::post('/presences/presentiel', [PresenceController::class, 'storePresentiel'])->name('presences.presentiel');
     });
 
     // Routes pour l'étudiant
-    Route::middleware(['check.role:etudiant'])->group(function () {
+    Route::middleware(['role:etudiant'])->group(function () {
         Route::get('/emplois-du-temps/etudiant', [EmploiDuTempsController::class, 'etudiant'])->name('emplois-du-temps.etudiant');
         Route::get('/presences/etudiant', [PresenceController::class, 'etudiant'])->name('presences.etudiant');
     });
 
     // Routes pour le parent
-    Route::middleware(['check.role:parent'])->group(function () {
+    Route::middleware(['role:parent'])->group(function () {
         Route::get('/emplois-du-temps/parent', [EmploiDuTempsController::class, 'parent'])->name('emplois-du-temps.parent');
         Route::get('/presences/parent', [PresenceController::class, 'parent'])->name('presences.parent');
     });

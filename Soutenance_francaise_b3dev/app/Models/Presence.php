@@ -19,8 +19,6 @@ class Presence extends Model
         'presence_status_id',
         'enregistre_le',
         'enregistre_par_user_id',
-        'academic_year_id',
-        'semester_id',
     ];
 
     protected $casts = [
@@ -47,15 +45,7 @@ class Presence extends Model
         return $this->belongsTo(User::class, 'enregistre_par_user_id');
     }
 
-    public function anneeAcademique(): BelongsTo
-    {
-        return $this->belongsTo(AnneeAcademique::class, 'academic_year_id');
-    }
 
-    public function semestre(): BelongsTo
-    {
-        return $this->belongsTo(Semestre::class, 'semester_id');
-    }
 
     public function justification(): HasOne
     {

@@ -42,13 +42,7 @@ class AnneeAcademique extends Model
         return $this->hasMany(SessionDeCours::class, 'annee_academique_id');
     }
 
-    /**
-     * Relation avec les présences
-     */
-    public function presences(): HasMany
-    {
-        return $this->hasMany(Presence::class, 'annee_academique_id');
-    }
+
 
     /**
      * Activer cette année académique et désactiver les autres
