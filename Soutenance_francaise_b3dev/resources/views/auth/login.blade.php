@@ -1,10 +1,10 @@
 <x-guest-layout>
     <x-auth-session-status class="mb-4" :status="session('status')" />
 
-    <div class="flex min-h-screen w-full bg-gradient-to-br from-[#546d86] to-[#49709b]">
+    <div class="flex min-h-screen w-full">
         <!-- Sidebar Logo (Hidden on mobile) -->
         <div
-            class="hidden md:flex md:w-1/2 bg-gradient-to-br from-[#49709b] to-[#3a5a7a] items-center justify-center relative overflow-hidden min-h-screen">
+            class="hidden md:flex md:w-1/2 bg-black items-center justify-center relative overflow-hidden min-h-screen">
             <!-- Background Pattern -->
             <div class="absolute inset-0 opacity-10">
                 <div class="absolute top-10 left-10 w-20 h-20 bg-white rounded-full animate-pulse"></div>
@@ -16,33 +16,33 @@
             <!-- Logo Container -->
             <div class="relative z-10 text-center px-8">
                 <div class="mb-8 transform hover:scale-105 transition-transform duration-300">
-                    <img src="{{ asset('Images/logo_app_white.png') }}" alt="Logo de l'application"
-                        class="w-64 h-64 object-contain mx-auto drop-shadow-2xl ml-28 mr-10">
+                    <img src="{{ asset('Images/logo_ifran-removebg-preview.png') }}" alt="Logo IFRAN"
+                        class="w-80 h-auto object-contain mx-auto drop-shadow-2xl">
                 </div>
-                <h2 class="text-white text-4xl font-bold mb-4 leading-tight">Système de Gestion Académique</h2>
-                <p class="text-white/90 text-xl leading-relaxed max-w-md mx-auto">Connectez-vous pour accéder à votre
+                <h2 class="text-black text-4xl font-bold mb-4 leading-tight">SYSTÈME DE <br> GESTION ACADEMIQUE</h2>
+                <p class="text-black text-xl leading-relaxed max-w-md mx-auto">Connectez-vous pour accéder à votre
                     espace de travail sécurisé</p>
 
                 <!-- Features List -->
                 <div class="mt-12 space-y-3 text-left max-w-sm mx-auto">
-                    <div class="flex items-center text-white/80">
-                        <svg class="w-5 h-5 mr-3 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                    <div class="flex items-center text-black">
+                        <svg class="w-5 h-5 mr-3 text-red-500" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd"
                                 d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
                                 clip-rule="evenodd"></path>
                         </svg>
                         <span>Gestion des présences</span>
                     </div>
-                    <div class="flex items-center text-white/80">
-                        <svg class="w-5 h-5 mr-3 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                    <div class="flex items-center text-black">
+                        <svg class="w-5 h-5 mr-3 text-red-500" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd"
                                 d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
                                 clip-rule="evenodd"></path>
                         </svg>
                         <span>Suivi académique</span>
                     </div>
-                    <div class="flex items-center text-white/80">
-                        <svg class="w-5 h-5 mr-3 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                    <div class="flex items-center text-black">
+                        <svg class="w-5 h-5 mr-3 text-red-500" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd"
                                 d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
                                 clip-rule="evenodd"></path>
@@ -118,7 +118,7 @@
                     <div class="flex items-center justify-between">
                         <div class="flex items-center">
                             <input id="remember_me" type="checkbox" name="remember"
-                                class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500 focus:ring-2">
+                                class="rounded border-black text-indigo-600 shadow-sm focus:ring-indigo-500 focus:ring-2">
                             <label for="remember_me"
                                 class="ml-2 text-sm text-gray-700">{{ __('Se souvenir de moi') }}</label>
                         </div>
@@ -134,7 +134,7 @@
                     <!-- Submit Button -->
                     <div>
                         <button type="submit"
-                            class="w-full py-4 px-4 bg-[#DBE8F2] text-gray-900 font-semibold rounded-lg hover:bg-[#c7d5e0] focus:outline-none focus:ring-2 focus:ring-[#DBE8F2] focus:ring-offset-2 transition-all duration-200 transform hover:scale-[1.02] shadow-lg active:scale-[0.98]">
+                            class="w-full py-4 px-4 bg-[#FD0800] text-white font-semibold rounded-lg hover:bg-black focus:outline-none focus:ring-2 focus:ring-[#FD0800] focus:ring-offset-2 transition-all duration-200 transform hover:scale-[1.02] shadow-lg active:scale-[0.98]">
                             <span class="flex items-center justify-center">
                                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

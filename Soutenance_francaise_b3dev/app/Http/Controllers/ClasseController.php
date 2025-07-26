@@ -47,6 +47,7 @@ class ClasseController extends Controller
      */
     public function show(Classe $class)
     {
+        $class->load(['etudiants', 'sessionsDeCours.matiere', 'sessionsDeCours.enseignant.user', 'sessionsDeCours.statut']);
         return view('classes.show', compact('class'));
     }
 

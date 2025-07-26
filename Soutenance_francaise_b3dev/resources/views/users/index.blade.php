@@ -2,9 +2,9 @@
 use Illuminate\Support\Facades\Storage;
 @endphp
 <x-app-layout>
-    <div class="py-8 px-8 max-w-7xl mx-auto">
+    <div class="bg-white rounded-lg shadow p-8">
         @if(session('success'))
-            <div class="mb-4 p-4 rounded bg-green-100 text-green-800 border border-green-200 flex items-center animate-fade-in">
+            <div class="mb-6 p-4 rounded bg-green-100 text-green-800 border border-green-200 flex items-center animate-fade-in">
                 <svg class="w-5 h-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                 </svg>
@@ -12,16 +12,16 @@ use Illuminate\Support\Facades\Storage;
             </div>
         @endif
         @if(session('error'))
-            <div class="mb-4 p-4 rounded bg-red-100 text-red-800 border border-red-200 flex items-center animate-fade-in">
+            <div class="mb-6 p-4 rounded bg-red-100 text-red-800 border border-red-200 flex items-center animate-fade-in">
                 <svg class="w-5 h-5 mr-2 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
                 <span>{{ session('error') }}</span>
             </div>
         @endif
-        <div class="flex items-center justify-between mb-6">
-            <h1 class="text-3xl font-bold text-gray-900">Liste des utilisateurs</h1>
-            <a href="{{ route('users.create') }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-md shadow transition">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4">
+            <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Liste des utilisateurs</h1>
+            <a href="{{ route('users.create') }}" class="inline-flex items-center px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-base font-semibold rounded-lg shadow transition focus:outline-none focus:ring-2 focus:ring-indigo-400">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                 </svg>
@@ -29,7 +29,7 @@ use Illuminate\Support\Facades\Storage;
             </a>
         </div>
         <!-- Barre de recherche -->
-        <form method="GET" action="{{ route('users.index') }}" class="mb-4">
+        <form method="GET" action="{{ route('users.index') }}" class="mb-6">
             <div class="relative max-w-xs">
                 <input type="text" name="search" value="{{ request('search') }}" placeholder="Rechercher..." class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-sm">
                 <span class="absolute left-3 top-2.5 text-gray-400">
@@ -40,7 +40,7 @@ use Illuminate\Support\Facades\Storage;
             </div>
         </form>
         <!-- Tableau des utilisateurs -->
-        <div class="bg-white rounded-lg shadow overflow-x-auto">
+        <div class="overflow-x-auto rounded-lg shadow">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>

@@ -1,3 +1,22 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Définir Poppins comme police par défaut */
+body {
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(to bottom, #CFDBE8 100%, #FFFFFF 50%);
+    min-height: 100vh;
+}
+
+/* Appliquer Poppins à tous les éléments */
+* {
+    font-family: 'Poppins', sans-serif;
+}
+
+/* Appliquer le dégradé à tous les conteneurs principaux */
+.min-h-screen {
+    background: linear-gradient(to bottom, #CFDBE8 100%, #FFFFFF 50%);
+}

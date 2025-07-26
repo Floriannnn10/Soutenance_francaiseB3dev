@@ -4,10 +4,10 @@
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
                 {{ __('Gestion des Années Académiques') }}
             </h2>
-            <a href="{{ route('annees-academiques.create') }}"
+            {{-- <a href="{{ route('annees-academiques.create') }}"
                class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
                 <i class="fas fa-plus mr-2"></i>Nouvelle Année
-            </a>
+            </a> --}}
         </div>
     </x-slot>
 

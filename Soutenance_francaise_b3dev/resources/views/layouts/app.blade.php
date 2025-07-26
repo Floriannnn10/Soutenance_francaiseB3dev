@@ -9,8 +9,9 @@
     <title>{{ config('app.name', 'Laravel') }}</title>
 
     <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
@@ -87,180 +88,249 @@
     </style>
 </head>
 
-<body class="min-h-screen" style="background: linear-gradient(to bottom, #E8EDF5 100%, #FFFFFF 50%);">
-    <div class="flex h-screen bg-gray-100">
-        <!-- Sidebar -->
-        <aside class="w-64 bg-gray-900 flex flex-col justify-between"
-            style="background: linear-gradient(to bottom, #E8EDF5 100%, #FFFFFF 50%);">
-            @php
-                $user = Auth::user();
-                $roleCode = $user->roles->first()->code;
-            @endphp
-            <div>
-                <!-- Logo -->
-                <div class="flex items-center justify-center h-20 border-b border-gray-800">
-                    <svg class="w-10 h-10 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                    </svg>
-                    <span class="ml-3 text-2xl font-bold text-white">
-                        @if($roleCode === 'admin')
-                            Admin
-                        @elseif($roleCode === 'coordinateur')
-                            Coordinateur
-                        @else
-                            Utilisateur
-                        @endif
-                    </span>
-                </div>
-                <!-- Menu -->
-                <nav class="mt-8">
-                    @if($roleCode === 'admin')
-                        <a href="{{ route('dashboard') }}"
-                            class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors {{ request()->routeIs('dashboard') ? 'bg-gray-800 text-white' : '' }}">
-                            <span class="mr-3">🏠</span> Tableau de bord
-                        </a>
-                        <a href="{{ route('annees-academiques.index') }}"
-                            class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors {{ request()->routeIs('annees-academiques.*') ? 'bg-gray-800 text-white' : '' }}">
-                            <span class="mr-3">📅</span> Années académiques
-                        </a>
-                        <a href="{{ route('semestres.index') }}"
-                            class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors {{ request()->routeIs('semestres.*') ? 'bg-gray-800 text-white' : '' }}">
-                            <span class="mr-3">🔒</span> Semestre
-                        </a>
-                        <a href="{{ route('coordinateurs.index') }}"
-                            class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors {{ request()->routeIs('coordinateurs.*') ? 'bg-gray-800 text-white' : '' }}">
-                            <span class="mr-3">👥</span> Coordinateur
-                        </a>
-                        <a href="{{ route('users.index') }}"
-                            class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors {{ request()->routeIs('users.index') ? 'bg-gray-800 text-white' : '' }}">
-                            <span class="mr-3">👤</span> Utilisateurs
-                        </a>
-                        <a href="{{ route('classes.index') }}"
-                            class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors {{ request()->routeIs('classes.*') ? 'bg-gray-800 text-white' : '' }}">
-                            <span class="mr-3">📚</span> classes
-                        </a>
-                        <a href="{{ route('matieres.index') }}"
-                            class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors {{ request()->routeIs('matieres.*') ? 'bg-gray-800 text-white' : '' }}">
-                            <span class="mr-3">📄</span> Matières
-                        </a>
-                        <a href="{{ route('enseignants.index') }}"
-                            class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors {{ request()->routeIs('enseignants.*') ? 'bg-gray-800 text-white' : '' }}">
-                            <span class="mr-3">🧑‍🏫</span> Enseignant
-                        </a>
-                        <a href="{{ route('etudiants.index') }}"
-                            class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors {{ request()->routeIs('etudiants.*') ? 'bg-gray-800 text-white' : '' }}">
-                            <span class="mr-3">🎓</span> Étudiant
-                        </a>
-                        <a href="{{ route('users.create') }}"
-                            class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors {{ request()->routeIs('users.create') ? 'bg-gray-800 text-white' : '' }}">
-                            <span class="mr-3">➕</span> Créer un utilisateur
-                        </a>
-                        @if (auth()->user() && auth()->user()->roles->first() && auth()->user()->roles->first()->code === 'admin')
-                        <a href="{{ route('promotions.index') }}"
-                            class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors {{ request()->routeIs('promotions.*') ? 'bg-gray-800 text-white' : '' }}">
-                            <span class="mr-3">��️</span> Promotions
-                        </a>
-                        <a href="{{ route('promotions.create') }}"
-                            class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors {{ request()->routeIs('promotions.create') ? 'bg-gray-800 text-white' : '' }}">
-                            <span class="mr-3">➕</span> Créer une promotion
-                        </a>
-                    @endif
-                    @elseif($roleCode === 'coordinateur')
-                        <a href="{{ route('dashboard') }}"
-                            class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors {{ request()->routeIs('dashboard') ? 'bg-gray-800 text-white' : '' }}">
-                            <span class="mr-3">🏠</span> Tableau de bord
-                        </a>
-                        <a href="{{ route('emplois-du-temps.index') }}"
-                            class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors {{ request()->routeIs('emplois-du-temps.*') ? 'bg-gray-800 text-white' : '' }}">
-                            <span class="mr-3">📅</span> Emplois du temps
-                        </a>
-                        <a href="{{ route('sessions-de-cours.index') }}"
-                            class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors {{ request()->routeIs('sessions-de-cours.*') ? 'bg-gray-800 text-white' : '' }}">
-                            <span class="mr-3">📚</span> Sessions de cours
-                        </a>
-                        <a href="{{ route('justifications.index') }}"
-                            class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors {{ request()->routeIs('justifications.*') ? 'bg-gray-800 text-white' : '' }}">
-                            <span class="mr-3">📝</span> Justifications d'absence
-                        </a>
-                        <a href="{{ route('statistiques.index') }}"
-                            class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors {{ request()->routeIs('statistiques.index') ? 'bg-gray-800 text-white' : '' }}">
-                            <span class="mr-3">📊</span> Statistiques
-                        </a>
-                        <a href="{{ route('graphiques') }}"
-                            class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors {{ request()->routeIs('graphiques') ? 'bg-gray-800 text-white' : '' }}">
-                            <span class="mr-3">📈</span> Graphiques
-                        </a>
-                        <a href="{{ route('presences.index') }}"
-                            class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors {{ request()->routeIs('presences.index') ? 'bg-gray-800 text-white' : '' }}">
-                            <span class="mr-3">✅</span> Présences
-                        </a>
-                        <a href="{{ route('profile.edit') }}"
-                            class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors {{ request()->routeIs('profile.edit') ? 'bg-gray-800 text-white' : '' }}">
-                            <span class="mr-3">👤</span> Profil
-                        </a>
-                        @if($user->coordinateur && $user->coordinateur->promotion)
-                            <div class="text-xs text-gray-300 mt-1 px-6 py-2">Promotion : {{ $user->coordinateur->promotion->nom }}</div>
-                        @endif
-                    @endif
-                </nav>
-            </div>
-            <!-- Utilisateur connecté + Déconnexion -->
-            <div class="flex flex-col items-center p-6 border-t border-gray-800">
-                @php
-                    $photo = null;
-                    if ($user->photo) {
-                        $photo = asset('storage/' . $user->photo);
-                    } elseif ($user->coordinateur && $user->coordinateur->photo) {
-                        $photo = asset('storage/' . $user->coordinateur->photo);
-                    } else {
-                        $photo = 'https://ui-avatars.com/api/?name=' . urlencode($user->name);
-                    }
-                @endphp
-                <img class="w-12 h-12 rounded-full object-cover" src="{{ $photo }}" alt="Photo">
-                <div class="mt-3 text-center">
-                    <div class="text-white font-semibold">{{ $user->name }}</div>
-                    <div class="text-gray-400 text-xs">{{ $user->email }}</div>
-                    <div class="text-indigo-400 text-xs capitalize">{{ $user->roles->first()->nom ?? '' }}</div>
-                    @if($roleCode === 'coordinateur' && $user->coordinateur && $user->coordinateur->promotion)
-                        <div class="text-xs text-gray-300 mt-1">Promotion : {{ $user->coordinateur->promotion->nom }}</div>
-                    @endif
-                </div>
-                <form method="POST" action="{{ route('logout') }}" class="w-full mt-4">
-                    @csrf
-                    <button type="submit"
-                        class="w-full flex items-center justify-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-md transition">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                        </svg>
-                        Déconnexion
-                    </button>
-                </form>
-            </div>
-        </aside>
-        <!-- Main Content -->
-        <main class="flex-1 overflow-y-auto">
-            <!-- Header Section -->
-            @isset($header)
-                <header class="bg-white shadow-sm border-b border-gray-200 px-8 py-6">
-                    {{ $header }}
-                </header>
-            @endisset
+<body class="min-h-screen">
+    @php
+        $user = Auth::user();
+        $roleCode = $user->roles->first()->code;
+    @endphp
 
-            <!-- Page Content -->
-            <div class="p-8">
-                {{ $slot ?? '' }}
-                @yield('content')
+    <!-- Header Section -->
+    <header class="bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div class="flex justify-between items-start">
+                <!-- Left Side - Title and Subtitle -->
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-black rounded mr-4"></div>
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">Tableau de bord</h1>
+                        <p class="text-sm text-gray-600 mt-1">Gestion complète du système académique</p>
+                    </div>
+                </div>
+
+                <!-- Right Side - User Info -->
+                <div class="flex items-center">
+                    <div class="text-right mr-4">
+                        <p class="text-sm text-gray-600">Bienvenue,</p>
+                        <p class="font-bold text-gray-900">{{ $user->roles->first()->nom ?? 'Utilisateur' }}</p>
+                    </div>
+                    @php
+                        $photo = null;
+                        if ($user->photo) {
+                            $photo = asset('storage/' . $user->photo);
+                        } elseif ($user->coordinateur && $user->coordinateur->photo) {
+                            $photo = asset('storage/' . $user->coordinateur->photo);
+                        } else {
+                            $photo = 'https://ui-avatars.com/api/?name=' . urlencode($user->name) . '&background=000000&color=ffffff';
+                        }
+                    @endphp
+                    <img class="w-10 h-10 rounded-full object-cover" src="{{ $photo }}" alt="Avatar">
+                </div>
             </div>
-        </main>
-    </div>
-    {{-- Actions rapides (si présentes dans le layout) --}}
-    {{-- @if (auth()->user() && auth()->user()->role && auth()->user()->role->nom === 'admin')
-        <a href="{{ route('promotions.index') }}"
-            class="flex items-center p-3 rounded-lg bg-pink-50 hover:bg-pink-100 transition">
-            <span class="mr-2">🏷️</span> Promotions
-        </a>
-    @endif --}}
+        </div>
+    </header>
+
+    <!-- Navbar -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <!-- Logo Section -->
+            <div class="flex justify-center items-center py-4 md:py-6">
+                <div class="flex items-center">
+                    <img src="{{ asset('Images/logo_ifran-removebg-preview.png') }}" alt="Logo" class="h-8 w-auto md:h-12">
+                </div>
+            </div>
+
+            <!-- Divider Line -->
+            <div class="border-t border-gray-300 mb-4"></div>
+
+            <!-- Navigation Section -->
+            <div class="flex flex-col md:flex-row md:justify-center md:items-center py-2 md:py-4">
+                <!-- Desktop Navigation -->
+                <div class="hidden md:flex flex-wrap justify-center items-center gap-2 lg:gap-4 xl:gap-6">
+                    @if($roleCode === 'admin')
+                        <a href="{{ route('dashboard') }}" class="text-gray-700 hover:text-blue-600 px-2 md:px-3 lg:px-4 py-2 text-xs md:text-sm font-medium whitespace-nowrap {{ request()->routeIs('dashboard') ? 'text-blue-600 font-semibold' : '' }}">
+                            [ TABLEAU DE BORD ]
+                        </a>
+                        <a href="{{ route('users.index') }}" class="text-gray-700 hover:text-blue-600 px-2 md:px-3 lg:px-4 py-2 text-xs md:text-sm font-medium whitespace-nowrap {{ request()->routeIs('users.*') ? 'text-blue-600 font-semibold' : '' }}">
+                            UTILISATEURS
+                        </a>
+                        <a href="{{ route('classes.index') }}" class="text-gray-700 hover:text-blue-600 px-2 md:px-3 lg:px-4 py-2 text-xs md:text-sm font-medium whitespace-nowrap {{ request()->routeIs('classes.*') ? 'text-blue-600 font-semibold' : '' }}">
+                            CLASSES
+                        </a>
+                        <a href="{{ route('matieres.index') }}" class="text-gray-700 hover:text-blue-600 px-2 md:px-3 lg:px-4 py-2 text-xs md:text-sm font-medium whitespace-nowrap {{ request()->routeIs('matieres.*') ? 'text-blue-600 font-semibold' : '' }}">
+                            MATIÈRES
+                        </a>
+                        <a href="{{ route('enseignants.index') }}" class="text-gray-700 hover:text-blue-600 px-2 md:px-3 lg:px-4 py-2 text-xs md:text-sm font-medium whitespace-nowrap {{ request()->routeIs('enseignants.*') ? 'text-blue-600 font-semibold' : '' }}">
+                            ENSEIGNANTS
+                        </a>
+                        <a href="{{ route('etudiants.index') }}" class="text-gray-700 hover:text-blue-600 px-2 md:px-3 lg:px-4 py-2 text-xs md:text-sm font-medium whitespace-nowrap {{ request()->routeIs('etudiants.*') ? 'text-blue-600 font-semibold' : '' }}">
+                            ÉTUDIANTS
+                        </a>
+                        <a href="{{ route('promotions.index') }}" class="text-gray-700 hover:text-blue-600 px-2 md:px-3 lg:px-4 py-2 text-xs md:text-sm font-medium whitespace-nowrap {{ request()->routeIs('promotions.*') ? 'text-blue-600 font-semibold' : '' }}">
+                            PROMOTIONS
+                        </a>
+                        <a href="{{ route('annees-academiques.index') }}" class="text-gray-700 hover:text-blue-600 px-2 md:px-3 lg:px-4 py-2 text-xs md:text-sm font-medium whitespace-nowrap {{ request()->routeIs('annees-academiques.*') ? 'text-blue-600 font-semibold' : '' }}">
+                            ANNÉES
+                        </a>
+                        <a href="{{ route('semestres.index') }}" class="text-gray-700 hover:text-blue-600 px-2 md:px-3 lg:px-4 py-2 text-xs md:text-sm font-medium whitespace-nowrap {{ request()->routeIs('semestres.*') ? 'text-blue-600 font-semibold' : '' }}">
+                            SEMESTRES
+                        </a>
+                        <a href="{{ route('coordinateurs.index') }}" class="text-gray-700 hover:text-blue-600 px-2 md:px-3 lg:px-4 py-2 text-xs md:text-sm font-medium whitespace-nowrap {{ request()->routeIs('coordinateurs.*') ? 'text-blue-600 font-semibold' : '' }}">
+                            COORDINATEURS
+                        </a>
+                        <a href="{{ route('profile.edit') }}" class="text-gray-700 hover:text-blue-600 px-2 md:px-3 lg:px-4 py-2 text-xs md:text-sm font-medium whitespace-nowrap {{ request()->routeIs('profile.edit') ? 'text-blue-600 font-semibold' : '' }}">
+                            PROFIL
+                        </a>
+
+                        <!-- Logout Button -->
+                        <form method="POST" action="{{ route('logout') }}" class="inline">
+                            @csrf
+                            <button type="submit" class="text-red-600 hover:text-red-700 px-2 md:px-3 lg:px-4 py-2 text-xs md:text-sm font-medium transition whitespace-nowrap">
+                                DÉCONNEXION
+                            </button>
+                        </form>
+                    @elseif($roleCode === 'coordinateur')
+                        <a href="{{ route('dashboard') }}" class="text-gray-700 hover:text-blue-600 px-2 md:px-3 lg:px-4 py-2 text-xs md:text-sm font-medium whitespace-nowrap {{ request()->routeIs('dashboard') ? 'text-blue-600 font-semibold' : '' }}">
+                            [ TABLEAU DE BORD ]
+                        </a>
+                        <a href="{{ route('emplois-du-temps.index') }}" class="text-gray-700 hover:text-blue-600 px-2 md:px-3 lg:px-4 py-2 text-xs md:text-sm font-medium whitespace-nowrap {{ request()->routeIs('emplois-du-temps.*') ? 'text-blue-600 font-semibold' : '' }}">
+                            EMPLOIS DU TEMPS
+                        </a>
+                        <a href="{{ route('sessions-de-cours.index') }}" class="text-gray-700 hover:text-blue-600 px-2 md:px-3 lg:px-4 py-2 text-xs md:text-sm font-medium whitespace-nowrap {{ request()->routeIs('sessions-de-cours.*') ? 'text-blue-600 font-semibold' : '' }}">
+                            SESSIONS
+                        </a>
+                        <a href="{{ route('presences.index') }}" class="text-gray-700 hover:text-blue-600 px-2 md:px-3 lg:px-4 py-2 text-xs md:text-sm font-medium whitespace-nowrap {{ request()->routeIs('presences.*') ? 'text-blue-600 font-semibold' : '' }}">
+                            PRÉSENCES
+                        </a>
+                        <a href="{{ route('profile.edit') }}" class="text-gray-700 hover:text-blue-600 px-2 md:px-3 lg:px-4 py-2 text-xs md:text-sm font-medium whitespace-nowrap {{ request()->routeIs('profile.edit') ? 'text-blue-600 font-semibold' : '' }}">
+                            PROFIL
+                        </a>
+
+                        <!-- Logout Button -->
+                        <form method="POST" action="{{ route('logout') }}" class="inline">
+                            @csrf
+                            <button type="submit" class="text-red-600 hover:text-red-700 px-2 md:px-3 lg:px-4 py-2 text-xs md:text-sm font-medium transition whitespace-nowrap">
+                                DÉCONNEXION
+                            </button>
+                        </form>
+                    @endif
+                </div>
+
+                <!-- Mobile menu button -->
+                <button id="mobile-menu-button" class="md:hidden inline-flex items-center justify-center p-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 transition">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Mobile menu -->
+        <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-gray-300">
+            <div class="px-4 py-4 space-y-2">
+                <!-- User Profile (Mobile) -->
+                <div class="flex items-center px-3 py-3 border-b border-gray-200">
+                    @php
+                        $photo = null;
+                        if ($user->photo) {
+                            $photo = asset('storage/' . $user->photo);
+                        } elseif ($user->coordinateur && $user->coordinateur->photo) {
+                            $photo = asset('storage/' . $user->coordinateur->photo);
+                        } else {
+                            $photo = 'https://ui-avatars.com/api/?name=' . urlencode($user->name);
+                        }
+                    @endphp
+                    <img class="w-12 h-12 rounded-full object-cover mr-4" src="{{ $photo }}" alt="Photo">
+                    <div>
+                        <div class="text-lg font-semibold text-gray-900">{{ $user->name }}</div>
+                        <div class="text-sm text-gray-500">{{ $user->email }}</div>
+                    </div>
+                </div>
+
+                @if($roleCode === 'admin')
+                    <a href="{{ route('dashboard') }}" class="block px-4 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 transition {{ request()->routeIs('dashboard') ? 'text-blue-600 font-semibold' : '' }}">
+                        [ TABLEAU DE BORD ]
+                    </a>
+                    <a href="{{ route('users.index') }}" class="block px-4 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 transition {{ request()->routeIs('users.*') ? 'text-blue-600 font-semibold' : '' }}">
+                        UTILISATEURS
+                    </a>
+                    <a href="{{ route('classes.index') }}" class="block px-4 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 transition {{ request()->routeIs('classes.*') ? 'text-blue-600 font-semibold' : '' }}">
+                        CLASSES
+                    </a>
+                    <a href="{{ route('matieres.index') }}" class="block px-4 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 transition {{ request()->routeIs('matieres.*') ? 'text-blue-600 font-semibold' : '' }}">
+                        MATIÈRES
+                    </a>
+                    <a href="{{ route('enseignants.index') }}" class="block px-4 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 transition {{ request()->routeIs('enseignants.*') ? 'text-blue-600 font-semibold' : '' }}">
+                        ENSEIGNANTS
+                    </a>
+                    <a href="{{ route('etudiants.index') }}" class="block px-4 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 transition {{ request()->routeIs('etudiants.*') ? 'text-blue-600 font-semibold' : '' }}">
+                        ÉTUDIANTS
+                    </a>
+                    <a href="{{ route('promotions.index') }}" class="block px-4 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 transition {{ request()->routeIs('promotions.*') ? 'text-blue-600 font-semibold' : '' }}">
+                        PROMOTIONS
+                    </a>
+                    <a href="{{ route('annees-academiques.index') }}" class="block px-4 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 transition {{ request()->routeIs('annees-academiques.*') ? 'text-blue-600 font-semibold' : '' }}">
+                        ANNÉES
+                    </a>
+                    <a href="{{ route('semestres.index') }}" class="block px-4 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 transition {{ request()->routeIs('semestres.*') ? 'text-blue-600 font-semibold' : '' }}">
+                        SEMESTRES
+                    </a>
+                    <a href="{{ route('coordinateurs.index') }}" class="block px-4 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 transition {{ request()->routeIs('coordinateurs.*') ? 'text-blue-600 font-semibold' : '' }}">
+                        COORDINATEURS
+                    </a>
+                @elseif($roleCode === 'coordinateur')
+                    <a href="{{ route('dashboard') }}" class="block px-4 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 transition {{ request()->routeIs('dashboard') ? 'text-blue-600 font-semibold' : '' }}">
+                        [ TABLEAU DE BORD ]
+                    </a>
+                    <a href="{{ route('emplois-du-temps.index') }}" class="block px-4 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 transition {{ request()->routeIs('emplois-du-temps.*') ? 'text-blue-600 font-semibold' : '' }}">
+                        EMPLOIS DU TEMPS
+                    </a>
+                    <a href="{{ route('sessions-de-cours.index') }}" class="block px-4 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 transition {{ request()->routeIs('sessions-de-cours.*') ? 'text-blue-600 font-semibold' : '' }}">
+                        SESSIONS
+                    </a>
+                    <a href="{{ route('presences.index') }}" class="block px-4 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 transition {{ request()->routeIs('presences.*') ? 'text-blue-600 font-semibold' : '' }}">
+                        PRÉSENCES
+                    </a>
+                @endif
+
+                <!-- Profil pour tous les rôles -->
+                <a href="{{ route('profile.edit') }}" class="block px-4 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 transition {{ request()->routeIs('profile.edit') ? 'text-blue-600 font-semibold' : '' }}">
+                    PROFIL
+                </a>
+
+                <!-- Logout -->
+                <div class="border-t border-gray-200 pt-4">
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button type="submit" class="w-full text-left block px-4 py-2 text-base font-medium text-red-600 hover:text-red-700 hover:bg-red-50 transition">
+                            DÉCONNEXION
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-1">
+        <!-- Page Content -->
+        <div class="p-4 sm:p-6 lg:p-8">
+            {{ $slot ?? '' }}
+            @yield('content')
+        </div>
+    </main>
+
+    <!-- JavaScript for mobile menu toggle -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+
+            mobileMenuButton.addEventListener('click', function() {
+                mobileMenu.classList.toggle('hidden');
+            });
+        });
+    </script>
+
     @stack('scripts')
 </body>
 

@@ -5,7 +5,7 @@ use Illuminate\Support\Facades\Storage;
 @endphp
 
 @section('content')
-<div class="container mx-auto py-8">
+<div class="bg-white rounded-lg shadow p-8">
     <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4">
         <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Liste des coordinateurs</h1>
         <a href="{{ route('coordinateurs.create') }}" class="inline-flex items-center px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-base font-semibold rounded-lg shadow transition focus:outline-none focus:ring-2 focus:ring-indigo-400">
