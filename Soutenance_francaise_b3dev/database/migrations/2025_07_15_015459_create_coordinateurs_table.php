@@ -12,13 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('coordinateurs', function (Blueprint $table) {
-            $table->integer('id')->nullable(false)->primary()->autoIncrement();
-            $table->integer('user_id')->nullable(false);
-            $table->string('prenom')->nullable(false);
-            $table->string('nom')->nullable(false);
-            $table->string('photo');
-            $table->timestamp('created_at');
-            $table->timestamp('updated_at');
+            $table->id();
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->string('prenom');
+            $table->string('nom');
+            $table->string('photo')->nullable();
+            $table->foreignId('promotion_id')->nullable()->constrained();
+            $table->timestamps();
         });
     }
 
@@ -28,6 +28,5 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('coordinateurs');
-
     }
 };

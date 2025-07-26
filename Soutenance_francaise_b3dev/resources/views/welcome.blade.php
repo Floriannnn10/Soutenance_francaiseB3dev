@@ -23,7 +23,7 @@
             class="relative w-full max-w-none mx-auto flex flex-col md:flex-row items-center justify-center md:justify-start px-0 h-screen overflow-hidden">
             <!-- Left Image (Visible on desktop) -->
             <div class="hidden md:block md:w-1/2 flex items-center justify-start pl-0">
-                <img src="{{ asset('Images\welwoce_page-removebg-preview.png') }}" alt="Illustration de bienvenue"
+                <img src="{{ asset('Images\welcome_deux-removebg-preview.png') }}" alt="Illustration de bienvenue"
                     class="object-contain w-full h-full -mt-12">
             </div>
 

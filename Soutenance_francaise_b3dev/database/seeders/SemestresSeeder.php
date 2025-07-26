@@ -15,32 +15,27 @@ class SemestresSeeder extends Seeder
     {
         $annees = AnneeAcademique::all();
 
+        if ($annees->isEmpty()) {
+            throw new \Exception('Aucune année académique n\'existe. Veuillez exécuter le seeder AnneesAcademiquesSeeder d\'abord.');
+        }
+
         foreach ($annees as $annee) {
-            // Calculer les dates des semestres
-            $dateDebut = $annee->date_debut;
-            $dateFin = $annee->date_fin;
-
-            // Calculer la date de fin du premier semestre (milieu de l'année académique)
-            $milieu = $dateDebut->copy()->addMonths(4); // Environ 4 mois pour le premier semestre
-
-            // Semestre 1
-            Semestre::updateOrCreate([
+            // Premier semestre
+            Semestre::create([
                 'nom' => 'Semestre 1',
                 'annee_academique_id' => $annee->id,
-            ], [
-                'date_debut' => $dateDebut,
-                'date_fin' => $milieu,
-                'actif' => $annee->actif && true, // Premier semestre actif si l'année est active
+                'date_debut' => $annee->date_debut,
+                'date_fin' => date('Y-m-d', strtotime($annee->date_debut . ' + 5 months')),
+                'actif' => $annee->actif
             ]);
 
-            // Semestre 2
-            Semestre::updateOrCreate([
+            // Deuxième semestre
+            Semestre::create([
                 'nom' => 'Semestre 2',
                 'annee_academique_id' => $annee->id,
-            ], [
-                'date_debut' => $milieu->copy()->addDay(),
-                'date_fin' => $dateFin,
-                'actif' => false, // Deuxième semestre inactif par défaut
+                'date_debut' => date('Y-m-d', strtotime($annee->date_debut . ' + 6 months')),
+                'date_fin' => $annee->date_fin,
+                'actif' => false
             ]);
         }
     }

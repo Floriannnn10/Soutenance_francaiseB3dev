@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use App\Models\Classe;
+use App\Models\Promotion;
 
 class ClassesSeeder extends Seeder
 {
@@ -12,19 +13,27 @@ class ClassesSeeder extends Seeder
      */
     public function run(): void
     {
-        $classes = [
-            ['nom' => 'Licence 1 Informatique'],
-            ['nom' => 'Licence 2 Informatique'],
-            ['nom' => 'Licence 3 Informatique'],
-            ['nom' => 'Master 1 Informatique'],
-            ['nom' => 'Master 2 Informatique'],
-            ['nom' => 'Licence 1 Mathématiques'],
-            ['nom' => 'Licence 2 Mathématiques'],
-            ['nom' => 'Licence 3 Mathématiques'],
-        ];
+        $promotions = Promotion::all();
 
-        foreach ($classes as $classe) {
-            Classe::create($classe);
+        if ($promotions->isEmpty()) {
+            throw new \Exception('Aucune promotion n\'existe. Veuillez exécuter le seeder PromotionsSeeder d\'abord.');
+        }
+
+        foreach ($promotions as $promotion) {
+            $classes = [
+                [
+                    'nom' => $promotion->nom . ' A',
+                    'promotion_id' => $promotion->id
+                ],
+                [
+                    'nom' => $promotion->nom . ' B',
+                    'promotion_id' => $promotion->id
+                ]
+            ];
+
+            foreach ($classes as $classe) {
+                Classe::create($classe);
+            }
         }
     }
 }

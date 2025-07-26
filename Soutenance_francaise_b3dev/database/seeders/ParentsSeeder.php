@@ -3,9 +3,10 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\ParentEtudiant;
 use App\Models\User;
 use App\Models\Role;
+use App\Models\ParentEtudiant;
+use App\Models\Etudiant;
 
 class ParentsSeeder extends Seeder
 {
@@ -14,59 +15,36 @@ class ParentsSeeder extends Seeder
      */
     public function run(): void
     {
-        // Créer un rôle parent s'il n'existe pas
-        $roleParent = Role::where('nom', 'Parent')->first();
+        $roleParent = Role::where('code', 'parent')->first();
 
-        // Créer des utilisateurs pour les parents
-        $parentsData = [
-            [
-                'nom' => 'Dupont',
-                'prenom' => 'Jean',
-                'email' => 'jean.dupont@example.com',
-                'telephone' => '0123456789',
-            ],
-            [
-                'nom' => 'Martin',
-                'prenom' => 'Marie',
-                'email' => 'marie.martin@example.com',
-                'telephone' => '0987654321',
-            ],
-            [
-                'nom' => 'Durand',
-                'prenom' => 'Pierre',
-                'email' => 'pierre.durand@example.com',
-                'telephone' => '0555666777',
-            ],
-            [
-                'nom' => 'Leroy',
-                'prenom' => 'Sophie',
-                'email' => 'sophie.leroy@example.com',
-                'telephone' => '0444555666',
-            ],
-            [
-                'nom' => 'Moreau',
-                'prenom' => 'Claude',
-                'email' => 'claude.moreau@example.com',
-                'telephone' => '0333444555',
-            ],
-        ];
+        if (!$roleParent) {
+            throw new \Exception('Le rôle parent n\'existe pas. Veuillez exécuter le seeder RolesSeeder d\'abord.');
+        }
 
-        foreach ($parentsData as $parentData) {
+        $etudiants = Etudiant::all();
+
+        if ($etudiants->isEmpty()) {
+            throw new \Exception('Aucun étudiant n\'existe. Veuillez exécuter le seeder EtudiantsSeeder d\'abord.');
+        }
+
+        foreach ($etudiants as $etudiant) {
+            // Créer un parent pour chaque étudiant
             $user = User::create([
-                'nom' => $parentData['nom'],
-                'prenom' => $parentData['prenom'],
-                'email' => $parentData['email'],
+                'name' => "Parent de {$etudiant->prenom} {$etudiant->nom}",
+                'email' => "parent.{$etudiant->email}",
                 'password' => bcrypt('password'),
-                'role_id' => $roleParent->id,
+                'role_id' => $roleParent->id
             ]);
 
-            ParentEtudiant::create([
+            $parent = ParentEtudiant::create([
                 'user_id' => $user->id,
-                'prenom' => $parentData['prenom'],
-                'nom' => $parentData['nom'],
-                'telephone' => $parentData['telephone'],
-                'photo' => null,
+                'prenom' => 'Parent',
+                'nom' => $etudiant->nom,
+                'photo' => null
             ]);
+
+            // Associer le parent à l'étudiant
+            $parent->etudiants()->attach($etudiant->id);
         }
     }
 }

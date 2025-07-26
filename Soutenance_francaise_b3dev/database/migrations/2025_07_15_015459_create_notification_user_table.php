@@ -12,12 +12,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('notification_user', function (Blueprint $table) {
-            $table->integer('id')->nullable(false)->primary()->autoIncrement();
-            $table->integer('user_id')->nullable(false);
-            $table->integer('notification_id')->nullable(false);
-            $table->timestamp('read_at');
-            $table->timestamp('created_at');
-            $table->timestamp('updated_at');
+            $table->id();
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->foreignId('notification_id')->constrained()->onDelete('cascade');
+            $table->timestamp('read_at')->nullable();
+            $table->timestamps();
         });
     }
 
@@ -27,6 +26,5 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('notification_user');
-
     }
 };

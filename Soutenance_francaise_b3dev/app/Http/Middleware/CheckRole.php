@@ -8,24 +8,14 @@ use Illuminate\Support\Facades\Auth;
 
 class CheckRole
 {
-    /**
-     * Handle an incoming request.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \Closure(\Illuminate\Http\Request): (\Illuminate\Http\Response|\Illuminate\Http\RedirectResponse)  $next
-     * @return \Illuminate\Http\Response|\Illuminate\Http\RedirectResponse
-     */
-    public function handle(Request $request, Closure $next, ...$roles)
+    public function handle(Request $request, Closure $next, string $role)
     {
         if (!Auth::check()) {
             return redirect('login');
         }
 
-        $user = Auth::user();
-        $userRole = $user->role ? $user->role->nom : null;
-
-        // Vérifier si l'utilisateur a un des rôles autorisés
-        if (!in_array($userRole, $roles)) {
+        $userRole = Auth::user()->roles->first();
+        if (!$userRole || $userRole->code !== $role) {
             abort(403, 'Accès non autorisé.');
         }
 

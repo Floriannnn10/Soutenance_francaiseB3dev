@@ -2,43 +2,76 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Models\User;
+use App\Models\AnneeAcademique;
+use App\Models\Semestre;
+use App\Models\Coordinateur;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
     public function index()
     {
         $user = Auth::user();
+        $role = $user->roles->first();
 
-        if (!$user->role) {
-            return view('dashboard');
+        if (!$role) {
+            return redirect()->route('login')->with('error', 'Aucun rôle attribué.');
         }
 
-        $role = strtolower($user->role->nom);
-
-        switch ($role) {
+        switch ($role->code) {
             case 'admin':
-                $nbAnnees = \App\Models\AnneeAcademique::count();
-                $nbSemestres = \App\Models\Semestre::count();
-                $nbCoordinateurs = \App\Models\Coordinateur::count();
-                $nbUtilisateurs = \App\Models\User::count();
-                $recentUsers = \App\Models\User::with('role')
-                    ->orderByDesc(DB::raw('COALESCE(last_login_at, updated_at)'))
-                    ->take(5)
-                    ->get();
-                return view('dashboard.utilisateurs', compact('nbAnnees', 'nbSemestres', 'nbCoordinateurs', 'nbUtilisateurs', 'recentUsers', 'user'));
+                return $this->adminDashboard();
             case 'coordinateur':
-                return redirect()->route('dashboard.coordinateur');
+                return $this->coordinateurDashboard();
             case 'enseignant':
-                return view('dashboard.enseignant');
+                return $this->enseignantDashboard();
             case 'etudiant':
-                return view('dashboard.etudiant');
+                return $this->etudiantDashboard();
             case 'parent':
-                return view('dashboard.parent');
+                return $this->parentDashboard();
             default:
-                return view('dashboard');
+                return redirect()->route('login')->with('error', 'Rôle non reconnu.');
         }
+    }
+
+    private function adminDashboard()
+    {
+        $totalUsers = User::count();
+        $totalAnnees = AnneeAcademique::count();
+        $totalSemestres = Semestre::count();
+        $totalCoordinateurs = Coordinateur::count();
+        $recentLogins = User::whereNotNull('last_login_at')
+                           ->orderBy('last_login_at', 'desc')
+                           ->take(5)
+                           ->get();
+
+        return view('dashboard.admin', compact(
+            'totalUsers',
+            'totalAnnees',
+            'totalSemestres',
+            'totalCoordinateurs',
+            'recentLogins'
+        ));
+    }
+
+    private function coordinateurDashboard()
+    {
+        return view('dashboard.coordinateur');
+    }
+
+    private function enseignantDashboard()
+    {
+        return view('dashboard.enseignant');
+    }
+
+    private function etudiantDashboard()
+    {
+        return view('dashboard.etudiant');
+    }
+
+    private function parentDashboard()
+    {
+        return view('dashboard.parent');
     }
 }

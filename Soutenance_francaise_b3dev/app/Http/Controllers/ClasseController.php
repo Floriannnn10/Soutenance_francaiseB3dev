@@ -3,42 +3,41 @@
 namespace App\Http\Controllers;
 
 use App\Models\Classe;
-use App\Models\AnneeAcademique;
+use App\Models\Promotion;
 use Illuminate\Http\Request;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\View\View;
 
 class ClasseController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index(): View
+    public function index()
     {
-        $classes = Classe::with(['etudiants', 'sessionsDeCours'])->paginate(10);
+        $classes = Classe::with('promotion')->get();
         return view('classes.index', compact('classes'));
     }
 
     /**
      * Show the form for creating a new resource.
      */
-    public function create(): View
+    public function create()
     {
-        $anneesAcademiques = \App\Models\AnneeAcademique::all();
-        $promotions = \App\Models\Promotion::all();
-        return view('classes.create', compact('anneesAcademiques', 'promotions'));
+        $promotions = Promotion::all();
+        return view('classes.create', compact('promotions'));
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'nom' => 'required|string|max:255',
             'promotion_id' => 'required|exists:promotions,id',
         ]);
-        Classe::create($request->all());
+
+        Classe::create($validated);
+
         return redirect()->route('classes.index')
             ->with('success', 'Classe créée avec succès.');
     }
@@ -46,31 +45,32 @@ class ClasseController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Classe $class): View
+    public function show(Classe $classe)
     {
-        $class->load(['etudiants', 'sessionsDeCours.matiere', 'sessionsDeCours.enseignant']);
-        return view('classes.show', compact('class'));
+        return view('classes.show', compact('classe'));
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Classe $class): View
+    public function edit(Classe $classe)
     {
-        $promotions = \App\Models\Promotion::all();
-        return view('classes.edit', compact('class', 'promotions'));
+        $promotions = Promotion::all();
+        return view('classes.edit', compact('classe', 'promotions'));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Classe $class): RedirectResponse
+    public function update(Request $request, Classe $classe)
     {
-        $request->validate([
+        $validated = $request->validate([
             'nom' => 'required|string|max:255',
             'promotion_id' => 'required|exists:promotions,id',
         ]);
-        $class->update($request->all());
+
+        $classe->update($validated);
+
         return redirect()->route('classes.index')
             ->with('success', 'Classe mise à jour avec succès.');
     }
@@ -78,33 +78,11 @@ class ClasseController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Classe $class): RedirectResponse
+    public function destroy(Classe $classe)
     {
-        // Vérifier s'il y a des données liées
-        if ($class->etudiants()->count() > 0 || $class->sessionsDeCours()->count() > 0) {
-            return redirect()->route('classes.index')
-                ->with('error', 'Impossible de supprimer cette classe car elle contient des données liées.');
-        }
-
-        $class->delete();
+        $classe->delete();
 
         return redirect()->route('classes.index')
             ->with('success', 'Classe supprimée avec succès.');
-    }
-
-    /**
-     * Marquer un semestre comme terminé pour une classe.
-     */
-    public function semestreTermine(Request $request, Classe $classe): RedirectResponse
-    {
-        $request->validate([
-            'semestre_id' => 'required|exists:semestres,id',
-        ]);
-
-        // Logique pour marquer le semestre comme terminé
-        // Ici vous pouvez ajouter la logique métier nécessaire
-
-        return redirect()->route('classes.show', $classe)
-            ->with('success', 'Semestre marqué comme terminé avec succès.');
     }
 }

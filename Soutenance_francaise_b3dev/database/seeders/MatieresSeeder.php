@@ -13,16 +13,42 @@ class MatieresSeeder extends Seeder
     public function run(): void
     {
         $matieres = [
-            ['nom' => 'Programmation Java'],
-            ['nom' => 'Base de données'],
-            ['nom' => 'Réseaux informatiques'],
-            ['nom' => 'Algorithmes et structures de données'],
-            ['nom' => 'Mathématiques discrètes'],
-            ['nom' => 'Calcul différentiel'],
-            ['nom' => 'Statistiques'],
-            ['nom' => 'Intelligence artificielle'],
-            ['nom' => 'Développement web'],
-            ['nom' => 'Systèmes d\'exploitation'],
+            [
+                'code' => 'JAVA',
+                'nom' => 'Programmation Java',
+                'coefficient' => 3.0,
+                'volume_horaire' => 60
+            ],
+            [
+                'code' => 'PHP',
+                'nom' => 'Développement Web PHP',
+                'coefficient' => 3.0,
+                'volume_horaire' => 60
+            ],
+            [
+                'code' => 'JS',
+                'nom' => 'JavaScript et Frameworks',
+                'coefficient' => 2.5,
+                'volume_horaire' => 45
+            ],
+            [
+                'code' => 'PYTHON',
+                'nom' => 'Python pour le Data Science',
+                'coefficient' => 2.5,
+                'volume_horaire' => 45
+            ],
+            [
+                'code' => 'DEVOPS',
+                'nom' => 'DevOps et CI/CD',
+                'coefficient' => 2.0,
+                'volume_horaire' => 30
+            ],
+            [
+                'code' => 'SECU',
+                'nom' => 'Sécurité des applications',
+                'coefficient' => 2.0,
+                'volume_horaire' => 30
+            ]
         ];
 
         foreach ($matieres as $matiere) {

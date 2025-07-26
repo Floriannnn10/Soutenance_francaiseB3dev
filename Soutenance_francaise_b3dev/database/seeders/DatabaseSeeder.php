@@ -13,20 +13,19 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             RolesSeeder::class,
+            StatutsPresenceSeeder::class,
+            StatutsSessionSeeder::class,
+            TypesCoursSeeder::class,
             AdminSeeder::class,
-            StatutsSeeder::class,
             AnneesAcademiquesSeeder::class,
             SemestresSeeder::class,
+            PromotionsSeeder::class,
             ClassesSeeder::class,
             MatieresSeeder::class,
-            TypesCoursSeeder::class,
-            CoordinateursSeeder::class,
-            ParentsSeeder::class,
-            EtudiantsSeeder::class,
             EnseignantsSeeder::class,
-            SessionsDeCoursSeeder::class,
-            PresencesSeeder::class,
-            NotificationsSeeder::class,
+            EtudiantsSeeder::class,
+            ParentsSeeder::class,
+            CoordinateursSeeder::class,
         ]);
     }
 }

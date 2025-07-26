@@ -12,13 +12,25 @@ class TypesCoursSeeder extends Seeder
      */
     public function run(): void
     {
-        $typesCours = [
-            ['nom' => 'Workshop'],
-            ['nom' => 'E-learning'],
-            ['nom' => 'Présentiel'],
+        $types = [
+            [
+                'nom' => 'Présentiel',
+                'code' => 'presentiel',
+                'description' => 'Cours en présentiel'
+            ],
+            [
+                'nom' => 'E-learning',
+                'code' => 'e_learning',
+                'description' => 'Cours en ligne'
+            ],
+            [
+                'nom' => 'Workshop',
+                'code' => 'workshop',
+                'description' => 'Atelier pratique'
+            ]
         ];
 
-        foreach ($typesCours as $type) {
+        foreach ($types as $type) {
             TypeCours::create($type);
         }
     }

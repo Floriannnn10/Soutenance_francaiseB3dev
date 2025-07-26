@@ -2,109 +2,97 @@
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\UserController;
 use App\Http\Controllers\AnneeAcademiqueController;
 use App\Http\Controllers\SemestreController;
+use App\Http\Controllers\CoordinateurController;
 use App\Http\Controllers\ClasseController;
 use App\Http\Controllers\MatiereController;
-use App\Http\Controllers\EtudiantController;
 use App\Http\Controllers\EnseignantController;
+use App\Http\Controllers\EtudiantController;
+use App\Http\Controllers\ParentController;
 use App\Http\Controllers\SessionDeCoursController;
 use App\Http\Controllers\PresenceController;
+use App\Http\Controllers\StatistiquesController;
+use App\Http\Controllers\EmploiDuTempsController;
+use App\Http\Controllers\JustificationAbsenceController;
 use App\Http\Controllers\NotificationController;
-use App\Http\Controllers\ParentEtudiantController;
-use App\Http\Controllers\CoordinateurController;
 use Illuminate\Support\Facades\Route;
+
+/*
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
+|
+| Here is where you can register web routes for your application. These
+| routes are loaded by the RouteServiceProvider and all of them will
+| be assigned to the "web" middleware group. Make something great!
+|
+*/
 
 Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/dashboard', [DashboardController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
-Route::get('/dashboard/coordinateur', [CoordinateurController::class, 'dashboard'])->middleware(['auth', 'verified', 'role:coordinateur'])->name('dashboard.coordinateur');
+Route::middleware(['auth'])->group(function () {
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    // Routes pour l'Administrateur (accès complet)
-    Route::middleware('role:admin')->group(function () {
-    Route::resource('annees-academiques', AnneeAcademiqueController::class)->parameters([
-        'annees-academiques' => 'anneeAcademique'
-    ]);
+    // Routes pour l'administrateur
+    Route::middleware(['check.role:admin'])->group(function () {
+        Route::resource('users', UserController::class);
+        Route::resource('annees-academiques', AnneeAcademiqueController::class);
         Route::resource('semestres', SemestreController::class);
+        Route::resource('coordinateurs', CoordinateurController::class);
         Route::resource('classes', ClasseController::class);
         Route::resource('matieres', MatiereController::class);
-        Route::resource('etudiants', EtudiantController::class);
         Route::resource('enseignants', EnseignantController::class);
-        Route::resource('coordinateurs', CoordinateurController::class);
-        Route::resource('parents', ParentEtudiantController::class);
-    Route::resource('users', App\Http\Controllers\UserController::class);
-    Route::middleware(['auth', 'role:admin'])->group(function () {
-        Route::resource('promotions', App\Http\Controllers\PromotionController::class);
+        Route::resource('etudiants', EtudiantController::class);
+        Route::resource('parents', ParentController::class);
+
+        // Routes pour activer/désactiver les années académiques et semestres
+        Route::patch('/annees-academiques/{anneeAcademique}/activer', [AnneeAcademiqueController::class, 'activer'])->name('annees-academiques.activer');
+        Route::patch('/semestres/{semestre}/activer', [SemestreController::class, 'activer'])->name('semestres.activer');
     });
 
-    // Routes supplémentaires pour des actions spécifiques
-    Route::patch('/annees-academiques/{anneeAcademique}/activate', [AnneeAcademiqueController::class, 'activate'])
-        ->name('annees-academiques.activate');
-    Route::patch('/annees-academiques/{anneeAcademique}/deactivate', [AnneeAcademiqueController::class, 'deactivate'])
-        ->name('annees-academiques.deactivate');
+    // Routes pour le coordinateur
+    Route::middleware(['check.role:coordinateur'])->group(function () {
+        Route::resource('sessions-de-cours', SessionDeCoursController::class);
+        Route::resource('emplois-du-temps', EmploiDuTempsController::class);
+        Route::resource('justifications', JustificationAbsenceController::class);
+        Route::get('/statistiques', [StatistiquesController::class, 'index'])->name('statistiques.index');
+        Route::get('/graphiques', [StatistiquesController::class, 'graphiques'])->name('graphiques');
 
-    // Routes pour les semestres
-    Route::patch('/semestres/{semestre}/activate', [SemestreController::class, 'activate'])
-        ->name('semestres.activate');
-    Route::patch('/semestres/{semestre}/deactivate', [SemestreController::class, 'deactivate'])
-        ->name('semestres.deactivate');
-
-        // Routes pour les coordinateurs
-        Route::patch('/coordinateurs/{coordinateur}/toggle-status', [CoordinateurController::class, 'toggleStatus'])
-            ->name('coordinateurs.toggle-status');
-
-        // Routes pour les parents
-        Route::patch('/parents/{parent}/toggle-status', [ParentEtudiantController::class, 'toggleStatus'])
-            ->name('parents.toggle-status');
-    });
-
-    // Routes pour le Coordinateur (gestion des emplois du temps, présences e-learning/workshops, justifications)
-    Route::middleware('role:coordinateur')->group(function () {
-    Route::resource('sessions-de-cours', SessionDeCoursController::class);
-    Route::get('/sessions-de-cours/{session}/appel', [SessionDeCoursController::class, 'appel'])
-        ->name('sessions-de-cours.appel');
-    Route::post('/sessions-de-cours/{session}/presences', [SessionDeCoursController::class, 'enregistrerPresences'])
-        ->name('sessions-de-cours.enregistrer-presences');
+        // Routes pour la gestion des présences
         Route::get('/presences', [PresenceController::class, 'index'])->name('presences.index');
-    Route::get('/sessions-de-cours/{sessionDeCour}/appel', [PresenceController::class, 'appel'])
-        ->name('presences.appel');
-    Route::post('/sessions-de-cours/{sessionDeCour}/appel', [PresenceController::class, 'storeAppel'])
-        ->name('presences.store-appel');
+        Route::post('/presences/workshop-elearning', [PresenceController::class, 'storeWorkshopElearning'])->name('presences.workshop-elearning');
     });
 
-    // Routes pour l'Enseignant (emploi du temps personnel, présences présentiel)
-    Route::middleware('role:enseignant')->group(function () {
-        Route::get('/sessions-de-cours', [SessionDeCoursController::class, 'index'])->name('sessions-de-cours.index');
-        Route::get('/sessions-de-cours/{session}/appel', [SessionDeCoursController::class, 'appel'])
-            ->name('sessions-de-cours.appel');
-        Route::post('/sessions-de-cours/{session}/presences', [SessionDeCoursController::class, 'enregistrerPresences'])
-            ->name('sessions-de-cours.enregistrer-presences');
-        Route::get('/presences', [PresenceController::class, 'index'])->name('presences.index');
+    // Routes pour l'enseignant
+    Route::middleware(['check.role:enseignant'])->group(function () {
+        Route::get('/emplois-du-temps/enseignant', [EmploiDuTempsController::class, 'enseignant'])->name('emplois-du-temps.enseignant');
+        Route::post('/presences/presentiel', [PresenceController::class, 'storePresentiel'])->name('presences.presentiel');
     });
 
-    // Routes pour les Étudiants et Parents (consultation uniquement)
-    Route::middleware('role:etudiant,parent')->group(function () {
-        Route::get('/sessions-de-cours', [SessionDeCoursController::class, 'index'])->name('sessions-de-cours.index');
+    // Routes pour l'étudiant
+    Route::middleware(['check.role:etudiant'])->group(function () {
+        Route::get('/emplois-du-temps/etudiant', [EmploiDuTempsController::class, 'etudiant'])->name('emplois-du-temps.etudiant');
+        Route::get('/presences/etudiant', [PresenceController::class, 'etudiant'])->name('presences.etudiant');
     });
 
-    // Routes communes pour tous les utilisateurs authentifiés
+    // Routes pour le parent
+    Route::middleware(['check.role:parent'])->group(function () {
+        Route::get('/emplois-du-temps/parent', [EmploiDuTempsController::class, 'parent'])->name('emplois-du-temps.parent');
+        Route::get('/presences/parent', [PresenceController::class, 'parent'])->name('presences.parent');
+    });
+
+    // Routes pour les notifications (accessibles à tous les utilisateurs authentifiés)
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
-    Route::patch('/notifications/{notification}/marquer-lue', [NotificationController::class, 'marquerLue'])
-        ->name('notifications.marquer-lue');
-    Route::patch('/notifications/{notification}/envoyer', [NotificationController::class, 'envoyer'])
-        ->name('notifications.envoyer');
-
-    // Route pour les graphiques (uniquement pour les coordinateurs)
-    Route::get('/graphiques', function () {
-        return view('graphiques');
-    })->middleware('role:coordinateur')->name('graphiques');
+    Route::post('/notifications/marquer-lue/{notification}', [NotificationController::class, 'marquerLue'])->name('notifications.marquer-lue');
+    Route::post('/notifications/marquer-toutes-lues', [NotificationController::class, 'marquerToutesLues'])->name('notifications.marquer-toutes-lues');
 });
 
 require __DIR__.'/auth.php';

@@ -3,9 +3,10 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\Coordinateur;
 use App\Models\User;
 use App\Models\Role;
+use App\Models\Coordinateur;
+use App\Models\Promotion;
 
 class CoordinateursSeeder extends Seeder
 {
@@ -14,43 +15,66 @@ class CoordinateursSeeder extends Seeder
      */
     public function run(): void
     {
-        // Créer un rôle coordinateur s'il n'existe pas
-        $roleCoordinateur = Role::where('nom', 'Coordinateur')->first();
+        $roleCoordinateur = Role::where('code', 'coordinateur')->first();
 
-        // Créer des utilisateurs pour les coordinateurs
-        $coordinateursData = [
+        if (!$roleCoordinateur) {
+            throw new \Exception('Le rôle coordinateur n\'existe pas. Veuillez exécuter le seeder RolesSeeder d\'abord.');
+        }
+
+        $promotions = Promotion::all();
+
+        if ($promotions->isEmpty()) {
+            throw new \Exception('Aucune promotion n\'existe. Veuillez exécuter le seeder PromotionsSeeder d\'abord.');
+        }
+
+        $coordinateurs = [
             [
-                'nom' => 'Bernard',
-                'prenom' => 'Sophie',
-                'email' => 'sophie.bernard.coord@example.com',
+                'user' => [
+                    'name' => 'Sophie Bernard',
+                    'email' => 'sophie.bernard@example.com',
+                    'password' => bcrypt('password'),
+                    'role_id' => $roleCoordinateur->id
+                ],
+                'coordinateur' => [
+                    'prenom' => 'Sophie',
+                    'nom' => 'Bernard',
+                    'photo' => null
+                ]
             ],
             [
-                'nom' => 'Dubois',
-                'prenom' => 'Michel',
-                'email' => 'michel.dubois.coord@example.com',
+                'user' => [
+                    'name' => 'Michel Dubois',
+                    'email' => 'michel.dubois@example.com',
+                    'password' => bcrypt('password'),
+                    'role_id' => $roleCoordinateur->id
+                ],
+                'coordinateur' => [
+                    'prenom' => 'Michel',
+                    'nom' => 'Dubois',
+                    'photo' => null
+                ]
             ],
             [
-                'nom' => 'Moreau',
-                'prenom' => 'Claire',
-                'email' => 'claire.moreau.coord@example.com',
-            ],
+                'user' => [
+                    'name' => 'Claire Moreau',
+                    'email' => 'claire.moreau@example.com',
+                    'password' => bcrypt('password'),
+                    'role_id' => $roleCoordinateur->id
+                ],
+                'coordinateur' => [
+                    'prenom' => 'Claire',
+                    'nom' => 'Moreau',
+                    'photo' => null
+                ]
+            ]
         ];
 
-        foreach ($coordinateursData as $coordinateurData) {
-            $user = User::create([
-                'nom' => $coordinateurData['nom'],
-                'prenom' => $coordinateurData['prenom'],
-                'email' => $coordinateurData['email'],
-                'password' => bcrypt('password'),
-                'role_id' => $roleCoordinateur->id,
-            ]);
-
-            Coordinateur::create([
-                'user_id' => $user->id,
-                'prenom' => $coordinateurData['prenom'],
-                'nom' => $coordinateurData['nom'],
-                'photo' => null,
-            ]);
+        foreach ($coordinateurs as $index => $data) {
+            $user = User::create($data['user']);
+            $coordinateur = new Coordinateur($data['coordinateur']);
+            $coordinateur->user()->associate($user);
+            $coordinateur->promotion()->associate($promotions[$index % $promotions->count()]);
+            $coordinateur->save();
         }
     }
 }

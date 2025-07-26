@@ -2,10 +2,12 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use App\Models\Enseignant;
 use App\Models\User;
 use App\Models\Role;
+use App\Models\Matiere;
+use App\Models\Enseignant;
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class EnseignantsSeeder extends Seeder
 {
@@ -14,56 +16,57 @@ class EnseignantsSeeder extends Seeder
      */
     public function run(): void
     {
-        // Créer un rôle enseignant s'il n'existe pas
-        $roleEnseignant = Role::where('nom', 'Enseignant')->first();
+        $matieres = Matiere::all();
 
-        // Créer des utilisateurs spécifiques pour les enseignants
-        $enseignantsData = [
+        if ($matieres->isEmpty()) {
+            throw new \Exception('Aucune matière n\'existe. Veuillez exécuter le seeder MatieresSeeder d\'abord.');
+        }
+
+        $enseignantRole = Role::where('code', 'enseignant')->first();
+
+        if (!$enseignantRole) {
+            throw new \Exception('Le rôle enseignant n\'existe pas. Veuillez exécuter le seeder RolesSeeder d\'abord.');
+        }
+
+        $enseignants = [
+            [
+                'nom' => 'Dupont',
+                'prenom' => 'Jean',
+                'email' => 'jean.dupont@example.com',
+                'password' => 'password',
+            ],
+            [
+                'nom' => 'Martin',
+                'prenom' => 'Marie',
+                'email' => 'marie.martin@example.com',
+                'password' => 'password',
+            ],
             [
                 'nom' => 'Bernard',
-                'prenom' => 'Sophie',
-                'email' => 'sophie.bernard.ens@example.com',
-            ],
-            [
-                'nom' => 'Dubois',
-                'prenom' => 'Michel',
-                'email' => 'michel.dubois.ens@example.com',
-            ],
-            [
-                'nom' => 'Moreau',
-                'prenom' => 'Claire',
-                'email' => 'claire.moreau.ens@example.com',
-            ],
-            [
-                'nom' => 'Leroy',
-                'prenom' => 'Jean',
-                'email' => 'jean.leroy.ens@example.com',
-            ],
-            [
-                'nom' => 'Garcia',
-                'prenom' => 'Maria',
-                'email' => 'maria.garcia.ens@example.com',
+                'prenom' => 'Pierre',
+                'email' => 'pierre.bernard@example.com',
+                'password' => 'password',
             ],
         ];
 
-        // Créer les enseignants spécifiques
-        foreach (
-            $enseignantsData as $enseignantData
-        ) {
-            Enseignant::create([
-                'prenom' => $enseignantData['prenom'],
-                'nom' => $enseignantData['nom'],
-                'photo' => null,
+        foreach ($enseignants as $enseignantData) {
+            $user = User::create([
+                'name' => $enseignantData['prenom'] . ' ' . $enseignantData['nom'],
+                'email' => $enseignantData['email'],
+                'password' => Hash::make($enseignantData['password']),
             ]);
-        }
 
-        // Créer quelques enseignants supplémentaires aléatoires
-        for ($i = 6; $i <= 10; $i++) {
-            Enseignant::create([
-                'prenom' => 'Enseignant' . $i,
-                'nom' => 'Enseignant',
-                'photo' => null,
+            $user->roles()->attach($enseignantRole->id);
+
+            $enseignant = Enseignant::create([
+                'nom' => $enseignantData['nom'],
+                'prenom' => $enseignantData['prenom'],
+                'user_id' => $user->id,
             ]);
+
+            // Attribuer aléatoirement 2 matières à chaque enseignant
+            $matieresAleatoires = $matieres->random(2);
+            $enseignant->matieres()->attach($matieresAleatoires->pluck('id'));
         }
     }
 }

@@ -12,11 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('parent_etudiant', function (Blueprint $table) {
-            $table->integer('id')->nullable(false)->primary()->autoIncrement();
-            $table->integer('parent_id')->nullable(false);
-            $table->integer('etudiant_id')->nullable(false);
-            $table->timestamp('created_at');
-            $table->timestamp('updated_at');
+            $table->id();
+            $table->foreignId('parent_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('etudiant_id')->constrained()->onDelete('cascade');
+            $table->timestamps();
         });
     }
 
@@ -26,6 +25,5 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('parent_etudiant');
-
     }
 };
