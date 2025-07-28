@@ -7,9 +7,88 @@ use App\Models\SessionDeCours;
 use App\Models\StatutPresence;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 
 class PresenceController extends Controller
 {
+    /**
+     * Afficher la liste des présences
+     */
+    public function index(Request $request)
+    {
+        $user = Auth::user();
+        $perPage = $request->get('per_page', 15);
+
+        // Construire la requête de base
+        $query = Presence::with(['etudiant', 'sessionDeCours.classe', 'sessionDeCours.matiere', 'statutPresence']);
+
+        // Filtrer selon le rôle de l'utilisateur
+        if ($user->roles->first()->code === 'enseignant') {
+            // Les enseignants ne voient que les présences de leurs sessions
+            $query->whereHas('sessionDeCours', function ($q) use ($user) {
+                $q->where('enseignant_id', $user->enseignant->id);
+            });
+        } elseif ($user->roles->first()->code === 'coordinateur') {
+            // Les coordinateurs voient les présences des sessions Workshop et E-learning
+            $query->whereHas('sessionDeCours.typeCours', function ($q) {
+                $q->whereIn('code', ['workshop', 'e_learning']);
+            });
+        } elseif ($user->roles->first()->code === 'etudiant') {
+            // Les étudiants ne voient que leurs propres présences
+            $query->where('etudiant_id', $user->etudiant->id);
+        } elseif ($user->roles->first()->code === 'parent') {
+            // Les parents voient les présences de leurs enfants
+            $query->whereHas('etudiant.parents', function ($q) use ($user) {
+                $q->where('user_id', $user->id);
+            });
+        }
+
+        // Appliquer les filtres si présents
+        if ($request->filled('session_id')) {
+            $query->where('course_session_id', $request->session_id);
+        }
+
+        if ($request->filled('etudiant_id')) {
+            $query->where('etudiant_id', $request->etudiant_id);
+        }
+
+        if ($request->filled('classe_id')) {
+            $query->whereHas('sessionDeCours', function ($q) use ($request) {
+                $q->where('classe_id', $request->classe_id);
+            });
+        }
+
+        if ($request->filled('statut_id')) {
+            $query->where('statut_presence_id', $request->statut_id);
+        }
+
+        if ($request->filled('date_debut')) {
+            $query->whereDate('enregistre_le', '>=', $request->date_debut);
+        }
+
+        if ($request->filled('date_fin')) {
+            $query->whereDate('enregistre_le', '<=', $request->date_fin);
+        }
+
+        // Trier par date d'enregistrement (plus récent en premier)
+        $presences = $query->orderBy('enregistre_le', 'desc')->paginate($perPage);
+
+        // Récupérer les classes pour le filtre
+        $classes = \App\Models\Classe::orderBy('nom')->get();
+
+        // Filtrer les classes selon le rôle de l'utilisateur
+        if ($user->roles->first()->code === 'coordinateur') {
+            $coordinateur = $user->coordinateur;
+            if ($coordinateur && $coordinateur->promotion) {
+                $classes = $coordinateur->promotion->classes()->orderBy('nom')->get();
+            } else {
+                $classes = collect(); // Aucune classe si pas de promotion
+            }
+        }
+
+        return view('presences.index', compact('presences', 'classes'));
+    }
+
     public function store(Request $request)
     {
         $request->validate([
@@ -20,7 +99,7 @@ class PresenceController extends Controller
         ]);
 
         $session = SessionDeCours::findOrFail($request->session_id);
-        $user = auth()->user();
+        $user = Auth::user();
 
         // Vérifier que l'utilisateur est autorisé à faire l'appel
         if ($user->roles->first()->code === 'enseignant' && $session->enseignant_id !== $user->enseignant->id) {
@@ -59,7 +138,7 @@ class PresenceController extends Controller
             'statut_id' => 'required|exists:statuts_presence,id'
         ]);
 
-        $user = auth()->user();
+        $user = Auth::user();
 
         // Vérifier que l'utilisateur est autorisé à modifier la présence
         if ($user->roles->first()->code === 'enseignant' && $presence->sessionDeCours->enseignant_id !== $user->enseignant->id) {

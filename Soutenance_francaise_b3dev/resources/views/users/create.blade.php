@@ -20,9 +20,15 @@
             @endif
             <form method="POST" action="{{ route('users.store') }}" enctype="multipart/form-data" class="space-y-6">
                 @csrf
-                <div>
-                    <label for="name" class="block text-sm font-medium text-gray-700">Nom complet</label>
-                    <input type="text" name="name" id="name" value="{{ old('name') }}" required autofocus class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="nom" class="block text-sm font-medium text-gray-700">Nom</label>
+                        <input type="text" name="nom" id="nom" value="{{ old('nom') }}" required autofocus class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                    <div>
+                        <label for="prenom" class="block text-sm font-medium text-gray-700">Prénom</label>
+                        <input type="text" name="prenom" id="prenom" value="{{ old('prenom') }}" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
                 </div>
                 <div>
                     <label for="date_naissance" class="block text-sm font-medium text-gray-700">Date de naissance</label>

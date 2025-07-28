@@ -63,7 +63,7 @@ use Illuminate\Support\Facades\Storage;
                                 </span>
                             @endif
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900">{{ $user->name }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900">{{ $user->nom }} {{ $user->prenom }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-gray-600">{{ $user->email }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-gray-600 capitalize">{{ $user->roles->first()->nom ?? '-' }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-right space-x-2">

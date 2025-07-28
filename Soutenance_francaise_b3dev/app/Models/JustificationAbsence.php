@@ -17,6 +17,8 @@ class JustificationAbsence extends Model
         'date_justification',
         'motif',
         'presence_id',
+        'piece_jointe',
+        'statut',
     ];
 
     protected $casts = [

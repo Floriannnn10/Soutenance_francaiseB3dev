@@ -42,7 +42,7 @@
                                 @endif
                             </div>
                             <h3 class="text-lg font-semibold text-gray-900">{{ $user->prenom }} {{ $user->nom }}</h3>
-                            <p class="text-sm text-gray-600">{{ $user->role->nom ?? 'Rôle non défini' }}</p>
+                            <p class="text-sm text-gray-600">{{ $user->roles->first()->nom ?? 'Rôle non défini' }}</p>
                         </div>
 
                         <!-- Détails -->
@@ -60,7 +60,7 @@
                                     </div>
                                     <div class="flex justify-between">
                                         <span class="text-sm font-medium text-gray-700">Rôle :</span>
-                                        <span class="text-sm text-gray-900">{{ $user->role->nom ?? 'Non défini' }}</span>
+                                        <span class="text-sm text-gray-900">{{ $user->roles->first()->nom ?? 'Non défini' }}</span>
                                     </div>
                                     <div class="flex justify-between">
                                         <span class="text-sm font-medium text-gray-700">Créé le :</span>

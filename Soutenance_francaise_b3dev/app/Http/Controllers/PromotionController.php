@@ -25,7 +25,23 @@ class PromotionController extends Controller
         $request->validate([
             'nom' => 'required|string|max:255|unique:promotions,nom',
         ]);
-        Promotion::create(['nom' => $request->nom]);
+
+        // Récupérer la première année académique ou créer une par défaut
+        $anneeAcademique = \App\Models\AnneeAcademique::first();
+        if (!$anneeAcademique) {
+            $anneeAcademique = \App\Models\AnneeAcademique::create([
+                'nom' => '2024-2025',
+                'date_debut' => '2024-09-01',
+                'date_fin' => '2025-08-31',
+                'est_active' => true
+            ]);
+        }
+
+        Promotion::create([
+            'nom' => $request->nom,
+            'annee_academique_id' => $anneeAcademique->id
+        ]);
+
         return redirect()->route('promotions.index')->with('success', 'Promotion créée avec succès.');
     }
 
@@ -48,4 +64,4 @@ class PromotionController extends Controller
         $promotion->delete();
         return redirect()->route('promotions.index')->with('success', 'Promotion supprimée avec succès.');
     }
-} 
+}

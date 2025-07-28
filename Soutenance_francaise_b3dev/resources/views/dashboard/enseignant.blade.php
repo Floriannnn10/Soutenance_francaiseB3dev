@@ -6,7 +6,7 @@
 
     <!-- Emploi du temps -->
     <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
-        <h3 class="text-lg font-semibold mb-4">Mon emploi du temps</h3>
+        <h3 class="text-lg font-semibold mb-4">Mon emploi du temps (Cours en présentiel uniquement)</h3>
         <div class="overflow-x-auto">
             <table class="min-w-full bg-white">
                 <thead class="bg-gray-100">
@@ -26,16 +26,8 @@
                         <td class="py-2 px-4 border">{{ $creneau['horaire'] }}</td>
                         @foreach(['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'] as $jour)
                             <td class="py-2 px-4 border">
-                                @if(isset($creneau[$jour]))
-                                    <div class="p-2 rounded
-                                        @if($creneau[$jour]['type'] === 'presentiel')
-                                            bg-blue-100
-                                        @elseif($creneau[$jour]['type'] === 'e-learning')
-                                            bg-green-100
-                                        @else
-                                            bg-yellow-100
-                                        @endif
-                                    ">
+                                @if(isset($creneau[$jour]) && $creneau[$jour]['type'] === 'presentiel')
+                                    <div class="p-2 rounded bg-blue-100">
                                         <p class="font-semibold">{{ $creneau[$jour]['matiere'] }}</p>
                                         <p class="text-sm">{{ $creneau[$jour]['classe'] }}</p>
                                         <p class="text-xs text-gray-600">{{ $creneau[$jour]['type'] }}</p>
@@ -50,22 +42,24 @@
         </div>
     </div>
 
-    <!-- Liste des cours -->
+    <!-- Liste des cours en présentiel -->
     <div class="bg-white rounded-lg shadow-lg p-6">
-        <h3 class="text-lg font-semibold mb-4">Mes cours</h3>
+        <h3 class="text-lg font-semibold mb-4">Mes cours en présentiel</h3>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             @foreach($cours ?? [] as $cours)
-            <div class="border rounded-lg p-4">
-                <h4 class="font-semibold">{{ $cours->matiere->nom }}</h4>
-                <p class="text-sm text-gray-600">{{ $cours->classe->nom }}</p>
-                <p class="text-sm">Type: {{ $cours->typeCours->nom }}</p>
-                <div class="mt-2">
-                    <a href="{{ route('presences.index', ['cours_id' => $cours->id]) }}"
-                       class="text-blue-600 hover:text-blue-800">
-                        Voir les présences
-                    </a>
+                @if($cours->typeCours->code === 'presentiel')
+                <div class="border rounded-lg p-4">
+                    <h4 class="font-semibold">{{ $cours->matiere->nom }}</h4>
+                    <p class="text-sm text-gray-600">{{ $cours->classe->nom }}</p>
+                    <p class="text-sm text-blue-600">Type: {{ $cours->typeCours->nom }}</p>
+                    <div class="mt-2">
+                        <a href="{{ route('presences.index', ['cours_id' => $cours->id]) }}"
+                           class="text-blue-600 hover:text-blue-800">
+                            Voir les présences
+                        </a>
+                    </div>
                 </div>
-            </div>
+                @endif
             @endforeach
         </div>
     </div>

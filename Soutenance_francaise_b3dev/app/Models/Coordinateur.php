@@ -15,10 +15,12 @@ class Coordinateur extends Model
 
     protected $fillable = [
         'user_id',
+        'email',
         'prenom',
         'nom',
         'photo',
         'promotion_id',
+        'est_actif',
     ];
 
     public function user(): BelongsTo

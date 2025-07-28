@@ -8,14 +8,16 @@ use App\Models\Enseignant;
 use App\Models\SessionDeCours;
 use App\Models\TypeCours;
 use App\Models\StatutSession;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 
 class EmploiDuTempsController extends Controller
 {
     public function index(Request $request)
     {
-        $user = auth()->user();
+        $user = Auth::user();
         $anneeActive = AnneeAcademique::getActive();
 
         switch ($user->roles->first()->code) {
@@ -32,7 +34,7 @@ class EmploiDuTempsController extends Controller
 
     private function indexCoordinateur(Request $request, AnneeAcademique $anneeAcademique)
     {
-        $user = auth()->user();
+        $user = Auth::user();
         $coordinateur = $user->coordinateur;
 
         if (!$coordinateur || !$coordinateur->promotion) {
@@ -42,7 +44,10 @@ class EmploiDuTempsController extends Controller
                 'typesCours' => collect(),
                 'statutsSession' => collect(),
                 'sessions' => collect(),
-                'anneeActive' => $anneeAcademique
+                'anneeActive' => $anneeAcademique,
+                'anneesAcademiques' => AnneeAcademique::orderBy('date_debut', 'desc')->get(),
+                'matieres' => collect(),
+                'classeFiltree' => null
             ]);
         }
 
@@ -51,13 +56,24 @@ class EmploiDuTempsController extends Controller
         $typesCours = TypeCours::all();
         $statutsSession = StatutSession::all();
         $anneeActive = $anneeAcademique;
+        $anneesAcademiques = AnneeAcademique::orderBy('date_debut', 'desc')->get();
+        $matieres = \App\Models\Matiere::all();
 
         // Récupérer les sessions pour les classes de la promotion du coordinateur
-        $sessions = SessionDeCours::with(['classe', 'matiere', 'enseignant', 'typeCours', 'statutSession'])
+        $sessionsQuery = SessionDeCours::with(['classe', 'matiere', 'enseignant', 'typeCours', 'statutSession'])
             ->whereIn('classe_id', $classes->pluck('id'))
-            ->where('annee_academique_id', $anneeAcademique->id)
-            ->orderBy('start_time')
-            ->get();
+            ->where('annee_academique_id', $anneeAcademique->id);
+
+        // Filtrer par classe spécifique si demandé
+        $classeFiltree = null;
+        if ($request->has('classe_id') && $request->classe_id) {
+            $classeFiltree = Classe::find($request->classe_id);
+            if ($classeFiltree && $classeFiltree->promotion_id == $coordinateur->promotion_id) {
+                $sessionsQuery->where('classe_id', $request->classe_id);
+            }
+        }
+
+        $sessions = $sessionsQuery->orderBy('start_time')->get();
 
         return view('emplois-du-temps.coordinateur', compact(
             'classes',
@@ -65,25 +81,50 @@ class EmploiDuTempsController extends Controller
             'typesCours',
             'statutsSession',
             'sessions',
-            'anneeActive'
+            'anneeActive',
+            'anneesAcademiques',
+            'matieres',
+            'classeFiltree'
         ));
     }
 
     private function indexEnseignant(Request $request, AnneeAcademique $anneeAcademique)
     {
+        $user = Auth::user();
+        $enseignant = $user->enseignant;
+
+        if (!$enseignant) {
+            return redirect()->back()->with('error', 'Accès non autorisé.');
+        }
+
+        // Sélection d'année académique
+        $anneeId = $request->input('annee_id');
+        $anneesAcademiques = AnneeAcademique::orderBy('date_debut', 'desc')->get();
+
+        if ($anneeId) {
+            $anneeActive = AnneeAcademique::find($anneeId);
+        } else {
+            $anneeActive = $anneeAcademique;
+        }
+
+        if (!$anneeActive) {
+            $anneeActive = $anneesAcademiques->first();
+        }
+
+        // Récupérer les sessions de l'enseignant pour l'année sélectionnée
         $sessions = SessionDeCours::with(['classe', 'matiere', 'typeCours', 'statutSession'])
-            ->where('enseignant_id', auth()->user()->enseignant->id)
-            ->where('annee_academique_id', $anneeAcademique->id)
+            ->where('enseignant_id', $enseignant->id)
+            ->where('annee_academique_id', $anneeActive->id)
             ->orderBy('start_time')
             ->get();
 
-        return view('emplois-du-temps.enseignant', compact('sessions'));
+        return view('emplois-du-temps.enseignant', compact('sessions', 'anneeActive', 'anneesAcademiques'));
     }
 
     private function indexEtudiant(Request $request, AnneeAcademique $anneeAcademique)
     {
         $sessions = SessionDeCours::with(['matiere', 'enseignant', 'typeCours', 'statutSession'])
-            ->where('classe_id', auth()->user()->etudiant->classe_id)
+            ->where('classe_id', Auth::user()->etudiant->classe_id)
             ->where('annee_academique_id', $anneeAcademique->id)
             ->orderBy('start_time')
             ->get();

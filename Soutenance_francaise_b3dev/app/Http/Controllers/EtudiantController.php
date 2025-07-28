@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Etudiant;
 use App\Models\Classe;
+use App\Models\ParentEtudiant;
+use App\Rules\ValidEmailDomain;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
@@ -45,7 +47,7 @@ class EtudiantController extends Controller
         $request->validate([
             'nom' => 'required|string|max:255',
             'prenom' => 'required|string|max:255',
-            'email' => 'required|email|unique:etudiants',
+            'email' => ['required', 'email', 'unique:users,email', new ValidEmailDomain],
             'password' => 'required|string|min:6|confirmed',
             'telephone' => 'nullable|string|max:20',
             'date_naissance' => 'nullable|date',
@@ -54,12 +56,41 @@ class EtudiantController extends Controller
             'photo' => 'nullable|image|max:2048',
         ]);
 
-        $data = $request->all();
-        $data['password'] = bcrypt($request->password);
-        if ($request->hasFile('photo')) {
-            $data['photo'] = $request->file('photo')->store('etudiants', 'public');
+        // Créer l'utilisateur
+        $user = \App\Models\User::create([
+            'nom' => $request->nom,
+            'prenom' => $request->prenom,
+            'email' => $request->email,
+            'password' => bcrypt($request->password),
+        ]);
+
+        // Attacher le rôle étudiant
+        $roleEtudiant = \App\Models\Role::where('nom', 'Étudiant')->first();
+        if ($roleEtudiant) {
+            $user->roles()->attach($roleEtudiant->id);
         }
-        $etudiant = Etudiant::create($data);
+
+        // Gérer l'upload de la photo
+        $photoPath = null;
+        if ($request->hasFile('photo')) {
+            $photoPath = $request->file('photo')->store('etudiants', 'public');
+        }
+
+        // Créer l'étudiant
+        $etudiant = Etudiant::create([
+            'user_id' => $user->id,
+            'nom' => $request->nom,
+            'prenom' => $request->prenom,
+            'email' => $request->email,
+            'classe_id' => $request->classe_id,
+            'date_naissance' => $request->date_naissance,
+            'photo' => $photoPath,
+        ]);
+
+        // Synchroniser la photo avec l'utilisateur
+        if ($photoPath) {
+            $user->update(['photo' => $photoPath]);
+        }
 
         return redirect()->route('etudiants.index')
             ->with('success', 'Étudiant créé avec succès.');
@@ -91,7 +122,7 @@ class EtudiantController extends Controller
         $request->validate([
             'nom' => 'required|string|max:255',
             'prenom' => 'required|string|max:255',
-            'email' => 'required|email|unique:etudiants,email,' . $etudiant->id,
+            'email' => ['required', 'email', 'unique:users,email,' . ($etudiant->user_id ?? ''), new ValidEmailDomain],
             'telephone' => 'nullable|string|max:20',
             'date_naissance' => 'nullable|date',
             'adresse' => 'nullable|string',
@@ -99,22 +130,69 @@ class EtudiantController extends Controller
             'photo' => 'nullable|image|max:2048',
         ]);
 
-        $data = $request->all();
-        if ($request->filled('password')) {
-            $request->validate([
-                'password' => 'string|min:6|confirmed',
+        // Vérifier si l'étudiant a un utilisateur associé
+        if ($etudiant->user_id && $etudiant->user) {
+            // Mettre à jour l'utilisateur existant
+            $user = $etudiant->user;
+            $user->update([
+                'nom' => $request->nom,
+                'prenom' => $request->prenom,
+                'email' => $request->email,
             ]);
-            $data['password'] = bcrypt($request->password);
-        } else {
-            unset($data['password']);
-        }
-        if ($request->hasFile('photo')) {
-            if ($etudiant->photo) {
-                Storage::disk('public')->delete($etudiant->photo);
+
+            // Mettre à jour le mot de passe si fourni
+            if ($request->filled('password')) {
+                $request->validate([
+                    'password' => 'string|min:6|confirmed',
+                ]);
+                $user->update(['password' => bcrypt($request->password)]);
             }
-            $data['photo'] = $request->file('photo')->store('etudiants', 'public');
+        } else {
+            // Créer un nouvel utilisateur pour cet étudiant
+            $user = \App\Models\User::create([
+                'nom' => $request->nom,
+                'prenom' => $request->prenom,
+                'email' => $request->email,
+                'password' => bcrypt($request->password ?? 'password'),
+            ]);
+
+            // Attacher le rôle étudiant
+            $roleEtudiant = \App\Models\Role::where('nom', 'Étudiant')->first();
+            if ($roleEtudiant) {
+                $user->roles()->attach($roleEtudiant->id);
+            }
+
+            // Mettre à jour l'étudiant avec le user_id
+            $etudiant->update(['user_id' => $user->id]);
         }
-        $etudiant->update($data);
+
+        // Mettre à jour l'étudiant
+        $etudiantData = [
+            'nom' => $request->nom,
+            'prenom' => $request->prenom,
+            'email' => $request->email,
+            'classe_id' => $request->classe_id,
+            'date_naissance' => $request->date_naissance,
+        ];
+
+        // Gérer l'upload de la photo
+        if ($request->hasFile('photo')) {
+            // Supprimer l'ancienne photo si elle existe
+            if ($etudiant->photo && \Illuminate\Support\Facades\Storage::disk('public')->exists($etudiant->photo)) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($etudiant->photo);
+            }
+
+            // Sauvegarder la nouvelle photo
+            $photoPath = $request->file('photo')->store('etudiants', 'public');
+            $etudiantData['photo'] = $photoPath;
+        }
+
+        $etudiant->update($etudiantData);
+
+        // Synchroniser la photo avec l'utilisateur
+        if (isset($etudiantData['photo']) && $etudiant->user) {
+            $etudiant->user->update(['photo' => $etudiantData['photo']]);
+        }
 
         return redirect()->route('etudiants.index')
             ->with('success', 'Étudiant mis à jour avec succès.');
@@ -134,5 +212,31 @@ class EtudiantController extends Controller
 
         return redirect()->route('etudiants.index')
             ->with('success', 'Étudiant supprimé avec succès.');
+    }
+
+    /**
+     * Afficher le formulaire pour attribuer des parents à un étudiant
+     */
+    public function attribuerParents(Etudiant $etudiant): View
+    {
+        $parents = ParentEtudiant::with('user')->get();
+        $etudiant->load('parents');
+        return view('etudiants.attribuer-parents', compact('etudiant', 'parents'));
+    }
+
+    /**
+     * Attribuer des parents à un étudiant
+     */
+    public function storeParents(Request $request, Etudiant $etudiant): RedirectResponse
+    {
+        $request->validate([
+            'parents' => 'required|array|min:1',
+            'parents.*' => 'exists:parents,id',
+        ]);
+
+        $etudiant->parents()->sync($request->parents);
+
+        return redirect()->route('etudiants.show', $etudiant)
+            ->with('success', 'Parents attribués avec succès.');
     }
 }

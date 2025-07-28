@@ -10,22 +10,44 @@
             <!-- Informations du coordinateur -->
             <div class="mb-8">
                 <div class="bg-white dark:bg-gray-800 shadow-sm rounded-lg p-6">
-                    <div class="flex items-center gap-6">
-                        @php
-                            $photo = $coordinateur && $coordinateur->photo
-                                ? asset('storage/'.$coordinateur->photo)
-                                : 'https://ui-avatars.com/api/?name=' . urlencode($coordinateur?->prenom . ' ' . $coordinateur?->nom);
-            @endphp
-                        <img src="{{ $photo }}" alt="Photo" class="w-16 h-16 rounded-full object-cover">
-                    <div>
-                            <div class="text-xl font-bold text-gray-900">{{ $coordinateur?->prenom }} {{ $coordinateur?->nom }}</div>
-                            <div class="text-gray-600">Coordinateur Pédagogique</div>
-                            @if($promotion)
-                                <div class="text-blue-600 font-semibold mt-1">Promotion : {{ $promotion->nom }}</div>
-                            @else
-                                <div class="text-red-600 font-semibold mt-1">Aucune promotion assignée</div>
-                            @endif
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-6">
+                            @php
+                                $photo = $coordinateur && $coordinateur->photo
+                                    ? asset('storage/'.$coordinateur->photo)
+                                    : 'https://ui-avatars.com/api/?name=' . urlencode($coordinateur?->prenom . ' ' . $coordinateur?->nom);
+                            @endphp
+                            <img src="{{ $photo }}" alt="Photo" class="w-16 h-16 rounded-full object-cover">
+                            <div>
+                                <div class="text-xl font-bold text-gray-900">{{ $coordinateur?->prenom }} {{ $coordinateur?->nom }}</div>
+                                <div class="text-gray-600">Coordinateur Pédagogique</div>
+                                @if($promotion)
+                                    <div class="text-blue-600 font-semibold mt-1">Promotion : {{ $promotion->nom }}</div>
+                                @else
+                                    <div class="text-red-600 font-semibold mt-1">Aucune promotion assignée</div>
+                                @endif
+                            </div>
                         </div>
+
+                        <!-- Sélecteur d'année académique -->
+                        @if($anneesAcademiques && $anneesAcademiques->count() > 0)
+                            <div class="flex items-center gap-4">
+                                <label for="annee_select" class="text-sm font-medium text-gray-700">Année académique :</label>
+                                <select id="annee_select" class="rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                                    @foreach($anneesAcademiques as $annee)
+                                        <option value="{{ $annee->id }}"
+                                                {{ $anneeActive && $anneeActive->id == $annee->id ? 'selected' : '' }}
+                                                data-url="{{ route('dashboard') }}?annee_id={{ $annee->id }}">
+                                            {{ $annee->nom }}
+                                            @if($annee->actif)
+                                                (Active)
+                                            @endif
+                                            - {{ $annee->getStatutAttribute() }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -83,8 +105,25 @@
                                 </svg>
                             </div>
                             <div class="ml-4">
-                                <p class="text-sm font-medium text-gray-600">Taux Présence</p>
-                                <p class="text-2xl font-semibold text-gray-900">{{ $stats['taux_presence'] }}%</p>
+                                <p class="text-sm font-medium text-gray-600">Taux Présence (Statut)</p>
+                                <p class="text-2xl font-semibold text-gray-900">{{ $stats['taux_presence_statut'] }}%</p>
+                                <p class="text-xs text-gray-500">{{ $stats['total_presences'] }} présences</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white dark:bg-gray-800 shadow-sm rounded-lg p-6">
+                        <div class="flex items-center">
+                            <div class="p-3 rounded-full bg-blue-50 p-4 rounded-lg">
+                                <div class="flex items-center">
+                                    <div class="p-2 bg-blue-100 rounded-lg">
+                                        <i class="fas fa-chart-line text-blue-600"></i>
+                                    </div>
+                                    <div class="ml-4">
+                                        <p class="text-sm font-medium text-gray-600">Taux Présence</p>
+                                        <p class="text-2xl font-semibold text-gray-900">{{ $stats['taux_presence_statut'] }}%</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -92,7 +131,7 @@
 
                 <!-- Actions rapides -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                    <a href="{{ route('emplois-du-temps.index') }}" class="bg-white dark:bg-gray-800 shadow-sm rounded-lg p-6 hover:shadow-md transition-shadow">
+                    <a href="{{ route('emplois-du-temps.index') }}?annee_id={{ $anneeActive?->id }}" class="bg-white dark:bg-gray-800 shadow-sm rounded-lg p-6 hover:shadow-md transition-shadow">
                         <div class="flex items-center">
                             <div class="p-3 rounded-full bg-blue-100 text-blue-600">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -133,29 +172,63 @@
                             </div>
                         </div>
                     </a>
+
+                    <a href="{{ route('statistiques.index') }}" class="bg-white dark:bg-gray-800 shadow-sm rounded-lg p-6 hover:shadow-md transition-shadow">
+                        <div class="flex items-center">
+                            <div class="p-3 rounded-full bg-indigo-100 text-indigo-600">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                </svg>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-lg font-semibold text-gray-900">Statistiques</h3>
+                                <p class="text-gray-600">Analyser les données</p>
+                            </div>
+                        </div>
+                    </a>
+
+                    <a href="{{ route('presences.index') }}" class="bg-white dark:bg-gray-800 shadow-sm rounded-lg p-6 hover:shadow-md transition-shadow">
+                        <div class="flex items-center">
+                            <div class="p-3 rounded-full bg-orange-100 text-orange-600">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-lg font-semibold text-gray-900">Présences</h3>
+                                <p class="text-gray-600">Gérer les présences</p>
+                            </div>
+                        </div>
+                    </a>
                 </div>
 
                 <!-- Classes de la promotion -->
                 <div class="bg-white dark:bg-gray-800 shadow-sm rounded-lg p-6">
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">Classes de la promotion {{ $promotion->nom }}</h3>
-                @if($classes->count())
+                    @if($classes->count())
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        @foreach($classes as $classe)
-                                <div class="border border-gray-200 rounded-lg p-4">
+                            @foreach($classes as $classe)
+                                <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
                                     <h4 class="font-semibold text-blue-700">{{ $classe->nom }}</h4>
                                     <p class="text-sm text-gray-600">{{ $classe->etudiants->count() }} étudiants</p>
+                                    <div class="mt-2">
+                                        <a href="{{ route('emplois-du-temps.index') }}?classe_id={{ $classe->id }}&annee_id={{ $anneeActive?->id }}"
+                                           class="text-sm text-blue-600 hover:text-blue-800">
+                                            Voir emploi du temps →
+                                        </a>
+                                    </div>
                                 </div>
-                        @endforeach
+                            @endforeach
                         </div>
-                @else
+                    @else
                         <div class="text-center py-8">
                             <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
                             </svg>
                             <p class="mt-2 text-gray-500">Aucune classe pour cette promotion</p>
                         </div>
-                @endif
-            </div>
+                    @endif
+                </div>
             @else
                 <!-- Message si aucune promotion assignée -->
                 <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
@@ -168,6 +241,17 @@
             @endif
         </div>
     </div>
+
+    <script>
+        // Gestion du changement d'année académique
+        document.getElementById('annee_select')?.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            const url = selectedOption.dataset.url;
+            if (url) {
+                window.location.href = url;
+            }
+        });
+    </script>
 </x-app-layout>
 
 

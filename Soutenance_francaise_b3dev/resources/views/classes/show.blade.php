@@ -140,7 +140,7 @@
                                         @foreach($class->sessionsDeCours as $session)
                                         <tr>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $session->matiere->nom ?? 'N/A' }}</td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $session->enseignant->user->name ?? 'N/A' }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $session->enseignant->user->nom }} {{ $session->enseignant->user->prenom ?? 'N/A' }}</td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $session->date ? $session->date->format('d/m/Y') : 'N/A' }}</td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $session->heure_debut ?? 'N/A' }} - {{ $session->heure_fin ?? 'N/A' }}</td>
                                             <td class="px-6 py-4 whitespace-nowrap">

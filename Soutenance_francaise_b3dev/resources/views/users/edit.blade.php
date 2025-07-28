@@ -21,9 +21,15 @@
             <form method="POST" action="{{ route('users.update', $user) }}" enctype="multipart/form-data" class="space-y-6">
                 @csrf
                 @method('PUT')
-                <div>
-                    <label for="name" class="block text-sm font-medium text-gray-700">Nom complet</label>
-                    <input type="text" name="name" id="name" value="{{ old('name', $user->name) }}" required autofocus class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="nom" class="block text-sm font-medium text-gray-700">Nom</label>
+                        <input type="text" name="nom" id="nom" value="{{ old('nom', $user->nom) }}" required autofocus class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                    <div>
+                        <label for="prenom" class="block text-sm font-medium text-gray-700">Prénom</label>
+                        <input type="text" name="prenom" id="prenom" value="{{ old('prenom', $user->prenom) }}" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
                 </div>
                 <div>
                     <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
@@ -62,6 +68,42 @@
                         </div>
                     @endif
                 </div>
+
+                <!-- Champs conditionnels selon le rôle -->
+                <div id="classe-field" style="display: none;">
+                    <label for="classe_id" class="block text-sm font-medium text-gray-700">Classe (pour les étudiants)</label>
+                    <select name="classe_id" id="classe_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                        <option value="">Sélectionner une classe</option>
+                        @foreach($classes as $classe)
+                            <option value="{{ $classe->id }}" {{ old('classe_id', $user->etudiant?->classe_id) == $classe->id ? 'selected' : '' }}>{{ $classe->nom }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div id="telephone-field" style="display: none;">
+                    <label for="telephone" class="block text-sm font-medium text-gray-700">Téléphone (pour les parents)</label>
+                    <input type="text" name="telephone" id="telephone" value="{{ old('telephone', $user->parent?->telephone) }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+
+                <div id="promotion-field" style="display: none;">
+                    <label for="promotion_id" class="block text-sm font-medium text-gray-700">Promotion (pour les coordinateurs)</label>
+                    <select name="promotion_id" id="promotion_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                        <option value="">Sélectionner une promotion</option>
+                        @foreach($promotions as $promotion)
+                            <option value="{{ $promotion->id }}" {{ old('promotion_id', $user->coordinateur?->promotion_id) == $promotion->id ? 'selected' : '' }}>{{ $promotion->nom }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div id="matieres-field" style="display: none;">
+                    <label for="matieres" class="block text-sm font-medium text-gray-700">Matières enseignées (pour les enseignants)</label>
+                    <select name="matieres[]" id="matieres" multiple class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                        @foreach($matieres as $matiere)
+                            <option value="{{ $matiere->id }}" {{ (collect(old('matieres', $user->enseignant?->matieres->pluck('id')))->contains($matiere->id)) ? 'selected' : '' }}>{{ $matiere->nom }} ({{ $matiere->code }})</option>
+                        @endforeach
+                    </select>
+                    <p class="text-xs text-gray-500 mt-1">Maintenez Ctrl (Windows) ou Cmd (Mac) pour sélectionner plusieurs matières.</p>
+                </div>
                 <div class="flex justify-end">
                     <a href="{{ route('users.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm font-medium rounded-md mr-2">Annuler</a>
                     <button type="submit" class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-md shadow transition">Enregistrer</button>
@@ -69,4 +111,41 @@
             </form>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const roleSelect = document.getElementById('role_id');
+            const classeField = document.getElementById('classe-field');
+            const telephoneField = document.getElementById('telephone-field');
+            const promotionField = document.getElementById('promotion-field');
+            const matieresField = document.getElementById('matieres-field');
+
+            function toggleFields() {
+                const selected = roleSelect.options[roleSelect.selectedIndex]?.text?.toLowerCase();
+
+                // Masquer tous les champs
+                classeField.style.display = 'none';
+                telephoneField.style.display = 'none';
+                promotionField.style.display = 'none';
+                matieresField.style.display = 'none';
+
+                // Afficher les champs selon le rôle
+                if(selected && (selected.includes('étudiant') || selected.includes('etudiant'))) {
+                    classeField.style.display = '';
+                } else if(selected && selected.includes('parent')) {
+                    telephoneField.style.display = '';
+                } else if(selected && selected.includes('coordinateur')) {
+                    promotionField.style.display = '';
+                } else if(selected && selected.includes('enseignant')) {
+                    matieresField.style.display = '';
+                }
+            }
+
+            // Initialiser l'affichage
+            toggleFields();
+
+            // Écouter les changements
+            roleSelect.addEventListener('change', toggleFields);
+        });
+    </script>
 </x-app-layout>

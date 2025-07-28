@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('nom');
             $table->string('photo')->nullable();
             $table->foreignId('promotion_id')->nullable()->constrained();
+            $table->boolean('est_actif')->default(true);
             $table->timestamps();
         });
     }

@@ -30,35 +30,53 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900">
                     <!-- Filtres -->
-                    <div class="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <div>
-                            <label for="filter_semestre" class="block text-sm font-medium text-gray-700">Semestre</label>
-                            <select id="filter_semestre" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
-                                <option value="">Tous les semestres</option>
-                                <!-- Options dynamiques via JavaScript -->
-                            </select>
-                        </div>
-                        <div>
-                            <label for="filter_classe" class="block text-sm font-medium text-gray-700">Classe</label>
-                            <select id="filter_classe" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
-                                <option value="">Toutes les classes</option>
-                                <!-- Options dynamiques via JavaScript -->
-                            </select>
-                        </div>
-                        <div>
-                            <label for="filter_matiere" class="block text-sm font-medium text-gray-700">Matière</label>
-                            <select id="filter_matiere" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
-                                <option value="">Toutes les matières</option>
-                                <!-- Options dynamiques via JavaScript -->
-                            </select>
-                        </div>
-                        <div>
-                            <label for="filter_statut" class="block text-sm font-medium text-gray-700">Statut</label>
-                            <select id="filter_statut" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
-                                <option value="">Tous les statuts</option>
-                                <!-- Options dynamiques via JavaScript -->
-                            </select>
-                        </div>
+                    <div class="bg-white rounded-lg shadow p-6 mb-6">
+                        <h3 class="text-lg font-semibold mb-4">Filtrer les sessions</h3>
+                        <form method="GET" action="{{ route('sessions-de-cours.index') }}" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div>
+                                <label for="semestre_id" class="block text-sm font-medium text-gray-700 mb-1">Semestre</label>
+                                <select name="semestre_id" id="semestre_id" class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="">Tous les semestres</option>
+                                    @foreach($semestres as $semestre)
+                                        <option value="{{ $semestre->id }}" {{ request('semestre_id') == $semestre->id ? 'selected' : '' }}>
+                                            {{ $semestre->nom }} ({{ $semestre->anneeAcademique->nom ?? '' }})
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div>
+                                <label for="classe_id" class="block text-sm font-medium text-gray-700 mb-1">Classe</label>
+                                <select name="classe_id" id="classe_id" class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="">Toutes les classes</option>
+                                    @foreach($classes as $classe)
+                                        <option value="{{ $classe->id }}" {{ request('classe_id') == $classe->id ? 'selected' : '' }}>
+                                            {{ $classe->nom }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div>
+                                <label for="matiere_id" class="block text-sm font-medium text-gray-700 mb-1">Matière</label>
+                                <select name="matiere_id" id="matiere_id" class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="">Toutes les matières</option>
+                                    @foreach($matieres as $matiere)
+                                        <option value="{{ $matiere->id }}" {{ request('matiere_id') == $matiere->id ? 'selected' : '' }}>
+                                            {{ $matiere->nom }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="flex items-end">
+                                <div class="flex space-x-2">
+                                    <button type="submit" class="bg-blue-600 hover:bg-[#FD0800] text-white font-medium py-2 px-4 rounded-md transition">
+                                        <i class="fas fa-search mr-2"></i>Filtrer
+                                    </button>
+                                    <a href="{{ route('sessions-de-cours.index') }}" class="bg-gray-500 hover:bg-[#FD0800] text-white font-medium py-2 px-4 rounded-md transition">
+                                        <i class="fas fa-times mr-2"></i>Réinitialiser
+                                    </a>
+                                </div>
+                            </div>
+                        </form>
                     </div>
 
                     <!-- Tableau des sessions -->
@@ -77,6 +95,9 @@
                                     </th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Enseignant
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Type de cours
                                     </th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Lieu
@@ -113,6 +134,9 @@
                                             </div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm text-gray-900">{{ $session->type_cours_nom }}</div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
                                             <div class="text-sm text-gray-500">{{ $session->location ?: 'Non défini' }}</div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
@@ -135,8 +159,12 @@
                                                 </a>
                                                 @php
                                                     $type = strtolower(str_replace(['é', 'è', 'ê', 'ë'], 'e', $session->type_cours_nom ?? ''));
+                                                    $typeCode = strtolower($session->type_cours_code ?? '');
+                                                    $user = auth()->user();
+                                                    $isCoordinateur = $user && $user->roles->first()->code === 'coordinateur';
+                                                    $isEnseignant = $user && $user->roles->first()->code === 'enseignant';
                                                 @endphp
-                                                @if($type === 'workshop' || $type === 'e-learning' || $type === 'elearning')
+                                                @if(($isCoordinateur && ($type === 'workshop' || $typeCode === 'workshop' || $type === 'e-learning' || $typeCode === 'e_learning' || $type === 'elearning' || $type === 'presentiel' || $typeCode === 'presentiel')) || ($isEnseignant && ($type === 'presentiel' || $typeCode === 'presentiel')))
                                                     <a href="{{ route('sessions-de-cours.appel', $session->id) }}"
                                                        class="text-green-600 hover:text-green-900 flex items-center" title="Faire l'Appel">
                                                         <i class="fas fa-clipboard-check mr-2"></i>Faire l'Appel

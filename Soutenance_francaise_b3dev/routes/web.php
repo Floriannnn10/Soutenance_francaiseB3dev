@@ -52,6 +52,8 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('matieres', MatiereController::class);
         Route::resource('enseignants', EnseignantController::class);
         Route::resource('etudiants', EtudiantController::class);
+        Route::get('/etudiants/{etudiant}/attribuer-parents', [EtudiantController::class, 'attribuerParents'])->name('etudiants.attribuer-parents');
+        Route::post('/etudiants/{etudiant}/store-parents', [EtudiantController::class, 'storeParents'])->name('etudiants.store-parents');
         Route::resource('parents', ParentEtudiantController::class);
         Route::resource('promotions', PromotionController::class);
 
@@ -64,8 +66,9 @@ Route::middleware(['auth'])->group(function () {
 
     // Routes pour le coordinateur
     Route::middleware(['role:coordinateur'])->group(function () {
-        Route::resource('sessions-de-cours', SessionDeCoursController::class);
+        Route::resource('sessions-de-cours', SessionDeCoursController::class)->parameters(['sessions-de-cours' => 'sessionDeCour']);
         Route::get('/sessions-de-cours/{session}/appel', [SessionDeCoursController::class, 'appel'])->name('sessions-de-cours.appel');
+        Route::get('/api/sessions-de-cours/{session}', [SessionDeCoursController::class, 'getSessionJson'])->name('api.sessions-de-cours.show');
         Route::resource('emplois-du-temps', EmploiDuTempsController::class);
         Route::resource('justifications', JustificationAbsenceController::class);
         Route::get('/statistiques', [StatistiquesController::class, 'index'])->name('statistiques.index');
@@ -75,12 +78,26 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/presences', [PresenceController::class, 'index'])->name('presences.index');
         Route::post('/presences/store', [PresenceController::class, 'store'])->name('presences.store');
         Route::post('/presences/workshop-elearning', [PresenceController::class, 'storeWorkshopElearning'])->name('presences.workshop-elearning');
+
+        // Nouvelles routes pour le coordinateur
+        Route::get('/coordinateur/emplois-du-temps', [CoordinateurController::class, 'emploisDuTemps'])->name('coordinateur.emplois-du-temps');
+        Route::post('/coordinateur/creer-session', [CoordinateurController::class, 'creerSession'])->name('coordinateur.creer-session');
+        Route::put('/coordinateur/session/{session}', [CoordinateurController::class, 'modifierSession'])->name('coordinateur.modifier-session');
+        Route::post('/coordinateur/session/{session}/presence', [CoordinateurController::class, 'prisePresence'])->name('coordinateur.prise-presence');
+        Route::get('/coordinateur/session/{session}/etudiants', [CoordinateurController::class, 'getEtudiantsClasse'])->name('coordinateur.get-etudiants');
+        Route::get('/coordinateur/session/{session}/presences', [CoordinateurController::class, 'getPresencesSession'])->name('coordinateur.get-presences');
+        Route::get('/coordinateur/sessions-presentiel', [CoordinateurController::class, 'getSessionsPresentiel'])->name('coordinateur.sessions-presentiel');
     });
 
     // Routes pour l'enseignant
     Route::middleware(['role:enseignant'])->group(function () {
         Route::get('/emplois-du-temps/enseignant', [EmploiDuTempsController::class, 'enseignant'])->name('emplois-du-temps.enseignant');
         Route::post('/presences/presentiel', [PresenceController::class, 'storePresentiel'])->name('presences.presentiel');
+
+        // Nouvelles routes pour la prise de présence des enseignants
+        Route::post('/enseignant/session/{session}/presence', [EnseignantController::class, 'prisePresence'])->name('enseignant.prise-presence');
+        Route::get('/enseignant/session/{session}/etudiants', [EnseignantController::class, 'getEtudiantsClasse'])->name('enseignant.get-etudiants');
+        Route::get('/enseignant/sessions-presentiel', [EnseignantController::class, 'getSessionsPresentiel'])->name('enseignant.sessions-presentiel');
     });
 
     // Routes pour l'étudiant

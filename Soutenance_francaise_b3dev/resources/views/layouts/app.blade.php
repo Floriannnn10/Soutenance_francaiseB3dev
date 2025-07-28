@@ -120,7 +120,7 @@
                         } elseif ($user->coordinateur && $user->coordinateur->photo) {
                             $photo = asset('storage/' . $user->coordinateur->photo);
                         } else {
-                            $photo = 'https://ui-avatars.com/api/?name=' . urlencode($user->name) . '&background=000000&color=ffffff';
+                            $photo = 'https://ui-avatars.com/api/?name=' . urlencode($user->nom . ' ' . $user->prenom) . '&background=000000&color=ffffff';
                         }
                     @endphp
                     <img class="w-10 h-10 rounded-full object-cover" src="{{ $photo }}" alt="Avatar">
@@ -236,12 +236,12 @@
                         } elseif ($user->coordinateur && $user->coordinateur->photo) {
                             $photo = asset('storage/' . $user->coordinateur->photo);
                         } else {
-                            $photo = 'https://ui-avatars.com/api/?name=' . urlencode($user->name);
+                            $photo = 'https://ui-avatars.com/api/?name=' . urlencode($user->nom . ' ' . $user->prenom);
                         }
                     @endphp
                     <img class="w-12 h-12 rounded-full object-cover mr-4" src="{{ $photo }}" alt="Photo">
                     <div>
-                        <div class="text-lg font-semibold text-gray-900">{{ $user->name }}</div>
+                        <div class="text-lg font-semibold text-gray-900">{{ $user->nom }}</div>
                         <div class="text-sm text-gray-500">{{ $user->email }}</div>
                     </div>
                 </div>

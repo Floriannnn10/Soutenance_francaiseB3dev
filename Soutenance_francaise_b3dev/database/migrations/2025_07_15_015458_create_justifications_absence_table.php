@@ -18,6 +18,7 @@ return new class extends Migration
             $table->text('motif');
             $table->foreignId('presence_id')->constrained('presences');
             $table->string('piece_jointe')->nullable();
+            $table->enum('statut', ['En attente', 'Approuvée', 'Rejetée'])->default('En attente');
             $table->timestamps();
         });
     }

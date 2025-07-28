@@ -82,7 +82,7 @@
                         @foreach($enseignant->matieres as $matiere)
                             <div class="bg-white rounded-lg p-4 shadow-sm">
                                 <h4 class="font-medium text-gray-900">{{ $matiere->nom }}</h4>
-                                <p class="text-sm text-gray-500">Code: {{ $matiere->code }}</p>
+                                <p class="text-sm text-gray-500">Code: {{ $matiere->code ?? 'Non défini' }}</p>
                                 <p class="text-sm text-gray-500">Coefficient: {{ $matiere->coefficient }}</p>
                                 <p class="text-sm text-gray-500">Volume horaire: {{ $matiere->volume_horaire }}h</p>
                             </div>

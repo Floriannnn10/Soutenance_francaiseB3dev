@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class SessionDeCoursController extends Controller
 {
@@ -35,7 +36,8 @@ class SessionDeCoursController extends Controller
                 'statuts_session.nom as statut_nom',
                 'semestres.nom as semestre_nom',
                 'annees_academiques.nom as annee_nom',
-                'types_cours.nom as type_cours_nom' // Ajout du nom du type de cours
+                'types_cours.nom as type_cours_nom', // Ajout du nom du type de cours
+                'types_cours.code as type_cours_code' // Ajout du code du type de cours
             )
             ->leftJoin('matieres', 'course_sessions.matiere_id', '=', 'matieres.id')
             ->leftJoin('classes', 'course_sessions.classe_id', '=', 'classes.id')
@@ -66,7 +68,24 @@ class SessionDeCoursController extends Controller
         // Paginer les résultats
         $sessions = $sessionsQuery->paginate($perPage)->appends($request->query());
 
-        return view('sessions-de-cours.index', compact('sessions'));
+        // Récupérer les données pour les filtres
+        $semestres = Semestre::with('anneeAcademique')->orderBy('nom')->get();
+        $matieres = Matiere::orderBy('nom')->get();
+
+        // Filtrer les classes selon le rôle de l'utilisateur
+        $user = Auth::user();
+        if ($user && $user->roles->first()->code === 'coordinateur') {
+            $coordinateur = $user->coordinateur;
+            if ($coordinateur && $coordinateur->promotion) {
+                $classes = $coordinateur->promotion->classes()->orderBy('nom')->get();
+            } else {
+                $classes = collect();
+            }
+        } else {
+            $classes = Classe::orderBy('nom')->get();
+        }
+
+        return view('sessions-de-cours.index', compact('sessions', 'semestres', 'classes', 'matieres'));
     }
 
     /**
@@ -105,7 +124,6 @@ class SessionDeCoursController extends Controller
         ]);
 
         // Créer la session de cours avec les bons noms de colonnes
-        $sessionDeCours = new \stdClass();
         $sessionDeCours = DB::table('course_sessions')->insertGetId([
             'semester_id' => $request->semestre_id,
             'classe_id' => $request->classe_id,
@@ -117,7 +135,7 @@ class SessionDeCoursController extends Controller
             'end_time' => $request->end_time,
             'location' => $request->location,
             'notes' => $request->notes,
-            'academic_year_id' => DB::table('semestres')
+            'annee_academique_id' => DB::table('semestres')
                 ->where('id', $request->semestre_id)
                 ->value('annee_academique_id'),
             'created_at' => now(),
@@ -136,11 +154,23 @@ class SessionDeCoursController extends Controller
     public function edit(SessionDeCours $sessionDeCour): View
     {
         $semestres = Semestre::with('anneeAcademique')->get();
-        $classes = Classe::all();
         $matieres = Matiere::all();
         $enseignants = Enseignant::all();
         $typesCours = TypeCours::all();
         $statutsSession = StatutSession::all();
+
+        // Filtrer les classes selon le rôle de l'utilisateur
+        $user = Auth::user();
+        if ($user && $user->roles->first()->code === 'coordinateur') {
+            $coordinateur = $user->coordinateur;
+            if ($coordinateur && $coordinateur->promotion) {
+                $classes = $coordinateur->promotion->classes()->orderBy('nom')->get();
+            } else {
+                $classes = collect();
+            }
+        } else {
+            $classes = Classe::orderBy('nom')->get();
+        }
 
         return view('sessions-de-cours.edit', compact(
             'sessionDeCour', 'semestres', 'classes', 'matieres', 'enseignants', 'typesCours', 'statutsSession'
@@ -158,15 +188,29 @@ class SessionDeCoursController extends Controller
             'matiere_id' => 'required|exists:matieres,id',
             'enseignant_id' => 'required|exists:enseignants,id',
             'type_cours_id' => 'required|exists:types_cours,id',
-            'statut_session_id' => 'required|exists:statuts_session,id',
-            'date' => 'required|date',
-            'heure_debut' => 'required|date_format:H:i',
-            'heure_fin' => 'required|date_format:H:i|after:heure_debut',
-            'salle' => 'nullable|string|max:255',
-            'commentaire' => 'nullable|string',
+            'status_id' => 'required|exists:statuts_session,id',
+            'start_time' => 'required|date',
+            'end_time' => 'required|date|after:start_time',
+            'location' => 'nullable|string|max:255',
+            'notes' => 'nullable|string',
         ]);
 
-        $sessionDeCour->update($request->all());
+        // Mettre à jour la session de cours
+        $sessionDeCour->update([
+            'semester_id' => $request->semestre_id,
+            'classe_id' => $request->classe_id,
+            'matiere_id' => $request->matiere_id,
+            'enseignant_id' => $request->enseignant_id,
+            'type_cours_id' => $request->type_cours_id,
+            'status_id' => $request->status_id,
+            'start_time' => $request->start_time,
+            'end_time' => $request->end_time,
+            'location' => $request->location,
+            'notes' => $request->notes,
+            'annee_academique_id' => DB::table('semestres')
+                ->where('id', $request->semestre_id)
+                ->value('annee_academique_id'),
+        ]);
 
         return redirect()->route('sessions-de-cours.index')
             ->with('success', 'Session de cours mise à jour avec succès.');
@@ -175,15 +219,28 @@ class SessionDeCoursController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(SessionDeCours $sessionDeCour): RedirectResponse
+    public function destroy(SessionDeCours $sessionDeCour): mixed
     {
         // Vérifier s'il y a des présences liées
         if ($sessionDeCour->presences()->count() > 0) {
+            if (request()->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Impossible de supprimer cette session car elle contient des présences enregistrées.'
+                ]);
+            }
             return redirect()->route('sessions-de-cours.index')
                 ->with('error', 'Impossible de supprimer cette session car elle contient des présences enregistrées.');
         }
 
         $sessionDeCour->delete();
+
+        if (request()->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Session de cours supprimée avec succès.'
+            ]);
+        }
 
         return redirect()->route('sessions-de-cours.index')
             ->with('success', 'Session de cours supprimée avec succès.');
@@ -290,7 +347,7 @@ class SessionDeCoursController extends Controller
     {
         $request->validate([
             'presences' => 'required|array',
-            'presences.*' => 'required|exists:statuts_presence,id'
+            'presences.*.statut_id' => 'required|exists:statuts_presence,id'
         ]);
 
         // Récupérer les informations de la session
@@ -309,15 +366,13 @@ class SessionDeCoursController extends Controller
         DB::table('presences')->where('course_session_id', $sessionId)->delete();
 
         // Enregistrer les nouvelles présences
-        foreach ($request->presences as $etudiantId => $statutId) {
+        foreach ($request->presences as $etudiantId => $data) {
             DB::table('presences')->insert([
                 'etudiant_id' => $etudiantId,
                 'course_session_id' => $sessionId,
-                'statut_presence_id' => $statutId,
+                'statut_presence_id' => $data['statut_id'],
                 'enregistre_le' => now(),
-                'enregistre_par_user_id' => 1, // ID utilisateur par défaut
-                'academic_year_id' => $session->annee_academique_id,
-                'semester_id' => $session->semester_id,
+                'enregistre_par_user_id' => Auth::id(),
                 'created_at' => now(),
                 'updated_at' => now()
             ]);
@@ -342,7 +397,9 @@ class SessionDeCoursController extends Controller
                 'enseignants.prenom as enseignant_prenom',
                 'statuts_session.nom as statut_nom',
                 'semestres.nom as semestre_nom',
-                'annees_academiques.nom as annee_nom'
+                'annees_academiques.nom as annee_nom',
+                'types_cours.nom as type_cours_nom',
+                'types_cours.code as type_cours_code'
             )
             ->leftJoin('matieres', 'course_sessions.matiere_id', '=', 'matieres.id')
             ->leftJoin('classes', 'course_sessions.classe_id', '=', 'classes.id')
@@ -350,6 +407,7 @@ class SessionDeCoursController extends Controller
             ->leftJoin('statuts_session', 'course_sessions.status_id', '=', 'statuts_session.id')
             ->leftJoin('semestres', 'course_sessions.semester_id', '=', 'semestres.id')
             ->leftJoin('annees_academiques', 'semestres.annee_academique_id', '=', 'annees_academiques.id')
+            ->leftJoin('types_cours', 'course_sessions.type_cours_id', '=', 'types_cours.id')
             ->where('course_sessions.id', $sessionId)
             ->first();
 
@@ -397,5 +455,25 @@ class SessionDeCoursController extends Controller
         }
 
         return view('sessions-de-cours.show', compact('session', 'presencesStats'));
+    }
+
+    /**
+     * Récupérer les données d'une session en JSON pour l'édition
+     */
+    public function getSessionJson(SessionDeCours $session)
+    {
+        try {
+            $session->load(['classe', 'matiere', 'enseignant', 'typeCours', 'statutSession']);
+
+            return response()->json([
+                'success' => true,
+                'session' => $session
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la récupération de la session: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

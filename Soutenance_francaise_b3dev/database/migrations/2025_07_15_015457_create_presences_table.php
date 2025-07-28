@@ -18,6 +18,7 @@ return new class extends Migration
             $table->foreignId('statut_presence_id')->constrained('statuts_presence');
             $table->foreignId('enregistre_par_user_id')->constrained('users');
             $table->dateTime('enregistre_le');
+
             $table->timestamps();
         });
     }

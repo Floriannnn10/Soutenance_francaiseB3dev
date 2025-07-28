@@ -41,6 +41,7 @@ class DashboardController extends Controller
         $totalAnnees = AnneeAcademique::count();
         $totalSemestres = Semestre::count();
         $totalCoordinateurs = Coordinateur::count();
+        $totalParents = \App\Models\ParentEtudiant::count();
         $recentLogins = User::whereNotNull('last_login_at')
                            ->orderBy('last_login_at', 'desc')
                            ->take(5)
@@ -51,6 +52,7 @@ class DashboardController extends Controller
             'totalAnnees',
             'totalSemestres',
             'totalCoordinateurs',
+            'totalParents',
             'recentLogins'
         ));
     }
@@ -72,49 +74,15 @@ class DashboardController extends Controller
                     'total_sessions' => 0,
                     'justifications_en_attente' => 0,
                     'taux_presence' => 0
-                ]
+                ],
+                'anneesAcademiques' => AnneeAcademique::orderBy('date_debut', 'desc')->get(),
+                'anneeActive' => null
             ]);
         }
 
-        // Statistiques pour la promotion du coordinateur
-        $classes = $promotion->classes;
-        $total_etudiants = $classes->sum(function($classe) {
-            return $classe->etudiants->count();
-        });
-
-        $total_sessions = \App\Models\SessionDeCours::whereHas('classe', function($query) use ($promotion) {
-            $query->where('promotion_id', $promotion->id);
-        })->count();
-
-        $justifications_en_attente = \App\Models\JustificationAbsence::whereHas('presence.etudiant.classe', function($query) use ($promotion) {
-            $query->where('promotion_id', $promotion->id);
-        })->count();
-
-        // Calcul du taux de présence (exemple simplifié)
-        $total_presences = \App\Models\Presence::whereHas('sessionDeCours.classe', function($query) use ($promotion) {
-            $query->where('promotion_id', $promotion->id);
-        })->count();
-
-        $presences_presentes = \App\Models\Presence::whereHas('sessionDeCours.classe', function($query) use ($promotion) {
-            $query->where('promotion_id', $promotion->id);
-        })->where('statut_presence_id', 1)->count(); // 1 = présent
-
-        $taux_presence = $total_presences > 0 ? round(($presences_presentes / $total_presences) * 100, 1) : 0;
-
-        $stats = [
-            'total_etudiants' => $total_etudiants,
-            'total_classes' => $classes->count(),
-            'total_sessions' => $total_sessions,
-            'justifications_en_attente' => $justifications_en_attente,
-            'taux_presence' => $taux_presence
-        ];
-
-        return view('dashboard.coordinateur', compact(
-            'coordinateur',
-            'promotion',
-            'classes',
-            'stats'
-        ));
+        // Rediriger vers le contrôleur du coordinateur pour une gestion complète
+        $coordinateurController = new \App\Http\Controllers\CoordinateurController();
+        return $coordinateurController->dashboard(request());
     }
 
     private function enseignantDashboard()
