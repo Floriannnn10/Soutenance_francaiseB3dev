@@ -21,6 +21,9 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 use App\Rules\ValidEmailDomain;
+use Exception;
+
+use function Laravel\Prompts\error;
 
 class CoordinateurController extends Controller
 {
@@ -632,7 +635,7 @@ class CoordinateurController extends Controller
                 'message' => 'Présences enregistrées avec succès.'
             ]);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Erreur lors de l\'enregistrement des présences: ' . $e->getMessage()
@@ -765,15 +768,15 @@ class CoordinateurController extends Controller
                 'session' => $session->load(['classe', 'matiere', 'enseignant', 'typeCours', 'statutSession'])
             ]);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Erreur lors de la modification de la session: ' . $e->getMessage()
             ], 500);
         }
-        } catch (\Exception $e) {
-            \Log::error('Erreur dans modifierSession: ' . $e->getMessage());
-            \Log::error('Stack trace: ' . $e->getTraceAsString());
+        } catch (Exception $e) {
+            error('Erreur dans modifierSession: ' . $e->getMessage());
+            error('Stack trace: ' . $e->getTraceAsString());
 
             return response()->json([
                 'success' => false,

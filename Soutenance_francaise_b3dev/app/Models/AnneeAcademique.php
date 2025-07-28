@@ -61,7 +61,23 @@ class AnneeAcademique extends Model
      */
     public static function getActive()
     {
-        return self::where('actif', true)->first();
+        // D'abord essayer de trouver une année marquée comme active
+        $active = self::where('actif', true)->first();
+        if ($active) {
+            return $active;
+        }
+
+        // Sinon, chercher une année en cours (basé sur les dates)
+        $now = Carbon::now();
+        $enCours = self::where('date_debut', '<=', $now)
+            ->where('date_fin', '>=', $now)
+            ->first();
+        if ($enCours) {
+            return $enCours;
+        }
+
+        // Sinon, retourner la plus récente
+        return self::orderBy('date_debut', 'desc')->first();
     }
 
     /**

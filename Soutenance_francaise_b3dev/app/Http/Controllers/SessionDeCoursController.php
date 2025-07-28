@@ -9,6 +9,7 @@ use App\Models\Matiere;
 use App\Models\Enseignant;
 use App\Models\TypeCours;
 use App\Models\StatutSession;
+use App\Models\AnneeAcademique;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
@@ -36,8 +37,11 @@ class SessionDeCoursController extends Controller
                 'statuts_session.nom as statut_nom',
                 'semestres.nom as semestre_nom',
                 'annees_academiques.nom as annee_nom',
-                'types_cours.nom as type_cours_nom', // Ajout du nom du type de cours
-                'types_cours.code as type_cours_code' // Ajout du code du type de cours
+                'annees_academiques.id as annee_id',
+                'annees_academiques.date_debut as annee_date_debut',
+                'annees_academiques.date_fin as annee_date_fin',
+                'types_cours.nom as type_cours_nom',
+                'types_cours.code as type_cours_code'
             )
             ->leftJoin('matieres', 'course_sessions.matiere_id', '=', 'matieres.id')
             ->leftJoin('classes', 'course_sessions.classe_id', '=', 'classes.id')
@@ -45,7 +49,7 @@ class SessionDeCoursController extends Controller
             ->leftJoin('statuts_session', 'course_sessions.status_id', '=', 'statuts_session.id')
             ->leftJoin('semestres', 'course_sessions.semester_id', '=', 'semestres.id')
             ->leftJoin('annees_academiques', 'semestres.annee_academique_id', '=', 'annees_academiques.id')
-            ->leftJoin('types_cours', 'course_sessions.type_cours_id', '=', 'types_cours.id') // Jointure ajoutée
+            ->leftJoin('types_cours', 'course_sessions.type_cours_id', '=', 'types_cours.id')
             ->orderBy('course_sessions.start_time', 'desc');
 
         // Filtrer selon le rôle de l'utilisateur
@@ -66,6 +70,10 @@ class SessionDeCoursController extends Controller
         }
 
         // Appliquer les filtres si présents
+        if ($request->filled('annee_academique_id')) {
+            $sessionsQuery->where('annees_academiques.id', $request->annee_academique_id);
+        }
+
         if ($request->filled('semestre_id')) {
             $sessionsQuery->where('course_sessions.semester_id', $request->semestre_id);
         }
@@ -86,11 +94,11 @@ class SessionDeCoursController extends Controller
         $sessions = $sessionsQuery->paginate($perPage)->appends($request->query());
 
         // Récupérer les données pour les filtres
+        $anneesAcademiques = AnneeAcademique::orderBy('nom', 'desc')->get();
         $semestres = Semestre::with('anneeAcademique')->orderBy('nom')->get();
         $matieres = Matiere::orderBy('nom')->get();
 
         // Filtrer les classes selon le rôle de l'utilisateur
-        $user = Auth::user();
         if ($user && $user->roles->first()->code === 'coordinateur') {
             $coordinateur = $user->coordinateur;
             if ($coordinateur && $coordinateur->promotion) {
@@ -105,15 +113,53 @@ class SessionDeCoursController extends Controller
         // Récupérer seulement les types de cours autorisés
         $typesCours = TypeCours::whereIn('nom', ['Présentiel', 'E-learning', 'Workshop'])->orderBy('nom')->get();
 
-        return view('sessions-de-cours.index', compact('sessions', 'semestres', 'classes', 'matieres', 'typesCours'));
+        return view('sessions-de-cours.index', compact('sessions', 'anneesAcademiques', 'semestres', 'classes', 'matieres', 'typesCours'));
     }
 
     /**
      * Show the form for creating a new resource.
      */
-    public function create(): View
+    public function create(Request $request): View|RedirectResponse
     {
-        $semestres = Semestre::with('anneeAcademique')->get();
+        // Récupérer l'année sélectionnée ou l'année en cours par défaut
+        $anneeSelectionnee = $request->get('annee_academique_id');
+        if (!$anneeSelectionnee) {
+            $anneeEnCours = DB::table('annees_academiques')->where('statut', 'En cours')->first();
+            $anneeSelectionnee = $anneeEnCours ? $anneeEnCours->id : null;
+        }
+
+        // Récupérer l'année pour vérifier le statut
+        $anneeAcademique = null;
+        if ($anneeSelectionnee) {
+            $anneeAcademique = DB::table('annees_academiques')->find($anneeSelectionnee);
+        }
+
+        // Vérifier si l'utilisateur peut modifier cette année
+        $user = Auth::user();
+        $peutModifier = true;
+        if ($user && $user->roles->first()->code === 'coordinateur') {
+            if ($anneeAcademique && $anneeAcademique->date_debut && $anneeAcademique->date_fin) {
+                $now = now();
+                $dateFin = \Carbon\Carbon::parse($anneeAcademique->date_fin);
+                if ($now->gt($dateFin)) {
+                    $peutModifier = false;
+                }
+            }
+        }
+
+        // Si l'année est terminée, rediriger vers l'index avec un message
+        if (!$peutModifier) {
+            return redirect()->route('sessions-de-cours.index')
+                ->with('error', 'Vous ne pouvez pas créer de sessions pour une année académique terminée.');
+        }
+
+        // Filtrer les semestres selon l'année sélectionnée
+        $semestresQuery = Semestre::with('anneeAcademique');
+        if ($anneeSelectionnee) {
+            $semestresQuery = $semestresQuery->where('annee_academique_id', $anneeSelectionnee);
+        }
+        $semestres = $semestresQuery->get();
+
         $matieres = Matiere::all();
         $enseignants = Enseignant::all();
         $typesCours = TypeCours::whereIn('nom', ['Présentiel', 'E-learning', 'Workshop'])->get();
@@ -123,7 +169,6 @@ class SessionDeCoursController extends Controller
         $coordinateurs = \App\Models\Coordinateur::with('user')->get();
 
         // Filtrer les classes selon le rôle de l'utilisateur
-        $user = Auth::user();
         if ($user && $user->roles->first()->code === 'coordinateur') {
             $coordinateur = $user->coordinateur;
             if ($coordinateur && $coordinateur->promotion) {
@@ -146,8 +191,12 @@ class SessionDeCoursController extends Controller
             $classes = Classe::orderBy('nom')->get();
         }
 
+        // Récupérer toutes les années académiques pour le sélecteur
+        $anneesAcademiques = DB::table('annees_academiques')->orderBy('nom', 'desc')->get();
+
         return view('sessions-de-cours.create', compact(
-            'semestres', 'classes', 'matieres', 'enseignants', 'typesCours', 'statutsSession', 'coordinateurs'
+            'semestres', 'classes', 'matieres', 'enseignants', 'typesCours', 'statutsSession',
+            'coordinateurs', 'anneesAcademiques', 'anneeSelectionnee', 'anneeAcademique', 'peutModifier'
         ));
     }
 
@@ -168,6 +217,21 @@ class SessionDeCoursController extends Controller
             'location' => 'nullable|string|max:255',
             'notes' => 'nullable|string',
         ]);
+
+        // Vérifier le statut de l'année académique
+        $semestre = Semestre::with('anneeAcademique')->find($request->semestre_id);
+        if ($semestre && $semestre->anneeAcademique && $semestre->anneeAcademique->date_debut && $semestre->anneeAcademique->date_fin) {
+            $now = now();
+            $dateFin = \Carbon\Carbon::parse($semestre->anneeAcademique->date_fin);
+            if ($now->gt($dateFin)) {
+                $user = Auth::user();
+                if ($user && $user->roles->first()->code === 'coordinateur') {
+                    return back()->withInput()->withErrors([
+                        'semestre_id' => 'Vous ne pouvez pas créer de sessions pour une année académique terminée.'
+                    ]);
+                }
+            }
+        }
 
         // Vérifier que pour les cours Workshop et E-learning, l'enseignant est un coordinateur
         $typeCours = TypeCours::find($request->type_cours_id);
@@ -208,8 +272,33 @@ class SessionDeCoursController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(SessionDeCours $sessionDeCour): View
+    public function edit(SessionDeCours $sessionDeCour): View|RedirectResponse
     {
+        // Récupérer l'année académique de cette session
+        $anneeAcademique = null;
+        if ($sessionDeCour->semester && $sessionDeCour->semester->anneeAcademique) {
+            $anneeAcademique = $sessionDeCour->semester->anneeAcademique;
+        }
+
+        // Vérifier si l'utilisateur peut modifier cette session
+        $user = Auth::user();
+        $peutModifier = true;
+        if ($user && $user->roles->first()->code === 'coordinateur') {
+            if ($anneeAcademique && $anneeAcademique->date_debut && $anneeAcademique->date_fin) {
+                $now = now();
+                $dateFin = \Carbon\Carbon::parse($anneeAcademique->date_fin);
+                if ($now->gt($dateFin)) {
+                    $peutModifier = false;
+                }
+            }
+        }
+
+        // Si l'année est terminée, rediriger vers l'index avec un message
+        if (!$peutModifier) {
+            return redirect()->route('sessions-de-cours.index')
+                ->with('error', 'Vous ne pouvez pas modifier des sessions pour une année académique terminée.');
+        }
+
         $semestres = Semestre::with('anneeAcademique')->get();
         $matieres = Matiere::all();
         $enseignants = Enseignant::all();
@@ -220,7 +309,6 @@ class SessionDeCoursController extends Controller
         $coordinateurs = \App\Models\Coordinateur::with('user')->get();
 
         // Filtrer les classes selon le rôle de l'utilisateur
-        $user = Auth::user();
         if ($user && $user->roles->first()->code === 'coordinateur') {
             $coordinateur = $user->coordinateur;
             if ($coordinateur && $coordinateur->promotion) {
@@ -232,8 +320,12 @@ class SessionDeCoursController extends Controller
             $classes = Classe::orderBy('nom')->get();
         }
 
+        // Récupérer toutes les années académiques pour le sélecteur
+        $anneesAcademiques = DB::table('annees_academiques')->orderBy('nom', 'desc')->get();
+
         return view('sessions-de-cours.edit', compact(
-            'sessionDeCour', 'semestres', 'classes', 'matieres', 'enseignants', 'typesCours', 'statutsSession', 'coordinateurs'
+            'sessionDeCour', 'semestres', 'classes', 'matieres', 'enseignants', 'typesCours',
+            'statutsSession', 'coordinateurs', 'anneesAcademiques', 'anneeAcademique', 'peutModifier'
         ));
     }
 
@@ -254,6 +346,21 @@ class SessionDeCoursController extends Controller
             'location' => 'nullable|string|max:255',
             'notes' => 'nullable|string',
         ]);
+
+        // Vérifier le statut de l'année académique
+        $semestre = Semestre::with('anneeAcademique')->find($request->semestre_id);
+        if ($semestre && $semestre->anneeAcademique && $semestre->anneeAcademique->date_debut && $semestre->anneeAcademique->date_fin) {
+            $now = now();
+            $dateFin = \Carbon\Carbon::parse($semestre->anneeAcademique->date_fin);
+            if ($now->gt($dateFin)) {
+                $user = Auth::user();
+                if ($user && $user->roles->first()->code === 'coordinateur') {
+                    return back()->withInput()->withErrors([
+                        'semestre_id' => 'Vous ne pouvez pas modifier de sessions pour une année académique terminée.'
+                    ]);
+                }
+            }
+        }
 
         // Vérifier que pour les cours Workshop et E-learning, l'enseignant est un coordinateur
         $typeCours = TypeCours::find($request->type_cours_id);
@@ -619,13 +726,22 @@ class SessionDeCoursController extends Controller
 
         // Récupérer les données pour les filtres
         $anneesAcademiques = DB::table('annees_academiques')
-            ->where('statut', 'Terminée')
+            ->select('id', 'nom', 'date_debut', 'date_fin')
             ->orderBy('nom', 'desc')
-            ->get();
+            ->get()
+            ->filter(function($annee) {
+                // Filtrer seulement les années terminées
+                if ($annee->date_debut && $annee->date_fin) {
+                    $now = now();
+                    $dateFin = \Carbon\Carbon::parse($annee->date_fin);
+                    return $now->gt($dateFin);
+                }
+                return false;
+            });
 
         $semestres = Semestre::with('anneeAcademique')
             ->whereHas('anneeAcademique', function($query) {
-                $query->where('statut', 'Terminée');
+                $query->where('date_fin', '<', now());
             })
             ->orderBy('nom')
             ->get();

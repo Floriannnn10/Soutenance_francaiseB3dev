@@ -19,27 +19,38 @@
         </div>
     </x-slot>
 
-    <div class="py-6">
+    <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <!-- Messages de succès/erreur -->
-            @if(session('success'))
-                <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
-                    {{ session('success') }}
-                </div>
-            @endif
-
-            @if(session('error'))
-                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-                    {{ session('error') }}
-                </div>
-            @endif
-
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900">
+                    <!-- Messages d'erreur et de succès -->
+                    @if(session('error'))
+                        <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                            {{ session('error') }}
+                        </div>
+                    @endif
+
+                    @if(session('success'))
+                        <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
+                            {{ session('success') }}
+                        </div>
+                    @endif
+
                     <!-- Filtres -->
                     <div class="bg-white rounded-lg shadow p-6 mb-6">
                         <h3 class="text-lg font-semibold mb-4">Filtrer les sessions</h3>
-                        <form method="GET" action="{{ route('sessions-de-cours.index') }}" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <form method="GET" action="{{ route('sessions-de-cours.index') }}" class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                            <div>
+                                <label for="annee_academique_id" class="block text-sm font-medium text-gray-700 mb-1">Année académique</label>
+                                <select name="annee_academique_id" id="annee_academique_id" class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="">Toutes les années</option>
+                                    @foreach($anneesAcademiques as $annee)
+                                        <option value="{{ $annee->id }}" {{ request('annee_academique_id') == $annee->id ? 'selected' : '' }}>
+                                            {{ $annee->nom }} - {{ $annee->statut }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
                             <div>
                                 <label for="semestre_id" class="block text-sm font-medium text-gray-700 mb-1">Semestre</label>
                                 <select name="semestre_id" id="semestre_id" class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
@@ -170,27 +181,52 @@
                                                     $user = auth()->user();
                                                     $isCoordinateur = $user && $user->roles->first()->code === 'coordinateur';
                                                     $isEnseignant = $user && $user->roles->first()->code === 'enseignant';
+
+                                                    // Calculer le statut de l'année
+                                                    $anneeStatut = 'En cours';
+                                                    if ($session->annee_date_debut && $session->annee_date_fin) {
+                                                        $now = now();
+                                                        $dateDebut = \Carbon\Carbon::parse($session->annee_date_debut);
+                                                        $dateFin = \Carbon\Carbon::parse($session->annee_date_fin);
+
+                                                        if ($now->lt($dateDebut)) {
+                                                            $anneeStatut = 'À venir';
+                                                        } elseif ($now->gt($dateFin)) {
+                                                            $anneeStatut = 'Terminée';
+                                                        }
+                                                    }
+
+                                                    $peutModifier = true;
+                                                    if ($isCoordinateur && $anneeStatut === 'Terminée') {
+                                                        $peutModifier = false;
+                                                    }
                                                 @endphp
                                                 @if(($isCoordinateur && ($type === 'workshop' || $typeCode === 'workshop' || $type === 'e-learning' || $typeCode === 'e_learning' || $type === 'elearning')) || ($isEnseignant && ($type === 'presentiel' || $typeCode === 'presentiel')))
-                                                    <a href="{{ route('sessions-de-cours.appel', $session->id) }}"
-                                                       class="text-green-600 hover:text-green-900 flex items-center" title="Faire l'Appel">
-                                                        <i class="fas fa-clipboard-check mr-2"></i>Faire l'Appel
-                                                    </a>
+                                                    @if($peutModifier)
+                                                        <a href="{{ route('sessions-de-cours.appel', $session->id) }}"
+                                                           class="text-green-600 hover:text-green-900 flex items-center" title="Faire l'Appel">
+                                                            <i class="fas fa-clipboard-check mr-2"></i>Faire l'Appel
+                                                        </a>
+                                                    @endif
                                                 @endif
-                                                <a href="{{ route('sessions-de-cours.edit', $session->id) }}"
-                                                   class="text-orange-600 hover:text-orange-900 flex items-center" title="Éditer">
-                                                    <i class="fas fa-edit mr-2"></i>Éditer
-                                                </a>
-                                                <form action="{{ route('sessions-de-cours.destroy', $session->id) }}"
-                                                      method="POST" class="inline">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit"
-                                                            class="text-red-600 hover:text-red-900 flex items-center" title="Supprimer"
-                                                            onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette session ?')">
-                                                        <i class="fas fa-times mr-2"></i>Supprimer
-                                                    </button>
-                                                </form>
+                                                @if($peutModifier)
+                                                    <a href="{{ route('sessions-de-cours.edit', $session->id) }}"
+                                                       class="text-orange-600 hover:text-orange-900 flex items-center" title="Éditer">
+                                                        <i class="fas fa-edit mr-2"></i>Éditer
+                                                    </a>
+                                                    <form action="{{ route('sessions-de-cours.destroy', $session->id) }}"
+                                                          method="POST" class="inline">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit"
+                                                                class="text-red-600 hover:text-red-900 flex items-center" title="Supprimer"
+                                                                onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette session ?')">
+                                                            <i class="fas fa-times mr-2"></i>Supprimer
+                                                        </button>
+                                                    </form>
+                                                @else
+                                                    <span class="text-gray-400 text-xs">Lecture seule</span>
+                                                @endif
                                             </div>
                                         </td>
                                     </tr>

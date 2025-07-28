@@ -18,6 +18,8 @@ class ParentEtudiant extends Model
         'prenom',
         'nom',
         'telephone',
+        'profession',
+        'adresse',
         'photo',
     ];
 

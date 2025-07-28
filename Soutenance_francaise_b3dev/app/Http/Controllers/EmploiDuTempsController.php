@@ -20,6 +20,15 @@ class EmploiDuTempsController extends Controller
         $user = Auth::user();
         $anneeActive = AnneeAcademique::getActive();
 
+        // Si aucune année active n'est trouvée, récupérer la première année disponible
+        if (!$anneeActive) {
+            $anneeActive = AnneeAcademique::orderBy('date_debut', 'desc')->first();
+
+            if (!$anneeActive) {
+                return redirect()->back()->with('error', 'Aucune année académique configurée.');
+            }
+        }
+
         switch ($user->roles->first()->code) {
             case 'coordinateur':
                 return $this->indexCoordinateur($request, $anneeActive);

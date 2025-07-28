@@ -40,7 +40,8 @@
                                     Semestre <span class="text-red-500">*</span>
                                 </label>
                                 <select name="semestre_id" id="semestre_id" required
-                                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                        {{ isset($peutModifier) && !$peutModifier ? 'disabled' : '' }}>
                                     <option value="">Sélectionner un semestre</option>
                                     @foreach($semestres as $semestre)
                                         <option value="{{ $semestre->id }}"
@@ -219,14 +220,20 @@
 
                         <!-- Boutons -->
                         <div class="flex items-center justify-end space-x-4">
-                                                         <a href="{{ route('sessions-de-cours.index') }}"
-                                class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded">
-                                 Annuler
-                             </a>
-                             <button type="submit"
-                                     class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                                 <i class="fas fa-save mr-2"></i>Mettre à jour
-                             </button>
+                            <a href="{{ route('sessions-de-cours.index') }}"
+                               class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded">
+                                Annuler
+                            </a>
+                            @if(isset($peutModifier) && $peutModifier)
+                                <button type="submit"
+                                        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                                    <i class="fas fa-save mr-2"></i>Mettre à jour
+                                </button>
+                            @else
+                                <div class="text-sm text-red-600 bg-red-50 px-4 py-2 rounded">
+                                    <i class="fas fa-lock mr-2"></i>Lecture seule - Année terminée
+                                </div>
+                            @endif
                         </div>
                     </form>
                     @else

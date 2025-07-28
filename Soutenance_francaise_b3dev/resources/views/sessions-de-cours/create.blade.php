@@ -32,6 +32,48 @@
                         @csrf
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Année académique -->
+                            <div>
+                                <label for="annee_academique_id" class="block text-sm font-medium text-gray-700">
+                                    Année académique <span class="text-red-500">*</span>
+                                </label>
+                                <select name="annee_academique_id" id="annee_academique_id" required
+                                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                    <option value="">Sélectionner une année</option>
+                                    @foreach($anneesAcademiques as $annee)
+                                        <option value="{{ $annee->id }}"
+                                                {{ $anneeSelectionnee == $annee->id ? 'selected' : '' }}>
+                                            @php
+                                                // Calculer le statut de l'année
+                                                $statut = 'En cours';
+                                                if ($annee->date_debut && $annee->date_fin) {
+                                                    $now = now();
+                                                    $dateDebut = \Carbon\Carbon::parse($annee->date_debut);
+                                                    $dateFin = \Carbon\Carbon::parse($annee->date_fin);
+
+                                                    if ($now->lt($dateDebut)) {
+                                                        $statut = 'À venir';
+                                                    } elseif ($now->gt($dateFin)) {
+                                                        $statut = 'Terminée';
+                                                    }
+                                                }
+                                            @endphp
+                                            {{ $annee->nom }} - {{ $statut }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @if(isset($anneeAcademique) && $anneeAcademique && $anneeAcademique->date_debut && $anneeAcademique->date_fin)
+                                    @php
+                                        $now = now();
+                                        $dateFin = \Carbon\Carbon::parse($anneeAcademique->date_fin);
+                                        $isTerminee = $now->gt($dateFin);
+                                    @endphp
+                                    @if($isTerminee)
+                                        <p class="mt-1 text-sm text-red-600">⚠️ Cette année est terminée. Vous ne pouvez que visualiser les données.</p>
+                                    @endif
+                                @endif
+                            </div>
+
                             <!-- Semestre -->
                             <div>
                                 <label for="semestre_id" class="block text-sm font-medium text-gray-700">
@@ -229,10 +271,13 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            const anneeSelect = document.getElementById('annee_academique_id');
+            const semestreSelect = document.getElementById('semestre_id');
             const typeCoursSelect = document.getElementById('type_cours_id');
             const enseignantSelect = document.getElementById('enseignant_id');
 
-            // Stocker toutes les options d'enseignants
+            // Stocker toutes les options de semestres
+            const allSemestreOptions = Array.from(semestreSelect.options);
             const allEnseignantOptions = Array.from(enseignantSelect.options);
 
             // Créer un élément pour afficher le message d'aide
@@ -240,6 +285,29 @@
             helpMessage.className = 'mt-2 text-sm text-blue-600 bg-blue-50 p-2 rounded';
             helpMessage.style.display = 'none';
             enseignantSelect.parentNode.appendChild(helpMessage);
+
+            function filterSemestres() {
+                const selectedAnneeId = anneeSelect.value;
+
+                // Réinitialiser les options
+                semestreSelect.innerHTML = '<option value="">Sélectionner un semestre</option>';
+
+                if (selectedAnneeId) {
+                    // Filtrer les semestres selon l'année sélectionnée
+                    allSemestreOptions.forEach(option => {
+                        if (option.value && option.textContent.includes(selectedAnneeId)) {
+                            semestreSelect.appendChild(option.cloneNode(true));
+                        }
+                    });
+                } else {
+                    // Afficher tous les semestres si aucune année n'est sélectionnée
+                    allSemestreOptions.forEach(option => {
+                        if (option.value) {
+                            semestreSelect.appendChild(option.cloneNode(true));
+                        }
+                    });
+                }
+            }
 
             function filterEnseignants() {
                 const selectedType = typeCoursSelect.options[typeCoursSelect.selectedIndex]?.text?.toLowerCase();
@@ -280,8 +348,82 @@
                 }
             }
 
-            // Appliquer le filtre au chargement et lors du changement
+            // Appliquer les filtres au chargement et lors des changements
+            filterSemestres();
             filterEnseignants();
+
+            anneeSelect.addEventListener('change', filterSemestres);
+            typeCoursSelect.addEventListener('change', filterEnseignants);
+        });
+    </script>
+</x-app-layout>
+
+                const selectedAnneeId = anneeSelect.value;
+
+                // Réinitialiser les options
+                semestreSelect.innerHTML = '<option value="">Sélectionner un semestre</option>';
+
+                if (selectedAnneeId) {
+                    // Filtrer les semestres selon l'année sélectionnée
+                    allSemestreOptions.forEach(option => {
+                        if (option.value && option.textContent.includes(selectedAnneeId)) {
+                            semestreSelect.appendChild(option.cloneNode(true));
+                        }
+                    });
+                } else {
+                    // Afficher tous les semestres si aucune année n'est sélectionnée
+                    allSemestreOptions.forEach(option => {
+                        if (option.value) {
+                            semestreSelect.appendChild(option.cloneNode(true));
+                        }
+                    });
+                }
+            }
+
+            function filterEnseignants() {
+                const selectedType = typeCoursSelect.options[typeCoursSelect.selectedIndex]?.text?.toLowerCase();
+                const selectedTypeId = typeCoursSelect.value;
+
+                // Réinitialiser les options
+                enseignantSelect.innerHTML = '<option value="">Sélectionner un enseignant</option>';
+
+                if (selectedType && (selectedType.includes('workshop') || selectedType.includes('e-learning'))) {
+                    // Pour Workshop et E-learning, afficher seulement les coordinateurs
+                    let coordinateurCount = 0;
+                    allEnseignantOptions.forEach(option => {
+                        if (option.value && option.getAttribute('data-role') === 'coordinateur') {
+                            enseignantSelect.appendChild(option.cloneNode(true));
+                            coordinateurCount++;
+                        }
+                    });
+
+                    // Afficher le message d'aide
+                    helpMessage.textContent = `Pour les cours de type "${typeCoursSelect.options[typeCoursSelect.selectedIndex].text}", seuls les coordinateurs pédagogiques peuvent être sélectionnés comme enseignants.`;
+                    helpMessage.style.display = 'block';
+
+                    // Si aucun coordinateur n'est disponible
+                    if (coordinateurCount === 0) {
+                        helpMessage.textContent = 'Aucun coordinateur pédagogique disponible. Veuillez d\'abord créer un coordinateur.';
+                        helpMessage.className = 'mt-2 text-sm text-red-600 bg-red-50 p-2 rounded';
+                    }
+                } else {
+                    // Pour les autres types, afficher tous les enseignants
+                    allEnseignantOptions.forEach(option => {
+                        if (option.value) {
+                            enseignantSelect.appendChild(option.cloneNode(true));
+                        }
+                    });
+
+                    // Masquer le message d'aide
+                    helpMessage.style.display = 'none';
+                }
+            }
+
+            // Appliquer les filtres au chargement et lors des changements
+            filterSemestres();
+            filterEnseignants();
+
+            anneeSelect.addEventListener('change', filterSemestres);
             typeCoursSelect.addEventListener('change', filterEnseignants);
         });
     </script>

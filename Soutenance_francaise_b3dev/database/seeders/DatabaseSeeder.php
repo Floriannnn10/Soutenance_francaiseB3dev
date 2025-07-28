@@ -29,6 +29,7 @@ class DatabaseSeeder extends Seeder
             CoordinateursSeeder::class,
             HistoriqueAnneesSeeder::class,
             SessionsHistoriquesSeeder::class,
+            SessionsAnneeCouranteSeeder::class,
         ]);
     }
 }

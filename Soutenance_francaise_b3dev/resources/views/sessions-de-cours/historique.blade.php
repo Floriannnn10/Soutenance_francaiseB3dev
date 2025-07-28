@@ -43,7 +43,22 @@
                                     <option value="">Toutes les années</option>
                                     @foreach($anneesAcademiques as $annee)
                                         <option value="{{ $annee->id }}" {{ request('annee_academique_id') == $annee->id ? 'selected' : '' }}>
-                                            {{ $annee->nom }} - {{ $annee->statut }}
+                                            @php
+                                                // Calculer le statut de l'année
+                                                $statut = 'En cours';
+                                                if ($annee->date_debut && $annee->date_fin) {
+                                                    $now = now();
+                                                    $dateDebut = \Carbon\Carbon::parse($annee->date_debut);
+                                                    $dateFin = \Carbon\Carbon::parse($annee->date_fin);
+
+                                                    if ($now->lt($dateDebut)) {
+                                                        $statut = 'À venir';
+                                                    } elseif ($now->gt($dateFin)) {
+                                                        $statut = 'Terminée';
+                                                    }
+                                                }
+                                            @endphp
+                                            {{ $annee->nom }} - {{ $statut }}
                                         </option>
                                     @endforeach
                                 </select>
@@ -143,9 +158,6 @@
                                             Type
                                         </th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Année/Semestre
-                                        </th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Lieu
                                         </th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -185,10 +197,6 @@
                                                 </span>
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                <div class="font-medium">{{ $session->annee_nom ?? 'N/A' }}</div>
-                                                <div class="text-gray-500">{{ $session->semestre_nom ?? 'N/A' }}</div>
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                                 {{ $session->location ?? 'N/A' }}
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -221,3 +229,4 @@
         </div>
     </div>
 </x-app-layout>
+

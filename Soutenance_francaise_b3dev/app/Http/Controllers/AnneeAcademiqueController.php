@@ -44,7 +44,10 @@ class AnneeAcademiqueController extends Controller
             'date_fin' => 'required|date|after:date_debut',
         ]);
 
-        $anneeAcademique = AnneeAcademique::create($request->all());
+        $data = $request->all();
+        $data['actif'] = $request->has('actif');
+
+        $anneeAcademique = AnneeAcademique::create($data);
 
         return redirect()->route('annees-academiques.index')
             ->with('success', 'Année académique créée avec succès.');
@@ -79,7 +82,10 @@ class AnneeAcademiqueController extends Controller
             'date_fin' => 'required|date|after:date_debut',
         ]);
 
-        $anneeAcademique->update($request->all());
+        $data = $request->all();
+        $data['actif'] = $request->has('actif');
+
+        $anneeAcademique->update($data);
 
         return redirect()->route('annees-academiques.index')
             ->with('success', 'Année académique mise à jour avec succès.');

@@ -62,6 +62,13 @@ class PresenceController extends Controller
             $query->where('statut_presence_id', $request->statut_id);
         }
 
+        // Validation des dates
+        if ($request->filled('date_debut') && $request->filled('date_fin')) {
+            if ($request->date_debut > $request->date_fin) {
+                return redirect()->back()->withErrors(['date_fin' => 'La date de fin ne peut pas être antérieure à la date de début.']);
+            }
+        }
+
         if ($request->filled('date_debut')) {
             $query->whereDate('enregistre_le', '>=', $request->date_debut);
         }
@@ -86,7 +93,10 @@ class PresenceController extends Controller
             }
         }
 
-        return view('presences.index', compact('presences', 'classes'));
+        // Récupérer les statuts de présence pour le filtre
+        $statutsPresence = StatutPresence::orderBy('nom')->get();
+
+        return view('presences.index', compact('presences', 'classes', 'statutsPresence'));
     }
 
     public function store(Request $request)
