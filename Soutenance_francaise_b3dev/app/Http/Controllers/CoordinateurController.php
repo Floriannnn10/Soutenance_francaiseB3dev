@@ -76,7 +76,8 @@ class CoordinateurController extends Controller
 
         // Créer l'utilisateur
         $user = User::create([
-            'name' => $request->prenom . ' ' . $request->nom,
+            'nom' => $request->nom,
+            'prenom' => $request->prenom,
             'email' => $request->email,
             'password' => bcrypt($request->password),
         ]);
@@ -147,7 +148,8 @@ class CoordinateurController extends Controller
         // Mettre à jour l'utilisateur
         $user = $coordinateur->user;
         $user->update([
-            'name' => $request->prenom . ' ' . $request->nom,
+            'nom' => $request->nom,
+            'prenom' => $request->prenom,
             'email' => $request->email,
         ]);
 

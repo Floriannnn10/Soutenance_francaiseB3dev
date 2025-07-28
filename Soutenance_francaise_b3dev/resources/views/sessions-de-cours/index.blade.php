@@ -4,11 +4,18 @@
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
                 {{ __('Sessions de Cours') }}
             </h2>
-            <a href="{{ route('sessions-de-cours.create') }}"
-               class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md flex items-center">
-                <i class="fas fa-plus mr-2"></i>
-                Nouvelle Session
-            </a>
+            <div class="flex space-x-2">
+                <a href="{{ route('sessions-de-cours.historique') }}"
+                   class="bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-md flex items-center">
+                    <i class="fas fa-history mr-2"></i>
+                    Historique
+                </a>
+                <a href="{{ route('sessions-de-cours.create') }}"
+                   class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md flex items-center">
+                    <i class="fas fa-plus mr-2"></i>
+                    Nouvelle Session
+                </a>
+            </div>
         </div>
     </x-slot>
 
@@ -164,7 +171,7 @@
                                                     $isCoordinateur = $user && $user->roles->first()->code === 'coordinateur';
                                                     $isEnseignant = $user && $user->roles->first()->code === 'enseignant';
                                                 @endphp
-                                                @if(($isCoordinateur && ($type === 'workshop' || $typeCode === 'workshop' || $type === 'e-learning' || $typeCode === 'e_learning' || $type === 'elearning' || $type === 'presentiel' || $typeCode === 'presentiel')) || ($isEnseignant && ($type === 'presentiel' || $typeCode === 'presentiel')))
+                                                @if(($isCoordinateur && ($type === 'workshop' || $typeCode === 'workshop' || $type === 'e-learning' || $typeCode === 'e_learning' || $type === 'elearning')) || ($isEnseignant && ($type === 'presentiel' || $typeCode === 'presentiel')))
                                                     <a href="{{ route('sessions-de-cours.appel', $session->id) }}"
                                                        class="text-green-600 hover:text-green-900 flex items-center" title="Faire l'Appel">
                                                         <i class="fas fa-clipboard-check mr-2"></i>Faire l'Appel

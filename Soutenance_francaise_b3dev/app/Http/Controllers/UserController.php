@@ -23,18 +23,30 @@ class UserController extends Controller
     public function index(Request $request)
     {
         $query = User::with('roles');
+
+        // Filtre par recherche
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
-                $q->where('name', 'like', "%$search%")
+                $q->where('nom', 'like', "%$search%")
+                  ->orWhere('prenom', 'like', "%$search%")
                   ->orWhere('email', 'like', "%$search%")
                   ->orWhereHas('roles', function($q2) use ($search) {
                       $q2->where('nom', 'like', "%$search%") ;
                   });
             });
         }
+
+        // Filtre par rôle
+        if ($request->filled('role_id')) {
+            $query->whereHas('roles', function($q) use ($request) {
+                $q->where('id', $request->role_id);
+            });
+        }
+
         $users = $query->orderBy('nom')->paginate(10)->withQueryString();
-        return view('users.index', compact('users'));
+        $roles = Role::all();
+        return view('users.index', compact('users', 'roles'));
     }
 
     public function create()

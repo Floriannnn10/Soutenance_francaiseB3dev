@@ -23,9 +23,12 @@ class DatabaseSeeder extends Seeder
             ClassesSeeder::class,
             MatieresSeeder::class,
             EnseignantsSeeder::class,
-            EtudiantsSeeder::class,
+            EtudiantsWithPresenceSeeder::class,
+            SessionsWithPresenceSeeder::class,
             ParentsSeeder::class,
             CoordinateursSeeder::class,
+            HistoriqueAnneesSeeder::class,
+            SessionsHistoriquesSeeder::class,
         ]);
     }
 }

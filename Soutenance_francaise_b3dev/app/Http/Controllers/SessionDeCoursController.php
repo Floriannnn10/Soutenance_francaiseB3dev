@@ -48,6 +48,23 @@ class SessionDeCoursController extends Controller
             ->leftJoin('types_cours', 'course_sessions.type_cours_id', '=', 'types_cours.id') // Jointure ajoutée
             ->orderBy('course_sessions.start_time', 'desc');
 
+        // Filtrer selon le rôle de l'utilisateur
+        $user = Auth::user();
+        if ($user && $user->roles->first()->code === 'coordinateur') {
+            // Coordinateur : voir seulement les sessions de sa promotion
+            $coordinateur = $user->coordinateur;
+            if ($coordinateur && $coordinateur->promotion) {
+                $classesIds = $coordinateur->promotion->classes()->pluck('id');
+                $sessionsQuery->whereIn('course_sessions.classe_id', $classesIds);
+            }
+        } elseif ($user && $user->roles->first()->code === 'enseignant') {
+            // Enseignant : voir seulement ses sessions
+            $enseignant = $user->enseignant;
+            if ($enseignant) {
+                $sessionsQuery->where('course_sessions.enseignant_id', $enseignant->id);
+            }
+        }
+
         // Appliquer les filtres si présents
         if ($request->filled('semestre_id')) {
             $sessionsQuery->where('course_sessions.semester_id', $request->semestre_id);
@@ -85,7 +102,10 @@ class SessionDeCoursController extends Controller
             $classes = Classe::orderBy('nom')->get();
         }
 
-        return view('sessions-de-cours.index', compact('sessions', 'semestres', 'classes', 'matieres'));
+        // Récupérer seulement les types de cours autorisés
+        $typesCours = TypeCours::whereIn('nom', ['Présentiel', 'E-learning', 'Workshop'])->orderBy('nom')->get();
+
+        return view('sessions-de-cours.index', compact('sessions', 'semestres', 'classes', 'matieres', 'typesCours'));
     }
 
     /**
@@ -94,14 +114,40 @@ class SessionDeCoursController extends Controller
     public function create(): View
     {
         $semestres = Semestre::with('anneeAcademique')->get();
-        $classes = Classe::all();
         $matieres = Matiere::all();
         $enseignants = Enseignant::all();
-        $typesCours = TypeCours::all();
+        $typesCours = TypeCours::whereIn('nom', ['Présentiel', 'E-learning', 'Workshop'])->get();
         $statutsSession = StatutSession::all();
 
+        // Récupérer les coordinateurs pour les cours Workshop et E-learning
+        $coordinateurs = \App\Models\Coordinateur::with('user')->get();
+
+        // Filtrer les classes selon le rôle de l'utilisateur
+        $user = Auth::user();
+        if ($user && $user->roles->first()->code === 'coordinateur') {
+            $coordinateur = $user->coordinateur;
+            if ($coordinateur && $coordinateur->promotion) {
+                $classes = $coordinateur->promotion->classes()->orderBy('nom')->get();
+            } else {
+                $classes = collect();
+            }
+        } elseif ($user && $user->roles->first()->code === 'enseignant') {
+            // Enseignant : voir seulement les classes où il enseigne
+            $enseignant = $user->enseignant;
+            if ($enseignant) {
+                $classesIds = SessionDeCours::where('enseignant_id', $enseignant->id)
+                    ->distinct()
+                    ->pluck('classe_id');
+                $classes = Classe::whereIn('id', $classesIds)->orderBy('nom')->get();
+            } else {
+                $classes = collect();
+            }
+        } else {
+            $classes = Classe::orderBy('nom')->get();
+        }
+
         return view('sessions-de-cours.create', compact(
-            'semestres', 'classes', 'matieres', 'enseignants', 'typesCours', 'statutsSession'
+            'semestres', 'classes', 'matieres', 'enseignants', 'typesCours', 'statutsSession', 'coordinateurs'
         ));
     }
 
@@ -122,6 +168,17 @@ class SessionDeCoursController extends Controller
             'location' => 'nullable|string|max:255',
             'notes' => 'nullable|string',
         ]);
+
+        // Vérifier que pour les cours Workshop et E-learning, l'enseignant est un coordinateur
+        $typeCours = TypeCours::find($request->type_cours_id);
+        if (in_array($typeCours->nom, ['Workshop', 'E-learning'])) {
+            $enseignant = Enseignant::find($request->enseignant_id);
+            if (!$enseignant || !$enseignant->user || $enseignant->user->roles->first()->code !== 'coordinateur') {
+                return back()->withInput()->withErrors([
+                    'enseignant_id' => 'Pour les cours de type "' . $typeCours->nom . '", l\'enseignant sélectionné doit obligatoirement être un coordinateur pédagogique.'
+                ]);
+            }
+        }
 
         // Créer la session de cours avec les bons noms de colonnes
         $sessionDeCours = DB::table('course_sessions')->insertGetId([
@@ -156,8 +213,11 @@ class SessionDeCoursController extends Controller
         $semestres = Semestre::with('anneeAcademique')->get();
         $matieres = Matiere::all();
         $enseignants = Enseignant::all();
-        $typesCours = TypeCours::all();
+        $typesCours = TypeCours::whereIn('nom', ['Présentiel', 'E-learning', 'Workshop'])->get();
         $statutsSession = StatutSession::all();
+
+        // Récupérer les coordinateurs pour les cours Workshop et E-learning
+        $coordinateurs = \App\Models\Coordinateur::with('user')->get();
 
         // Filtrer les classes selon le rôle de l'utilisateur
         $user = Auth::user();
@@ -173,7 +233,7 @@ class SessionDeCoursController extends Controller
         }
 
         return view('sessions-de-cours.edit', compact(
-            'sessionDeCour', 'semestres', 'classes', 'matieres', 'enseignants', 'typesCours', 'statutsSession'
+            'sessionDeCour', 'semestres', 'classes', 'matieres', 'enseignants', 'typesCours', 'statutsSession', 'coordinateurs'
         ));
     }
 
@@ -194,6 +254,17 @@ class SessionDeCoursController extends Controller
             'location' => 'nullable|string|max:255',
             'notes' => 'nullable|string',
         ]);
+
+        // Vérifier que pour les cours Workshop et E-learning, l'enseignant est un coordinateur
+        $typeCours = TypeCours::find($request->type_cours_id);
+        if (in_array($typeCours->nom, ['Workshop', 'E-learning'])) {
+            $enseignant = Enseignant::find($request->enseignant_id);
+            if (!$enseignant || !$enseignant->user || $enseignant->user->roles->first()->code !== 'coordinateur') {
+                return back()->withInput()->withErrors([
+                    'enseignant_id' => 'Pour les cours de type "' . $typeCours->nom . '", l\'enseignant sélectionné doit obligatoirement être un coordinateur pédagogique.'
+                ]);
+            }
+        }
 
         // Mettre à jour la session de cours
         $sessionDeCour->update([
@@ -475,5 +546,108 @@ class SessionDeCoursController extends Controller
                 'message' => 'Erreur lors de la récupération de la session: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Afficher les sessions historiques (années terminées) en lecture seule.
+     */
+    public function historique(Request $request): View
+    {
+        $perPage = $request->get('per_page', 15);
+        $perPage = in_array($perPage, [10, 15, 25, 50]) ? $perPage : 15;
+
+        // Charger les sessions historiques (années terminées)
+        $sessionsQuery = DB::table('course_sessions')
+            ->select(
+                'course_sessions.*',
+                'matieres.nom as matiere_nom',
+                'classes.nom as classe_nom',
+                'enseignants.nom as enseignant_nom',
+                'enseignants.prenom as enseignant_prenom',
+                'statuts_session.nom as statut_nom',
+                'semestres.nom as semestre_nom',
+                'annees_academiques.nom as annee_nom',
+                'types_cours.nom as type_cours_nom',
+                'types_cours.code as type_cours_code'
+            )
+            ->leftJoin('matieres', 'course_sessions.matiere_id', '=', 'matieres.id')
+            ->leftJoin('classes', 'course_sessions.classe_id', '=', 'classes.id')
+            ->leftJoin('enseignants', 'course_sessions.enseignant_id', '=', 'enseignants.id')
+            ->leftJoin('statuts_session', 'course_sessions.status_id', '=', 'statuts_session.id')
+            ->leftJoin('semestres', 'course_sessions.semester_id', '=', 'semestres.id')
+            ->leftJoin('annees_academiques', 'semestres.annee_academique_id', '=', 'annees_academiques.id')
+            ->leftJoin('types_cours', 'course_sessions.type_cours_id', '=', 'types_cours.id')
+            ->where('annees_academiques.statut', 'Terminée')
+            ->orderBy('course_sessions.start_time', 'desc');
+
+        // Filtrer selon le rôle de l'utilisateur
+        $user = Auth::user();
+        if ($user && $user->roles->first()->code === 'coordinateur') {
+            // Coordinateur : voir seulement les sessions de sa promotion
+            $coordinateur = $user->coordinateur;
+            if ($coordinateur && $coordinateur->promotion) {
+                $classesIds = $coordinateur->promotion->classes()->pluck('id');
+                $sessionsQuery->whereIn('course_sessions.classe_id', $classesIds);
+            }
+        } elseif ($user && $user->roles->first()->code === 'enseignant') {
+            // Enseignant : voir seulement ses sessions
+            $enseignant = $user->enseignant;
+            if ($enseignant) {
+                $sessionsQuery->where('course_sessions.enseignant_id', $enseignant->id);
+            }
+        }
+
+        // Appliquer les filtres si présents
+        if ($request->filled('annee_academique_id')) {
+            $sessionsQuery->where('annees_academiques.id', $request->annee_academique_id);
+        }
+
+        if ($request->filled('semestre_id')) {
+            $sessionsQuery->where('course_sessions.semester_id', $request->semestre_id);
+        }
+
+        if ($request->filled('classe_id')) {
+            $sessionsQuery->where('course_sessions.classe_id', $request->classe_id);
+        }
+
+        if ($request->filled('matiere_id')) {
+            $sessionsQuery->where('course_sessions.matiere_id', $request->matiere_id);
+        }
+
+        // Paginer les résultats
+        $sessions = $sessionsQuery->paginate($perPage)->appends($request->query());
+
+        // Récupérer les données pour les filtres
+        $anneesAcademiques = DB::table('annees_academiques')
+            ->where('statut', 'Terminée')
+            ->orderBy('nom', 'desc')
+            ->get();
+
+        $semestres = Semestre::with('anneeAcademique')
+            ->whereHas('anneeAcademique', function($query) {
+                $query->where('statut', 'Terminée');
+            })
+            ->orderBy('nom')
+            ->get();
+
+        $matieres = Matiere::orderBy('nom')->get();
+
+        // Filtrer les classes selon le rôle de l'utilisateur
+        if ($user && $user->roles->first()->code === 'coordinateur') {
+            $coordinateur = $user->coordinateur;
+            if ($coordinateur && $coordinateur->promotion) {
+                $classes = $coordinateur->promotion->classes()->orderBy('nom')->get();
+            } else {
+                $classes = collect();
+            }
+        } else {
+            $classes = Classe::orderBy('nom')->get();
+        }
+
+        $typesCours = TypeCours::whereIn('nom', ['Présentiel', 'E-learning', 'Workshop'])->orderBy('nom')->get();
+
+        return view('sessions-de-cours.historique', compact(
+            'sessions', 'anneesAcademiques', 'semestres', 'classes', 'matieres', 'typesCours'
+        ));
     }
 }

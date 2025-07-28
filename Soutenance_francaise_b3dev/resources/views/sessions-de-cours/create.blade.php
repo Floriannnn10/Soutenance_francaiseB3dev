@@ -102,8 +102,11 @@
                                         class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                     <option value="">Sélectionner un enseignant</option>
                                     @foreach($enseignants as $enseignant)
-                                        <option value="{{ $enseignant->id }}">
+                                        <option value="{{ $enseignant->id }}" data-role="{{ $enseignant->user?->roles->first()?->code ?? '' }}">
                                             {{ $enseignant->prenom }} {{ $enseignant->nom }}
+                                            @if($enseignant->user?->roles->first()?->code === 'coordinateur')
+                                                (Coordinateur)
+                                            @endif
                                         </option>
                                     @endforeach
                                 </select>
@@ -223,4 +226,63 @@
             </div>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const typeCoursSelect = document.getElementById('type_cours_id');
+            const enseignantSelect = document.getElementById('enseignant_id');
+
+            // Stocker toutes les options d'enseignants
+            const allEnseignantOptions = Array.from(enseignantSelect.options);
+
+            // Créer un élément pour afficher le message d'aide
+            const helpMessage = document.createElement('div');
+            helpMessage.className = 'mt-2 text-sm text-blue-600 bg-blue-50 p-2 rounded';
+            helpMessage.style.display = 'none';
+            enseignantSelect.parentNode.appendChild(helpMessage);
+
+            function filterEnseignants() {
+                const selectedType = typeCoursSelect.options[typeCoursSelect.selectedIndex]?.text?.toLowerCase();
+                const selectedTypeId = typeCoursSelect.value;
+
+                // Réinitialiser les options
+                enseignantSelect.innerHTML = '<option value="">Sélectionner un enseignant</option>';
+
+                if (selectedType && (selectedType.includes('workshop') || selectedType.includes('e-learning'))) {
+                    // Pour Workshop et E-learning, afficher seulement les coordinateurs
+                    let coordinateurCount = 0;
+                    allEnseignantOptions.forEach(option => {
+                        if (option.value && option.getAttribute('data-role') === 'coordinateur') {
+                            enseignantSelect.appendChild(option.cloneNode(true));
+                            coordinateurCount++;
+                        }
+                    });
+
+                    // Afficher le message d'aide
+                    helpMessage.textContent = `Pour les cours de type "${typeCoursSelect.options[typeCoursSelect.selectedIndex].text}", seuls les coordinateurs pédagogiques peuvent être sélectionnés comme enseignants.`;
+                    helpMessage.style.display = 'block';
+
+                    // Si aucun coordinateur n'est disponible
+                    if (coordinateurCount === 0) {
+                        helpMessage.textContent = 'Aucun coordinateur pédagogique disponible. Veuillez d\'abord créer un coordinateur.';
+                        helpMessage.className = 'mt-2 text-sm text-red-600 bg-red-50 p-2 rounded';
+                    }
+                } else {
+                    // Pour les autres types, afficher tous les enseignants
+                    allEnseignantOptions.forEach(option => {
+                        if (option.value) {
+                            enseignantSelect.appendChild(option.cloneNode(true));
+                        }
+                    });
+
+                    // Masquer le message d'aide
+                    helpMessage.style.display = 'none';
+                }
+            }
+
+            // Appliquer le filtre au chargement et lors du changement
+            filterEnseignants();
+            typeCoursSelect.addEventListener('change', filterEnseignants);
+        });
+    </script>
 </x-app-layout>

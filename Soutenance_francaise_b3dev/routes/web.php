@@ -67,6 +67,7 @@ Route::middleware(['auth'])->group(function () {
     // Routes pour le coordinateur
     Route::middleware(['role:coordinateur'])->group(function () {
         Route::resource('sessions-de-cours', SessionDeCoursController::class)->parameters(['sessions-de-cours' => 'sessionDeCour']);
+        Route::get('/sessions-de-cours/historique', [SessionDeCoursController::class, 'historique'])->name('sessions-de-cours.historique');
         Route::get('/sessions-de-cours/{session}/appel', [SessionDeCoursController::class, 'appel'])->name('sessions-de-cours.appel');
         Route::get('/api/sessions-de-cours/{session}', [SessionDeCoursController::class, 'getSessionJson'])->name('api.sessions-de-cours.show');
         Route::resource('emplois-du-temps', EmploiDuTempsController::class);
