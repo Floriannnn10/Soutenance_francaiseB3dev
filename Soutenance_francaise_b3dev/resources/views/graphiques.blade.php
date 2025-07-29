@@ -174,7 +174,7 @@ const presenceData = @json(\App\Models\Classe::withCount('etudiants')->get()->ma
     $presencesPresent = \App\Models\Presence::whereHas('sessionDeCours', function($q) use ($classe) {
         $q->where('classe_id', $classe->id);
     })->whereHas('statutPresence', function($q) {
-        $q->where('name', 'present');
+        $q->where('nom', 'Présent');
     })->count();
     return [
         'nom' => $classe->nom,
@@ -186,7 +186,7 @@ const presenceData = @json(\App\Models\Classe::withCount('etudiants')->get()->ma
 const etudiantsData = @json(\App\Models\Etudiant::with(['classe', 'presences.statutPresence'])->get()->map(function($etudiant) {
     $totalPresences = $etudiant->presences()->count();
     $presencesPresent = $etudiant->presences()->whereHas('statutPresence', function($q) {
-        $q->where('name', 'present');
+        $q->where('nom', 'Présent');
     })->count();
     $taux = $totalPresences > 0 ? round(($presencesPresent / $totalPresences) * 100) : 0;
 

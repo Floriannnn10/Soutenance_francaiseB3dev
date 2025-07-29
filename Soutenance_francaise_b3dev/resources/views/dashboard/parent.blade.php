@@ -77,7 +77,7 @@
                                 @php
                                     $totalPresences = $etudiant->presences()->count();
                                     $presencesPresent = $etudiant->presences()->whereHas('statutPresence', function($q) {
-                                        $q->where('name', 'present');
+                                        $q->where('nom', 'Présent');
                                     })->count();
                                     $taux = $totalPresences > 0 ? round(($presencesPresent / $totalPresences) * 100) : 0;
                                 @endphp
@@ -89,7 +89,7 @@
                                 <span class="text-xs text-gray-500 dark:text-gray-400">Absences</span>
                                 <span class="text-sm font-medium text-gray-900 dark:text-gray-100">
                                     {{ $etudiant->presences()->whereHas('statutPresence', function($q) {
-                                        $q->where('name', 'absent');
+                                        $q->where('nom', 'Absent');
                                     })->count() }}
                                 </span>
                             </div>
@@ -137,9 +137,9 @@
                             foreach($parent->etudiants as $etudiant) {
                                 $etudiantAbsences = $etudiant->presences()
                                     ->whereHas('statutPresence', function($q) {
-                                        $q->where('name', 'absent');
+                                        $q->where('nom', 'Absent');
                                     })
-                                    ->with(['sessionDeCours.matiere', 'sessionDeCours.typeCours', 'justificationAbsence'])
+                                    ->with(['sessionDeCours.matiere', 'sessionDeCours.typeCours', 'justification'])
                                     ->orderBy('enregistre_le', 'desc')
                                     ->get();
                                 $absences = $absences->merge($etudiantAbsences);
@@ -151,13 +151,13 @@
                             @foreach($absences as $presence)
                             <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg absence-item"
                                  data-enfant="{{ $presence->etudiant->id }}"
-                                 data-justification="{{ $presence->justificationAbsence ? 'justifiee' : 'non-justifiee' }}"
+                                 data-justification="{{ $presence->justification ? 'justifiee' : 'non-justifiee' }}"
                                  data-type="{{ strtolower($presence->sessionDeCours->typeCours->nom) }}">
                                 <div class="flex items-center">
                                     <div class="flex-shrink-0">
-                                        <div class="w-8 h-8 {{ $presence->justificationAbsence ? 'bg-green-100 dark:bg-green-900' : 'bg-red-100 dark:bg-red-900' }} rounded-lg flex items-center justify-center">
-                                            <svg class="w-4 h-4 {{ $presence->justificationAbsence ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                @if($presence->justificationAbsence)
+                                        <div class="w-8 h-8 {{ $presence->justification ? 'bg-green-100 dark:bg-green-900' : 'bg-red-100 dark:bg-red-900' }} rounded-lg flex items-center justify-center">
+                                            <svg class="w-4 h-4 {{ $presence->justification ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                @if($presence->justification)
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                                 @else
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -172,16 +172,16 @@
                                         <p class="text-xs text-gray-500 dark:text-gray-400">
                                             {{ $presence->sessionDeCours->typeCours->nom }} - {{ \Carbon\Carbon::parse($presence->enregistre_le)->format('d/m/Y') }}
                                         </p>
-                                        @if($presence->justificationAbsence)
-                                            <p class="text-xs text-green-600 dark:text-green-400">Justifiée: {{ $presence->justificationAbsence->motif }}</p>
+                                        @if($presence->justification)
+                                            <p class="text-xs text-green-600 dark:text-green-400">Justifiée: {{ $presence->justification->motif }}</p>
                                         @else
                                             <p class="text-xs text-red-600 dark:text-red-400">Non justifiée</p>
                                         @endif
                                     </div>
                                 </div>
                                 <div class="flex items-center space-x-2">
-                                    <span class="text-xs px-2 py-1 rounded-full {{ $presence->justificationAbsence ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' }}">
-                                        {{ $presence->justificationAbsence ? 'Justifiée' : 'Non justifiée' }}
+                                    <span class="text-xs px-2 py-1 rounded-full {{ $presence->justification ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' }}">
+                                        {{ $presence->justification ? 'Justifiée' : 'Non justifiée' }}
                                     </span>
                                 </div>
                             </div>

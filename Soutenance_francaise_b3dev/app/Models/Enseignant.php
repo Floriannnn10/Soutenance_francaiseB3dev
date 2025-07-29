@@ -18,6 +18,7 @@ class Enseignant extends Model
         'user_id',
         'prenom',
         'nom',
+        'email',
         'photo',
     ];
 

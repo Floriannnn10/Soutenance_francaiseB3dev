@@ -95,6 +95,12 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/emplois-du-temps/enseignant', [EmploiDuTempsController::class, 'enseignant'])->name('emplois-du-temps.enseignant');
         Route::post('/presences/presentiel', [PresenceController::class, 'storePresentiel'])->name('presences.presentiel');
 
+        // Routes pour les sessions de cours (enseignants) - avec des noms différents pour éviter les conflits
+        Route::get('/enseignant/sessions-de-cours', [SessionDeCoursController::class, 'index'])->name('enseignant.sessions-de-cours.index');
+        Route::get('/enseignant/sessions-de-cours/{sessionId}', [SessionDeCoursController::class, 'show'])->name('enseignant.sessions-de-cours.show');
+        Route::get('/enseignant/sessions-de-cours/{sessionId}/appel', [SessionDeCoursController::class, 'appel'])->name('enseignant.sessions-de-cours.appel');
+        Route::post('/enseignant/sessions-de-cours/{sessionId}/presences', [SessionDeCoursController::class, 'enregistrerPresences'])->name('enseignant.sessions-de-cours.enregistrer-presences');
+
         // Nouvelles routes pour la prise de présence des enseignants
         Route::post('/enseignant/session/{session}/presence', [EnseignantController::class, 'prisePresence'])->name('enseignant.prise-presence');
         Route::get('/enseignant/session/{session}/etudiants', [EnseignantController::class, 'getEtudiantsClasse'])->name('enseignant.get-etudiants');

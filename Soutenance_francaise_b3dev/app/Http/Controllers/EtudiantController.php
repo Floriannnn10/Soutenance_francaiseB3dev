@@ -36,7 +36,8 @@ class EtudiantController extends Controller
     public function create(): View
     {
         $classes = Classe::all();
-        return view('etudiants.create', compact('classes'));
+        $parents = \App\Models\ParentEtudiant::with('user')->orderBy('nom')->orderBy('prenom')->get();
+        return view('etudiants.create', compact('classes', 'parents'));
     }
 
     /**
@@ -54,6 +55,8 @@ class EtudiantController extends Controller
             'adresse' => 'nullable|string',
             'classe_id' => 'required|exists:classes,id',
             'photo' => 'nullable|image|max:2048',
+            'parents' => 'nullable|array',
+            'parents.*' => 'exists:parents,id',
         ]);
 
         // Créer l'utilisateur
@@ -82,6 +85,7 @@ class EtudiantController extends Controller
             'nom' => $request->nom,
             'prenom' => $request->prenom,
             'email' => $request->email,
+            'password' => bcrypt($request->password),
             'classe_id' => $request->classe_id,
             'date_naissance' => $request->date_naissance,
             'photo' => $photoPath,
@@ -92,8 +96,12 @@ class EtudiantController extends Controller
             $user->update(['photo' => $photoPath]);
         }
 
-        return redirect()->route('etudiants.index')
-            ->with('success', 'Étudiant créé avec succès.');
+        // Attribuer les parents sélectionnés
+        if ($request->has('parents') && is_array($request->parents)) {
+            $etudiant->parents()->attach($request->parents);
+        }
+
+        return redirect()->route('etudiants.index')->with('success', 'Étudiant créé avec succès.');
     }
 
     /**
@@ -111,7 +119,8 @@ class EtudiantController extends Controller
     public function edit(Etudiant $etudiant): View
     {
         $classes = Classe::all();
-        return view('etudiants.edit', compact('etudiant', 'classes'));
+        $parents = \App\Models\ParentEtudiant::with('user')->orderBy('nom')->orderBy('prenom')->get();
+        return view('etudiants.edit', compact('etudiant', 'classes', 'parents'));
     }
 
     /**
@@ -123,11 +132,14 @@ class EtudiantController extends Controller
             'nom' => 'required|string|max:255',
             'prenom' => 'required|string|max:255',
             'email' => ['required', 'email', 'unique:users,email,' . ($etudiant->user_id ?? ''), new ValidEmailDomain],
+            'password' => 'nullable|string|min:6|confirmed',
             'telephone' => 'nullable|string|max:20',
             'date_naissance' => 'nullable|date',
             'adresse' => 'nullable|string',
             'classe_id' => 'required|exists:classes,id',
             'photo' => 'nullable|image|max:2048',
+            'parents' => 'nullable|array',
+            'parents.*' => 'exists:parents,id',
         ]);
 
         // Vérifier si l'étudiant a un utilisateur associé
@@ -142,60 +154,48 @@ class EtudiantController extends Controller
 
             // Mettre à jour le mot de passe si fourni
             if ($request->filled('password')) {
-                $request->validate([
-                    'password' => 'string|min:6|confirmed',
-                ]);
                 $user->update(['password' => bcrypt($request->password)]);
             }
-        } else {
-            // Créer un nouvel utilisateur pour cet étudiant
-            $user = \App\Models\User::create([
-                'nom' => $request->nom,
-                'prenom' => $request->prenom,
-                'email' => $request->email,
-                'password' => bcrypt($request->password ?? 'password'),
-            ]);
+        }
 
-            // Attacher le rôle étudiant
-            $roleEtudiant = \App\Models\Role::where('nom', 'Étudiant')->first();
-            if ($roleEtudiant) {
-                $user->roles()->attach($roleEtudiant->id);
+        // Gérer l'upload de la photo
+        $photoPath = $etudiant->photo;
+        if ($request->hasFile('photo')) {
+            // Supprimer l'ancienne photo si elle existe
+            if ($etudiant->photo && Storage::disk('public')->exists($etudiant->photo)) {
+                Storage::disk('public')->delete($etudiant->photo);
             }
-
-            // Mettre à jour l'étudiant avec le user_id
-            $etudiant->update(['user_id' => $user->id]);
+            $photoPath = $request->file('photo')->store('etudiants', 'public');
         }
 
         // Mettre à jour l'étudiant
-        $etudiantData = [
+        $etudiant->update([
             'nom' => $request->nom,
             'prenom' => $request->prenom,
             'email' => $request->email,
             'classe_id' => $request->classe_id,
             'date_naissance' => $request->date_naissance,
-        ];
+            'photo' => $photoPath,
+        ]);
 
-        // Gérer l'upload de la photo
-        if ($request->hasFile('photo')) {
-            // Supprimer l'ancienne photo si elle existe
-            if ($etudiant->photo && \Illuminate\Support\Facades\Storage::disk('public')->exists($etudiant->photo)) {
-                \Illuminate\Support\Facades\Storage::disk('public')->delete($etudiant->photo);
-            }
-
-            // Sauvegarder la nouvelle photo
-            $photoPath = $request->file('photo')->store('etudiants', 'public');
-            $etudiantData['photo'] = $photoPath;
+        // Mettre à jour le mot de passe dans la table etudiants si fourni
+        if ($request->filled('password')) {
+            $etudiant->update(['password' => bcrypt($request->password)]);
         }
-
-        $etudiant->update($etudiantData);
 
         // Synchroniser la photo avec l'utilisateur
-        if (isset($etudiantData['photo']) && $etudiant->user) {
-            $etudiant->user->update(['photo' => $etudiantData['photo']]);
+        if ($etudiant->user) {
+            $etudiant->user->update(['photo' => $photoPath]);
         }
 
-        return redirect()->route('etudiants.index')
-            ->with('success', 'Étudiant mis à jour avec succès.');
+        // Mettre à jour les parents
+        if ($request->has('parents')) {
+            $etudiant->parents()->sync($request->parents);
+        } else {
+            $etudiant->parents()->detach();
+        }
+
+        return redirect()->route('etudiants.index')->with('success', 'Étudiant mis à jour avec succès.');
     }
 
     /**

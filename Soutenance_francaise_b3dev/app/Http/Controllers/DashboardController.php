@@ -87,7 +87,79 @@ class DashboardController extends Controller
 
     private function enseignantDashboard()
     {
-        return view('dashboard.enseignant');
+        $user = Auth::user();
+        $enseignant = $user->enseignant;
+
+        if (!$enseignant) {
+            return redirect()->route('login')->with('error', 'Profil enseignant non trouvé.');
+        }
+
+        // Récupérer les sessions de l'enseignant
+        $sessions = \App\Models\SessionDeCours::with(['classe', 'matiere', 'typeCours', 'statutSession'])
+            ->where('enseignant_id', $enseignant->id)
+            ->orderBy('start_time', 'desc')
+            ->take(10)
+            ->get();
+
+        // Récupérer les sessions en présentiel pour l'emploi du temps
+        $sessionsPresentiel = \App\Models\SessionDeCours::with(['classe', 'matiere', 'typeCours'])
+            ->where('enseignant_id', $enseignant->id)
+            ->whereHas('typeCours', function($q) {
+                $q->where('nom', 'Présentiel');
+            })
+            ->orderBy('start_time')
+            ->get();
+
+        // Créer l'emploi du temps simplifié
+        $emploiDuTemps = [];
+        $creneaux = [
+            '08:00-10:00' => '8:00',
+            '10:00-12:00' => '10:00',
+            '14:00-16:00' => '14:00',
+            '16:00-18:00' => '16:00'
+        ];
+
+        foreach ($creneaux as $horaire => $heure) {
+            $emploiDuTemps[$horaire] = [
+                'horaire' => $horaire,
+                'lundi' => null,
+                'mardi' => null,
+                'mercredi' => null,
+                'jeudi' => null,
+                'vendredi' => null,
+                'samedi' => null
+            ];
+
+            // Utiliser les noms de jours en anglais pour Carbon
+            $joursAnglais = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+            $joursFrancais = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+
+            foreach ($joursAnglais as $index => $jourAnglais) {
+                $jourFrancais = $joursFrancais[$index];
+
+                // Calculer la date du prochain jour de la semaine
+                $dateJour = now()->startOfWeek()->next($jourAnglais);
+                $heureDebut = $dateJour->copy()->setTimeFromTimeString($heure);
+                $heureFin = $heureDebut->copy()->addHours(2);
+
+                // Chercher une session pour ce créneau (dans les 4 prochaines semaines)
+                $session = $sessionsPresentiel->where('start_time', '>=', $heureDebut)
+                    ->where('start_time', '<', $heureFin)
+                    ->where('start_time', '<=', now()->addWeeks(4))
+                    ->first();
+
+                if ($session) {
+                    $emploiDuTemps[$horaire][$jourFrancais] = [
+                        'matiere' => $session->matiere->nom,
+                        'classe' => $session->classe->nom,
+                        'type' => 'presentiel',
+                        'date' => $session->start_time->format('d/m/Y')
+                    ];
+                }
+            }
+        }
+
+        return view('dashboard.enseignant', compact('sessions', 'emploiDuTemps'));
     }
 
     private function etudiantDashboard()
@@ -143,6 +215,16 @@ class DashboardController extends Controller
 
     private function parentDashboard()
     {
-        return view('dashboard.parent');
+        $user = Auth::user();
+        $parent = $user->parent;
+
+        if (!$parent) {
+            return redirect()->route('login')->with('error', 'Profil parent non trouvé.');
+        }
+
+        // Charger les étudiants avec leurs relations
+        $parent->load(['etudiants.presences.statutPresence', 'etudiants.presences.sessionDeCours.matiere', 'etudiants.presences.sessionDeCours.typeCours', 'etudiants.classe']);
+
+        return view('dashboard.parent', compact('parent'));
     }
 }

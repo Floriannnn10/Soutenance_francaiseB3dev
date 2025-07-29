@@ -292,18 +292,24 @@ class ComprehensiveDataSeeder extends Seeder
 
     private function createEtudiantProfile($userId, $nom, $prenom, $email, $classeId)
     {
-        $existing = DB::table('etudiants')->where('user_id', $userId)->first();
-        if (!$existing) {
-            DB::table('etudiants')->insert([
-                'user_id' => $userId,
-                'nom' => $nom,
-                'prenom' => $prenom,
-                'classe_id' => $classeId,
-                'date_naissance' => Carbon::now()->subYears(rand(18, 25)),
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+        $existing = DB::table('etudiants')->where('email', $email)->first();
+        if ($existing) {
+            return (object) $existing;
         }
+
+        $etudiantId = DB::table('etudiants')->insertGetId([
+            'user_id' => $userId,
+            'nom' => $nom,
+            'prenom' => $prenom,
+            'email' => $email,
+            'password' => Hash::make('password'),
+            'classe_id' => $classeId,
+            'date_naissance' => now()->subYears(rand(18, 25))->format('Y-m-d'),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        return (object) ['id' => $etudiantId, 'nom' => $nom, 'prenom' => $prenom, 'email' => $email];
     }
 
     private function createParentProfile($userId, $nom, $prenom, $email)

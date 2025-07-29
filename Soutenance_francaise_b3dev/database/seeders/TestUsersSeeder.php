@@ -181,7 +181,9 @@ class TestUsersSeeder extends Seeder
                 'nom' => $etudiantData['nom'],
                 'prenom' => $etudiantData['prenom'],
                 'email' => $etudiantData['email'],
+                'password' => Hash::make($etudiantData['password']),
                 'date_naissance' => $etudiantData['date_naissance'],
+                'photo' => null,
             ]);
 
             $this->command->info("✅ Étudiant créé: {$etudiantData['email']} (password) - Classe: {$classe->nom}");

@@ -479,6 +479,8 @@ class SessionDeCoursController extends Controller
                 'enseignants.prenom as enseignant_prenom',
                 'semestres.nom as semestre_nom',
                 'annees_academiques.nom as annee_nom',
+                'annees_academiques.date_debut as annee_date_debut',
+                'annees_academiques.date_fin as annee_date_fin',
                 'types_cours.nom as type_cours_nom'
             )
             ->leftJoin('matieres', 'course_sessions.matiere_id', '=', 'matieres.id')
@@ -491,8 +493,44 @@ class SessionDeCoursController extends Controller
             ->first();
 
         if (!$session) {
-            return redirect()->route('sessions-de-cours.index')
-                ->with('error', 'Session de cours introuvable.');
+            return redirect()->route($this->getRouteName('index'))
+                ->with('error', 'Session introuvable.');
+        }
+
+        // Vérifier les permissions selon le rôle de l'utilisateur
+        $user = Auth::user();
+        $hasAccess = false;
+
+        if ($user->roles->first()->code === 'admin') {
+            // Admin a accès à tout
+            $hasAccess = true;
+        } elseif ($user->roles->first()->code === 'coordinateur') {
+            // Coordinateur : vérifier si la session appartient à sa promotion
+            $coordinateur = $user->coordinateur;
+            if ($coordinateur && $coordinateur->promotion) {
+                $classesIds = $coordinateur->promotion->classes()->pluck('id');
+                $hasAccess = in_array($session->classe_id, $classesIds->toArray());
+            }
+        } elseif ($user->roles->first()->code === 'enseignant') {
+            // Enseignant : vérifier si c'est sa session
+            $enseignant = $user->enseignant;
+            if ($enseignant) {
+                $hasAccess = $session->enseignant_id == $enseignant->id;
+            }
+        }
+
+        if (!$hasAccess) {
+            abort(403, 'Accès non autorisé à cette session.');
+        }
+
+        // Vérifier si l'année académique est terminée
+        if ($session->annee_date_debut && $session->annee_date_fin) {
+            $now = now();
+            $dateFin = \Carbon\Carbon::parse($session->annee_date_fin);
+            if ($now->gt($dateFin)) {
+                return redirect()->route('sessions-de-cours.show', $sessionId)
+                    ->with('error', 'Cette année académique est terminée. Vous ne pouvez plus faire l\'appel.');
+            }
         }
 
         // Récupérer tous les étudiants de la classe
@@ -530,14 +568,51 @@ class SessionDeCoursController extends Controller
 
         // Récupérer les informations de la session
         $session = DB::table('course_sessions')
-            ->select('course_sessions.*', 'semestres.annee_academique_id')
+            ->select('course_sessions.*', 'semestres.annee_academique_id', 'annees_academiques.date_debut', 'annees_academiques.date_fin')
             ->leftJoin('semestres', 'course_sessions.semester_id', '=', 'semestres.id')
+            ->leftJoin('annees_academiques', 'semestres.annee_academique_id', '=', 'annees_academiques.id')
             ->where('course_sessions.id', $sessionId)
             ->first();
 
         if (!$session) {
-            return redirect()->route('sessions-de-cours.index')
+            return redirect()->route($this->getRouteName('index'))
                 ->with('error', 'Session introuvable.');
+        }
+
+        // Vérifier les permissions selon le rôle de l'utilisateur
+        $user = Auth::user();
+        $hasAccess = false;
+
+        if ($user->roles->first()->code === 'admin') {
+            // Admin a accès à tout
+            $hasAccess = true;
+        } elseif ($user->roles->first()->code === 'coordinateur') {
+            // Coordinateur : vérifier si la session appartient à sa promotion
+            $coordinateur = $user->coordinateur;
+            if ($coordinateur && $coordinateur->promotion) {
+                $classesIds = $coordinateur->promotion->classes()->pluck('id');
+                $hasAccess = in_array($session->classe_id, $classesIds->toArray());
+            }
+        } elseif ($user->roles->first()->code === 'enseignant') {
+            // Enseignant : vérifier si c'est sa session
+            $enseignant = $user->enseignant;
+            if ($enseignant) {
+                $hasAccess = $session->enseignant_id == $enseignant->id;
+            }
+        }
+
+        if (!$hasAccess) {
+            abort(403, 'Accès non autorisé à cette session.');
+        }
+
+        // Vérifier si l'année académique est terminée
+        if ($session->date_debut && $session->date_fin) {
+            $now = now();
+            $dateFin = \Carbon\Carbon::parse($session->date_fin);
+            if ($now->gt($dateFin)) {
+                return redirect()->route('sessions-de-cours.show', $sessionId)
+                    ->with('error', 'Cette année académique est terminée. Vous ne pouvez plus enregistrer les présences.');
+            }
         }
 
         // Supprimer les anciennes présences pour cette session
@@ -576,6 +651,8 @@ class SessionDeCoursController extends Controller
                 'statuts_session.nom as statut_nom',
                 'semestres.nom as semestre_nom',
                 'annees_academiques.nom as annee_nom',
+                'annees_academiques.date_debut as annee_date_debut',
+                'annees_academiques.date_fin as annee_date_fin',
                 'types_cours.nom as type_cours_nom',
                 'types_cours.code as type_cours_code'
             )
@@ -590,8 +667,42 @@ class SessionDeCoursController extends Controller
             ->first();
 
         if (!$session) {
-            return redirect()->route('sessions-de-cours.index')
+            return redirect()->route($this->getRouteName('index'))
                 ->with('error', 'Session introuvable.');
+        }
+
+        // Vérifier les permissions selon le rôle de l'utilisateur
+        $user = Auth::user();
+        $hasAccess = false;
+
+        if ($user->roles->first()->code === 'admin') {
+            // Admin a accès à tout
+            $hasAccess = true;
+        } elseif ($user->roles->first()->code === 'coordinateur') {
+            // Coordinateur : vérifier si la session appartient à sa promotion
+            $coordinateur = $user->coordinateur;
+            if ($coordinateur && $coordinateur->promotion) {
+                $classesIds = $coordinateur->promotion->classes()->pluck('id');
+                $hasAccess = in_array($session->classe_id, $classesIds->toArray());
+            }
+        } elseif ($user->roles->first()->code === 'enseignant') {
+            // Enseignant : vérifier si c'est sa session
+            $enseignant = $user->enseignant;
+            if ($enseignant) {
+                $hasAccess = $session->enseignant_id == $enseignant->id;
+            }
+        }
+
+        if (!$hasAccess) {
+            abort(403, 'Accès non autorisé à cette session.');
+        }
+
+        // Vérifier si l'année académique est terminée
+        $anneeTerminee = false;
+        if ($session->annee_date_debut && $session->annee_date_fin) {
+            $now = now();
+            $dateFin = \Carbon\Carbon::parse($session->annee_date_fin);
+            $anneeTerminee = $now->gt($dateFin);
         }
 
         // Calculer les statistiques de présence
@@ -632,7 +743,7 @@ class SessionDeCoursController extends Controller
             }
         }
 
-        return view('sessions-de-cours.show', compact('session', 'presencesStats'));
+        return view('sessions-de-cours.show', compact('session', 'presencesStats', 'anneeTerminee'));
     }
 
     /**
@@ -765,5 +876,17 @@ class SessionDeCoursController extends Controller
         return view('sessions-de-cours.historique', compact(
             'sessions', 'anneesAcademiques', 'semestres', 'classes', 'matieres', 'typesCours'
         ));
+    }
+
+    /**
+     * Obtenir la route appropriée selon le rôle de l'utilisateur
+     */
+    private function getRouteName($route)
+    {
+        $user = Auth::user();
+        if ($user && $user->roles->first()->code === 'enseignant') {
+            return 'enseignant.sessions-de-cours.' . $route;
+        }
+        return 'sessions-de-cours.' . $route;
     }
 }

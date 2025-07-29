@@ -118,6 +118,7 @@ class EtudiantsWithPresenceSeeder extends Seeder
                     'prenom' => $studentData['prenom'],
                     'classe_id' => $classe->id,
                     'email' => $studentData['email'],
+                    'password' => Hash::make('password'),
                     'date_naissance' => Carbon::now()->subYears(20)->subDays(rand(0, 365)),
                     'photo' => null,
                 ]);
@@ -137,6 +138,7 @@ class EtudiantsWithPresenceSeeder extends Seeder
                         'prenom' => $studentData['prenom'],
                         'classe_id' => $classe->id,
                         'email' => $studentData['email'],
+                        'password' => Hash::make('password'),
                         'date_naissance' => Carbon::now()->subYears(20)->subDays(rand(0, 365)),
                         'photo' => null,
                     ]);

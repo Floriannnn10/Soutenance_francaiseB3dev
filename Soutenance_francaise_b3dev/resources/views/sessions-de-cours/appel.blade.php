@@ -39,7 +39,7 @@
                 </div>
             </div>
 
-            <form action="{{ route('presences.store') }}" method="POST">
+            <form action="{{ route('enseignant.sessions-de-cours.enregistrer-presences', $session->id) }}" method="POST">
                 @csrf
                 <input type="hidden" name="session_id" value="{{ $session->id }}">
 
