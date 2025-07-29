@@ -21,12 +21,15 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 use App\Rules\ValidEmailDomain;
+use App\Traits\SonnerNotifier;
 use Exception;
 
 use function Laravel\Prompts\error;
 
 class CoordinateurController extends Controller
 {
+    use SonnerNotifier;
+
     /**
      * Display a listing of the resource.
      */
@@ -453,7 +456,11 @@ class CoordinateurController extends Controller
         if (!$coordinateur || !$coordinateur->promotion) {
             return response()->json([
                 'success' => false,
-                'message' => 'Aucune promotion assignée.'
+                'message' => 'Aucune promotion assignée.',
+                'notification' => [
+                    'type' => 'error',
+                    'message' => 'Aucune promotion assignée.'
+                ]
             ]);
         }
 
@@ -469,7 +476,7 @@ class CoordinateurController extends Controller
             'notes' => 'nullable|string'
         ]);
 
-                // Vérifier le type de cours
+        // Vérifier le type de cours
         $typeCours = TypeCours::find($request->type_cours_id);
 
         // Pour Workshop et E-learning, forcer l'enseignant à être le coordinateur
@@ -480,7 +487,11 @@ class CoordinateurController extends Controller
             if (!$enseignantCoordinateur) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Vous devez avoir un profil enseignant pour créer des sessions Workshop et E-learning.'
+                    'message' => 'Vous devez avoir un profil enseignant pour créer des sessions Workshop et E-learning.',
+                    'notification' => [
+                        'type' => 'error',
+                        'message' => 'Vous devez avoir un profil enseignant pour créer des sessions Workshop et E-learning.'
+                    ]
                 ]);
             }
 
@@ -492,7 +503,11 @@ class CoordinateurController extends Controller
         if (!$anneeActive) {
             return response()->json([
                 'success' => false,
-                'message' => 'Année académique non trouvée.'
+                'message' => 'Année académique non trouvée.',
+                'notification' => [
+                    'type' => 'error',
+                    'message' => 'Année académique non trouvée.'
+                ]
             ]);
         }
 
@@ -512,7 +527,11 @@ class CoordinateurController extends Controller
         if ($conflitClasse) {
             return response()->json([
                 'success' => false,
-                'message' => 'Il y a un conflit d\'horaire pour cette classe.'
+                'message' => 'Il y a un conflit d\'horaire pour cette classe.',
+                'notification' => [
+                    'type' => 'error',
+                    'message' => 'Il y a un conflit d\'horaire pour cette classe.'
+                ]
             ]);
         }
 
@@ -532,7 +551,11 @@ class CoordinateurController extends Controller
         if ($conflitEnseignant) {
             return response()->json([
                 'success' => false,
-                'message' => 'Il y a un conflit d\'horaire pour cet enseignant.'
+                'message' => 'Il y a un conflit d\'horaire pour cet enseignant.',
+                'notification' => [
+                    'type' => 'error',
+                    'message' => 'Il y a un conflit d\'horaire pour cet enseignant.'
+                ]
             ]);
         }
 
@@ -540,29 +563,49 @@ class CoordinateurController extends Controller
         if (!$semestre) {
             return response()->json([
                 'success' => false,
-                'message' => 'Aucun semestre actif trouvé pour cette année académique.'
+                'message' => 'Aucun semestre actif trouvé pour cette année académique.',
+                'notification' => [
+                    'type' => 'error',
+                    'message' => 'Aucun semestre actif trouvé pour cette année académique.'
+                ]
             ]);
         }
 
-        $session = SessionDeCours::create([
-            'classe_id' => $request->classe_id,
-            'matiere_id' => $request->matiere_id,
-            'enseignant_id' => $request->enseignant_id,
-            'type_cours_id' => $request->type_cours_id,
-            'status_id' => $request->status_id,
-            'start_time' => $request->start_time,
-            'end_time' => $request->end_time,
-            'location' => $request->location,
-            'notes' => $request->notes,
-            'annee_academique_id' => $anneeActive->id,
-            'semester_id' => $semestre->id
-        ]);
+        try {
+            $session = SessionDeCours::create([
+                'classe_id' => $request->classe_id,
+                'matiere_id' => $request->matiere_id,
+                'enseignant_id' => $request->enseignant_id,
+                'type_cours_id' => $request->type_cours_id,
+                'status_id' => $request->status_id,
+                'start_time' => $request->start_time,
+                'end_time' => $request->end_time,
+                'location' => $request->location,
+                'notes' => $request->notes,
+                'annee_academique_id' => $anneeActive->id,
+                'semester_id' => $semestre->id
+            ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Session de cours créée avec succès.',
-            'session' => $session->load(['classe', 'matiere', 'enseignant', 'typeCours', 'statutSession'])
-        ]);
+            return response()->json([
+                'success' => true,
+                'message' => 'Session de cours créée avec succès.',
+                'notification' => [
+                    'type' => 'success',
+                    'message' => 'Session de cours créée avec succès.'
+                ],
+                'session' => $session->load(['classe', 'matiere', 'enseignant', 'typeCours', 'statutSession'])
+            ]);
+        } catch (Exception $e) {
+            Log::error('Erreur lors de la création de session: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la création de la session.',
+                'notification' => [
+                    'type' => 'error',
+                    'message' => 'Erreur lors de la création de la session.'
+                ]
+            ], 500);
+        }
     }
 
     /**
@@ -576,7 +619,11 @@ class CoordinateurController extends Controller
         if (!$coordinateur || !$coordinateur->promotion) {
             return response()->json([
                 'success' => false,
-                'message' => 'Aucune promotion assignée.'
+                'message' => 'Aucune promotion assignée.',
+                'notification' => [
+                    'type' => 'error',
+                    'message' => 'Aucune promotion assignée.'
+                ]
             ]);
         }
 
@@ -585,7 +632,11 @@ class CoordinateurController extends Controller
         if (!in_array($session->type_cours_id, $typesAutorises->toArray())) {
             return response()->json([
                 'success' => false,
-                'message' => 'La prise de présence n\'est autorisée que pour les cours Workshop et E-learning.'
+                'message' => 'La prise de présence n\'est autorisée que pour les cours Workshop et E-learning.',
+                'notification' => [
+                    'type' => 'error',
+                    'message' => 'La prise de présence n\'est autorisée que pour les cours Workshop et E-learning.'
+                ]
             ]);
         }
 
@@ -594,7 +645,11 @@ class CoordinateurController extends Controller
         if (!in_array($session->classe_id, $classes->toArray())) {
             return response()->json([
                 'success' => false,
-                'message' => 'Cette session n\'appartient pas à votre promotion.'
+                'message' => 'Cette session n\'appartient pas à votre promotion.',
+                'notification' => [
+                    'type' => 'error',
+                    'message' => 'Cette session n\'appartient pas à votre promotion.'
+                ]
             ]);
         }
 
@@ -632,13 +687,22 @@ class CoordinateurController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Présences enregistrées avec succès.'
+                'message' => 'Présences enregistrées avec succès.',
+                'notification' => [
+                    'type' => 'success',
+                    'message' => 'Présences enregistrées avec succès.'
+                ]
             ]);
 
         } catch (Exception $e) {
+            Log::error('Erreur lors de l\'enregistrement des présences: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Erreur lors de l\'enregistrement des présences: ' . $e->getMessage()
+                'message' => 'Erreur lors de l\'enregistrement des présences: ' . $e->getMessage(),
+                'notification' => [
+                    'type' => 'error',
+                    'message' => 'Erreur lors de l\'enregistrement des présences.'
+                ]
             ], 500);
         }
     }
@@ -646,7 +710,7 @@ class CoordinateurController extends Controller
     /**
      * Modifier une session de cours
      */
-        public function modifierSession(Request $request, SessionDeCours $session)
+    public function modifierSession(Request $request, SessionDeCours $session)
     {
         try {
             $user = Auth::user();
@@ -655,7 +719,11 @@ class CoordinateurController extends Controller
             if (!$coordinateur || !$coordinateur->promotion) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Aucune promotion assignée.'
+                    'message' => 'Aucune promotion assignée.',
+                    'notification' => [
+                        'type' => 'error',
+                        'message' => 'Aucune promotion assignée.'
+                    ]
                 ]);
             }
             $request->validate([
@@ -670,81 +738,100 @@ class CoordinateurController extends Controller
                 'notes' => 'nullable|string'
             ]);
 
-        // Vérifier le type de cours
-        $typeCours = TypeCours::find($request->type_cours_id);
+            // Vérifier le type de cours
+            $typeCours = TypeCours::find($request->type_cours_id);
 
-        // Pour Workshop et E-learning, forcer l'enseignant à être le coordinateur
-        if (in_array($typeCours->nom, ['Workshop', 'E-learning'])) {
-            // Vérifier si le coordinateur a un enseignant associé
-            $enseignantCoordinateur = Enseignant::where('user_id', $coordinateur->user_id)->first();
+            // Pour Workshop et E-learning, forcer l'enseignant à être le coordinateur
+            if (in_array($typeCours->nom, ['Workshop', 'E-learning'])) {
+                // Vérifier si le coordinateur a un enseignant associé
+                $enseignantCoordinateur = Enseignant::where('user_id', $coordinateur->user_id)->first();
 
-            if (!$enseignantCoordinateur) {
+                if (!$enseignantCoordinateur) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Vous devez avoir un profil enseignant pour modifier des sessions Workshop et E-learning.',
+                        'notification' => [
+                            'type' => 'error',
+                            'message' => 'Vous devez avoir un profil enseignant pour modifier des sessions Workshop et E-learning.'
+                        ]
+                    ]);
+                }
+
+                // Forcer automatiquement l'enseignant à être le coordinateur
+                $request->merge(['enseignant_id' => $enseignantCoordinateur->id]);
+            }
+
+            $anneeActive = AnneeAcademique::find($request->input('annee_id'));
+            if (!$anneeActive) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Vous devez avoir un profil enseignant pour modifier des sessions Workshop et E-learning.'
+                    'message' => 'Année académique non trouvée.',
+                    'notification' => [
+                        'type' => 'error',
+                        'message' => 'Année académique non trouvée.'
+                    ]
                 ]);
             }
 
-            // Forcer automatiquement l'enseignant à être le coordinateur
-            $request->merge(['enseignant_id' => $enseignantCoordinateur->id]);
-        }
+            // Vérifier les conflits d'horaire pour la classe (exclure la session actuelle)
+            $conflitClasse = SessionDeCours::where('classe_id', $request->classe_id)
+                ->where('annee_academique_id', $anneeActive->id)
+                ->where('course_sessions.id', '!=', $session->id)
+                ->where(function($query) use ($request) {
+                    $query->whereBetween('start_time', [$request->start_time, $request->end_time])
+                        ->orWhereBetween('end_time', [$request->start_time, $request->end_time])
+                        ->orWhere(function($q) use ($request) {
+                            $q->where('start_time', '<=', $request->start_time)
+                              ->where('end_time', '>=', $request->end_time);
+                        });
+                })
+                ->exists();
 
-        $anneeActive = AnneeAcademique::find($request->input('annee_id'));
-        if (!$anneeActive) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Année académique non trouvée.'
-            ]);
-        }
+            if ($conflitClasse) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Il y a un conflit d\'horaire pour cette classe.',
+                    'notification' => [
+                        'type' => 'error',
+                        'message' => 'Il y a un conflit d\'horaire pour cette classe.'
+                    ]
+                ]);
+            }
 
-        // Vérifier les conflits d'horaire pour la classe (exclure la session actuelle)
-        $conflitClasse = SessionDeCours::where('classe_id', $request->classe_id)
-            ->where('annee_academique_id', $anneeActive->id)
-            ->where('course_sessions.id', '!=', $session->id)
-            ->where(function($query) use ($request) {
-                $query->whereBetween('start_time', [$request->start_time, $request->end_time])
-                    ->orWhereBetween('end_time', [$request->start_time, $request->end_time])
-                    ->orWhere(function($q) use ($request) {
-                        $q->where('start_time', '<=', $request->start_time)
-                          ->where('end_time', '>=', $request->end_time);
-                    });
-            })
-            ->exists();
+            // Vérifier les conflits d'horaire pour l'enseignant (exclure la session actuelle)
+            $conflitEnseignant = SessionDeCours::where('enseignant_id', $request->enseignant_id)
+                ->where('annee_academique_id', $anneeActive->id)
+                ->where('course_sessions.id', '!=', $session->id)
+                ->where(function($query) use ($request) {
+                    $query->whereBetween('start_time', [$request->start_time, $request->end_time])
+                        ->orWhereBetween('end_time', [$request->start_time, $request->end_time])
+                        ->orWhere(function($q) use ($request) {
+                            $q->where('start_time', '<=', $request->start_time)
+                              ->where('end_time', '>=', $request->end_time);
+                        });
+                })
+                ->exists();
 
-        if ($conflitClasse) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Il y a un conflit d\'horaire pour cette classe.'
-            ]);
-        }
+            if ($conflitEnseignant) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Il y a un conflit d\'horaire pour cet enseignant.',
+                    'notification' => [
+                        'type' => 'error',
+                        'message' => 'Il y a un conflit d\'horaire pour cet enseignant.'
+                    ]
+                ]);
+            }
 
-        // Vérifier les conflits d'horaire pour l'enseignant (exclure la session actuelle)
-        $conflitEnseignant = SessionDeCours::where('enseignant_id', $request->enseignant_id)
-            ->where('annee_academique_id', $anneeActive->id)
-            ->where('course_sessions.id', '!=', $session->id)
-            ->where(function($query) use ($request) {
-                $query->whereBetween('start_time', [$request->start_time, $request->end_time])
-                    ->orWhereBetween('end_time', [$request->start_time, $request->end_time])
-                    ->orWhere(function($q) use ($request) {
-                        $q->where('start_time', '<=', $request->start_time)
-                          ->where('end_time', '>=', $request->end_time);
-                    });
-            })
-            ->exists();
-
-        if ($conflitEnseignant) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Il y a un conflit d\'horaire pour cet enseignant.'
-            ]);
-        }
-
-        try {
             $semestre = $anneeActive->semestres()->where('actif', true)->first();
             if (!$semestre) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Aucun semestre actif trouvé pour cette année académique.'
+                    'message' => 'Aucun semestre actif trouvé pour cette année académique.',
+                    'notification' => [
+                        'type' => 'error',
+                        'message' => 'Aucun semestre actif trouvé pour cette année académique.'
+                    ]
                 ]);
             }
 
@@ -765,22 +852,22 @@ class CoordinateurController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Session modifiée avec succès.',
+                'notification' => [
+                    'type' => 'success',
+                    'message' => 'Session modifiée avec succès.'
+                ],
                 'session' => $session->load(['classe', 'matiere', 'enseignant', 'typeCours', 'statutSession'])
             ]);
 
         } catch (Exception $e) {
+            Log::error('Erreur lors de la modification de session: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Erreur lors de la modification de la session: ' . $e->getMessage()
-            ], 500);
-        }
-        } catch (Exception $e) {
-            error('Erreur dans modifierSession: ' . $e->getMessage());
-            error('Stack trace: ' . $e->getTraceAsString());
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur générale lors de la modification: ' . $e->getMessage()
+                'message' => 'Erreur lors de la modification de la session: ' . $e->getMessage(),
+                'notification' => [
+                    'type' => 'error',
+                    'message' => 'Erreur lors de la modification de la session.'
+                ]
             ], 500);
         }
     }

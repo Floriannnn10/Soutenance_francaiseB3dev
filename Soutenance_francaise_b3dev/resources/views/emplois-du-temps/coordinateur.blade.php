@@ -684,15 +684,41 @@ function openCreateModal() {
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
+                        // Afficher notification de succès avec Sonner
+                        if (data.notification && window.showNotification) {
+                            window.showNotification(data.notification.type, data.notification.message);
+                        } else if (window.SonnerHelper) {
+                            window.SonnerHelper.success(data.message || 'Opération réussie');
+                        } else if (window.toast) {
+                            window.toast.success(data.message || 'Opération réussie');
+                        }
+
                         closeSessionModal();
                         location.reload();
                     } else {
-                        alert('Erreur: ' + data.message);
+                        // Afficher notification d'erreur avec Sonner
+                        if (data.notification && window.showNotification) {
+                            window.showNotification(data.notification.type, data.notification.message);
+                        } else if (window.SonnerHelper) {
+                            window.SonnerHelper.error(data.message || 'Une erreur est survenue');
+                        } else if (window.toast) {
+                            window.toast.error(data.message || 'Une erreur est survenue');
+                        } else {
+                            alert('Erreur: ' + data.message);
+                        }
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    alert('Une erreur est survenue');
+
+                    // Afficher notification d'erreur avec Sonner
+                    if (window.SonnerHelper) {
+                        window.SonnerHelper.error('Une erreur est survenue lors de la communication avec le serveur');
+                    } else if (window.toast) {
+                        window.toast.error('Une erreur est survenue lors de la communication avec le serveur');
+                    } else {
+                        alert('Une erreur est survenue');
+                    }
                 });
             }
 

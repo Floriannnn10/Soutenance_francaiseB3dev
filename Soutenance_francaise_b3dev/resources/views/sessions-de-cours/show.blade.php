@@ -24,10 +24,12 @@
                             <i class="fas fa-clipboard-check mr-2"></i>Faire l'Appel
                         </a>
                     @endif
-                    <a href="{{ route('sessions-de-cours.edit', $session->id) }}"
-                       class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md flex items-center">
-                        <i class="fas fa-edit mr-2"></i>Modifier
-                    </a>
+                    @if(!($isEnseignant && ($type === 'presentiel' || $typeCode === 'presentiel')))
+                        <a href="{{ route('sessions-de-cours.edit', $session->id) }}"
+                           class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md flex items-center">
+                            <i class="fas fa-edit mr-2"></i>Modifier
+                        </a>
+                    @endif
                 @else
                     <span class="bg-gray-400 text-white font-medium py-2 px-4 rounded-md flex items-center cursor-not-allowed">
                         <i class="fas fa-lock mr-2"></i>Lecture seule
@@ -211,10 +213,17 @@
                         <div class="text-center">
                             @if(!$anneeTerminee)
                                 @if(($isCoordinateur && ($type === 'workshop' || $typeCode === 'workshop' || $type === 'e-learning' || $typeCode === 'e_learning' || $type === 'elearning')) || ($isEnseignant && ($type === 'presentiel' || $typeCode === 'presentiel')))
-                                    <a href="{{ route('sessions-de-cours.appel', $session->id) }}"
-                                       class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md">
-                                        <i class="fas fa-edit mr-2"></i>Modifier les Présences
-                                    </a>
+                                    @if($isEnseignant)
+                                        <a href="{{ route('enseignant.sessions-de-cours.appel', $session->id) }}"
+                                           class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md">
+                                            <i class="fas fa-edit mr-2"></i>Modifier les Présences
+                                        </a>
+                                    @else
+                                        <a href="{{ route('sessions-de-cours.appel', $session->id) }}"
+                                           class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md">
+                                            <i class="fas fa-edit mr-2"></i>Modifier les Présences
+                                        </a>
+                                    @endif
                                 @endif
                             @endif
                         </div>
@@ -226,10 +235,17 @@
                             <p class="text-gray-500 mb-4">Aucun appel n'a encore été fait pour cette session.</p>
                             @if(!$anneeTerminee)
                                 @if(($isCoordinateur && ($type === 'workshop' || $typeCode === 'workshop' || $type === 'e-learning' || $typeCode === 'e_learning' || $type === 'elearning')) || ($isEnseignant && ($type === 'presentiel' || $typeCode === 'presentiel')))
-                                    <a href="{{ route('sessions-de-cours.appel', $session->id) }}"
-                                       class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-6 rounded-md">
-                                        <i class="fas fa-clipboard-check mr-2"></i>Faire l'Appel Maintenant
-                                    </a>
+                                    @if($isEnseignant)
+                                        <a href="{{ route('enseignant.sessions-de-cours.appel', $session->id) }}"
+                                           class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-6 rounded-md">
+                                            <i class="fas fa-clipboard-check mr-2"></i>Faire l'Appel Maintenant
+                                        </a>
+                                    @else
+                                        <a href="{{ route('sessions-de-cours.appel', $session->id) }}"
+                                           class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-6 rounded-md">
+                                            <i class="fas fa-clipboard-check mr-2"></i>Faire l'Appel Maintenant
+                                        </a>
+                                    @endif
                                 @else
                                     <p class="text-gray-400 text-sm">Vous n'êtes pas autorisé à faire l'appel pour ce type de cours.</p>
                                 @endif

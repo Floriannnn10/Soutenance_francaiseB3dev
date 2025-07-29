@@ -39,7 +39,7 @@
                     <!-- Filtres -->
                     <div class="bg-white rounded-lg shadow p-6 mb-6">
                         <h3 class="text-lg font-semibold mb-4">Filtrer les sessions</h3>
-                        <form method="GET" action="{{ route('sessions-de-cours.index') }}" class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                        <form method="GET" action="{{ Auth::user()->roles->first()->code === 'enseignant' ? route('enseignant.sessions-de-cours.index') : route('sessions-de-cours.index') }}" class="grid grid-cols-1 md:grid-cols-5 gap-4">
                             <div>
                                 <label for="annee_academique_id" class="block text-sm font-medium text-gray-700 mb-1">Année académique</label>
                                 <select name="annee_academique_id" id="annee_academique_id" class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
@@ -86,10 +86,10 @@
                             </div>
                             <div class="flex items-end">
                                 <div class="flex space-x-2">
-                                    <button type="submit" class="bg-blue-600 hover:bg-[#FD0800] text-white font-medium py-2 px-4 rounded-md transition">
+                                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition">
                                         <i class="fas fa-search mr-2"></i>Filtrer
                                     </button>
-                                    <a href="{{ route('sessions-de-cours.index') }}" class="bg-gray-500 hover:bg-[#FD0800] text-white font-medium py-2 px-4 rounded-md transition">
+                                    <a href="{{ Auth::user()->roles->first()->code === 'enseignant' ? route('enseignant.sessions-de-cours.index') : route('sessions-de-cours.index') }}" class="bg-gray-500 hover:bg-[#FD0800] text-white font-medium py-2 px-4 rounded-md transition">
                                         <i class="fas fa-times mr-2"></i>Réinitialiser
                                     </a>
                                 </div>
@@ -171,7 +171,7 @@
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                             <div class="flex flex-col space-y-1">
-                                                <a href="{{ route('sessions-de-cours.show', $session->id) }}"
+                                                <a href="{{ Auth::user()->roles->first()->code === 'enseignant' ? route('enseignant.sessions-de-cours.show', $session->id) : route('sessions-de-cours.show', $session->id) }}"
                                                    class="text-blue-600 hover:text-blue-900 flex items-center" title="Voir">
                                                     <i class="fas fa-eye mr-2"></i>Voir
                                                 </a>
@@ -203,27 +203,29 @@
                                                 @endphp
                                                 @if(($isCoordinateur && ($type === 'workshop' || $typeCode === 'workshop' || $type === 'e-learning' || $typeCode === 'e_learning' || $type === 'elearning')) || ($isEnseignant && ($type === 'presentiel' || $typeCode === 'presentiel')))
                                                     @if($peutModifier)
-                                                        <a href="{{ route('sessions-de-cours.appel', $session->id) }}"
+                                                        <a href="{{ $isEnseignant ? route('enseignant.sessions-de-cours.appel', $session->id) : route('sessions-de-cours.appel', $session->id) }}"
                                                            class="text-green-600 hover:text-green-900 flex items-center" title="Faire l'Appel">
                                                             <i class="fas fa-clipboard-check mr-2"></i>Faire l'Appel
                                                         </a>
                                                     @endif
                                                 @endif
                                                 @if($peutModifier)
-                                                    <a href="{{ route('sessions-de-cours.edit', $session->id) }}"
-                                                       class="text-orange-600 hover:text-orange-900 flex items-center" title="Éditer">
-                                                        <i class="fas fa-edit mr-2"></i>Éditer
-                                                    </a>
-                                                    <form action="{{ route('sessions-de-cours.destroy', $session->id) }}"
-                                                          method="POST" class="inline">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <button type="submit"
-                                                                class="text-red-600 hover:text-red-900 flex items-center" title="Supprimer"
-                                                                onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette session ?')">
-                                                            <i class="fas fa-times mr-2"></i>Supprimer
-                                                        </button>
-                                                    </form>
+                                                    @if(!($isCoordinateur && ($type === 'presentiel' || $typeCode === 'presentiel')) && !($isEnseignant && ($type === 'presentiel' || $typeCode === 'presentiel')))
+                                                        <a href="{{ $isEnseignant ? route('enseignant.sessions-de-cours.edit', $session->id) : route('sessions-de-cours.edit', $session->id) }}"
+                                                           class="text-orange-600 hover:text-orange-900 flex items-center" title="Éditer">
+                                                            <i class="fas fa-edit mr-2"></i>Éditer
+                                                        </a>
+                                                        <form action="{{ $isEnseignant ? route('enseignant.sessions-de-cours.destroy', $session->id) : route('sessions-de-cours.destroy', $session->id) }}"
+                                                              method="POST" class="inline">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <button type="submit"
+                                                                    class="text-red-600 hover:text-red-900 flex items-center" title="Supprimer"
+                                                                    onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette session ?')">
+                                                                <i class="fas fa-times mr-2"></i>Supprimer
+                                                            </button>
+                                                        </form>
+                                                    @endif
                                                 @else
                                                     <span class="text-gray-400 text-xs">Lecture seule</span>
                                                 @endif

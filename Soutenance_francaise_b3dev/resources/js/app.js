@@ -1,4 +1,5 @@
 import './bootstrap';
+import './sonner-helper';
 
 import Alpine from 'alpinejs';
 

@@ -21,6 +21,9 @@
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
+    <!-- Sonner Toaster -->
+    <div id="sonner-toaster"></div>
+
     <!-- Custom styles for icons fallback -->
     <style>
         .action-icon {
@@ -216,13 +219,10 @@
                         <a href="{{ route('dashboard') }}" class="text-gray-700 hover:text-blue-600 px-2 md:px-3 lg:px-4 py-2 text-xs md:text-sm font-medium whitespace-nowrap {{ request()->routeIs('dashboard') ? 'text-blue-600 font-semibold' : '' }}">
                             [ TABLEAU DE BORD ]
                         </a>
-                        <a href="{{ route('sessions-de-cours.index') }}" class="text-gray-700 hover:text-blue-600 px-2 md:px-3 lg:px-4 py-2 text-xs md:text-sm font-medium whitespace-nowrap {{ request()->routeIs('sessions-de-cours.*') ? 'text-blue-600 font-semibold' : '' }}">
-                            MES SESSIONS
-                        </a>
-                        <a href="{{ route('presences.index') }}" class="text-gray-700 hover:text-blue-600 px-2 md:px-3 lg:px-4 py-2 text-xs md:text-sm font-medium whitespace-nowrap {{ request()->routeIs('presences.*') ? 'text-blue-600 font-semibold' : '' }}">
+                        <a href="{{ route('enseignant.presences.index') }}" class="text-gray-700 hover:text-blue-600 px-2 md:px-3 lg:px-4 py-2 text-xs md:text-sm font-medium whitespace-nowrap {{ request()->routeIs('enseignant.presences.*') ? 'text-blue-600 font-semibold' : '' }}">
                             PRÉSENCES
                         </a>
-                        <a href="{{ route('emplois-du-temps.index') }}" class="text-gray-700 hover:text-blue-600 px-2 md:px-3 lg:px-4 py-2 text-xs md:text-sm font-medium whitespace-nowrap {{ request()->routeIs('emplois-du-temps.*') ? 'text-blue-600 font-semibold' : '' }}">
+                        <a href="{{ route('enseignant.sessions-de-cours.index') }}" class="text-gray-700 hover:text-blue-600 px-2 md:px-3 lg:px-4 py-2 text-xs md:text-sm font-medium whitespace-nowrap {{ request()->routeIs('enseignant.sessions-de-cours.*') ? 'text-blue-600 font-semibold' : '' }}">
                             EMPLOI DU TEMPS
                         </a>
                         <a href="{{ route('profile.edit') }}" class="text-gray-700 hover:text-blue-600 px-2 md:px-3 lg:px-4 py-2 text-xs md:text-sm font-medium whitespace-nowrap {{ request()->routeIs('profile.edit') ? 'text-blue-600 font-semibold' : '' }}">
@@ -366,13 +366,10 @@
                     <a href="{{ route('dashboard') }}" class="block px-4 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 transition {{ request()->routeIs('dashboard') ? 'text-blue-600 font-semibold' : '' }}">
                         [ TABLEAU DE BORD ]
                     </a>
-                    <a href="{{ route('sessions-de-cours.index') }}" class="block px-4 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 transition {{ request()->routeIs('sessions-de-cours.*') ? 'text-blue-600 font-semibold' : '' }}">
-                        MES SESSIONS
-                    </a>
-                    <a href="{{ route('presences.index') }}" class="block px-4 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 transition {{ request()->routeIs('presences.*') ? 'text-blue-600 font-semibold' : '' }}">
+                    <a href="{{ route('enseignant.presences.index') }}" class="block px-4 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 transition {{ request()->routeIs('enseignant.presences.*') ? 'text-blue-600 font-semibold' : '' }}">
                         PRÉSENCES
                     </a>
-                    <a href="{{ route('emplois-du-temps.index') }}" class="block px-4 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 transition {{ request()->routeIs('emplois-du-temps.*') ? 'text-blue-600 font-semibold' : '' }}">
+                    <a href="{{ route('enseignant.sessions-de-cours.index') }}" class="block px-4 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 transition {{ request()->routeIs('enseignant.sessions-de-cours.*') ? 'text-blue-600 font-semibold' : '' }}">
                         EMPLOI DU TEMPS
                     </a>
                 @elseif($roleCode === 'etudiant')
@@ -443,6 +440,7 @@
     </script>
 
     @stack('scripts')
+    @include('components.sonner-toaster')
 </body>
 
 </html>

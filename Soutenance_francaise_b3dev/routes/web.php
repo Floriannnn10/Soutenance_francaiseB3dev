@@ -79,6 +79,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/presences', [PresenceController::class, 'index'])->name('presences.index');
         Route::post('/presences/store', [PresenceController::class, 'store'])->name('presences.store');
         Route::post('/presences/workshop-elearning', [PresenceController::class, 'storeWorkshopElearning'])->name('presences.workshop-elearning');
+        Route::put('/presences/{presence}', [PresenceController::class, 'update'])->name('presences.update');
 
         // Nouvelles routes pour le coordinateur
         Route::get('/coordinateur/emplois-du-temps', [CoordinateurController::class, 'emploisDuTemps'])->name('coordinateur.emplois-du-temps');
@@ -100,6 +101,13 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/enseignant/sessions-de-cours/{sessionId}', [SessionDeCoursController::class, 'show'])->name('enseignant.sessions-de-cours.show');
         Route::get('/enseignant/sessions-de-cours/{sessionId}/appel', [SessionDeCoursController::class, 'appel'])->name('enseignant.sessions-de-cours.appel');
         Route::post('/enseignant/sessions-de-cours/{sessionId}/presences', [SessionDeCoursController::class, 'enregistrerPresences'])->name('enseignant.sessions-de-cours.enregistrer-presences');
+        Route::get('/enseignant/sessions-de-cours/{sessionDeCour}/edit', [SessionDeCoursController::class, 'edit'])->name('enseignant.sessions-de-cours.edit');
+        Route::put('/enseignant/sessions-de-cours/{sessionDeCour}', [SessionDeCoursController::class, 'update'])->name('enseignant.sessions-de-cours.update');
+        Route::delete('/enseignant/sessions-de-cours/{sessionDeCour}', [SessionDeCoursController::class, 'destroy'])->name('enseignant.sessions-de-cours.destroy');
+
+        // Routes pour la modification des présences
+        Route::get('/enseignant/presences', [PresenceController::class, 'index'])->name('enseignant.presences.index');
+        Route::put('/enseignant/presences/{presence}', [PresenceController::class, 'update'])->name('enseignant.presences.update');
 
         // Nouvelles routes pour la prise de présence des enseignants
         Route::post('/enseignant/session/{session}/presence', [EnseignantController::class, 'prisePresence'])->name('enseignant.prise-presence');
@@ -124,5 +132,9 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/notifications/marquer-lue/{notification}', [NotificationController::class, 'marquerLue'])->name('notifications.marquer-lue');
     Route::post('/notifications/marquer-toutes-lues', [NotificationController::class, 'marquerToutesLues'])->name('notifications.marquer-toutes-lues');
 });
+
+// Routes de test pour Sonner
+Route::get('/test-sonner', [App\Http\Controllers\TestSonnerController::class, 'index'])->name('test-sonner');
+Route::post('/test-sonner', [App\Http\Controllers\TestSonnerController::class, 'test'])->name('test-sonner.post');
 
 require __DIR__.'/auth.php';

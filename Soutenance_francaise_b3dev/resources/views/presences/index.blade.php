@@ -66,7 +66,7 @@
     <!-- Filtres -->
     <div class="bg-white rounded-lg shadow p-6 mb-6">
         <h2 class="text-lg font-semibold mb-4">Filtrer les présences</h2>
-        <form method="GET" action="{{ route('presences.index') }}" class="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <form method="GET" action="{{ Auth::user()->roles->first()->code === 'enseignant' ? route('enseignant.presences.index') : route('presences.index') }}" class="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div>
                 <label for="classe_id" class="block text-sm font-medium text-gray-700 mb-1">Classe</label>
                 <select name="classe_id" id="classe_id" class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
@@ -107,10 +107,10 @@
 
             <div class="flex items-end">
                 <div class="flex space-x-2">
-                    <button type="submit" class="bg-blue-600 hover:bg-[#FD0800] text-white font-medium py-2 px-4 rounded-md transition">
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition">
                         <i class="fas fa-search mr-2"></i>Filtrer
                     </button>
-                    <a href="{{ route('presences.index') }}" class="bg-gray-500 hover:bg-[#FD0800] text-white font-medium py-2 px-4 rounded-md transition">
+                    <a href="{{ Auth::user()->roles->first()->code === 'enseignant' ? route('enseignant.presences.index') : route('presences.index') }}" class="bg-gray-500 hover:bg-[#FD0800] text-white font-medium py-2 px-4 rounded-md transition">
                         <i class="fas fa-times mr-2"></i>Réinitialiser
                     </a>
                 </div>
@@ -121,19 +121,22 @@
         <div class="mt-4">
             <h4 class="text-sm font-medium text-gray-700 mb-2">Périodes rapides :</h4>
             <div class="flex space-x-2">
-                <a href="{{ route('presences.index', array_merge(request()->query(), ['date_debut' => now()->startOfWeek()->format('Y-m-d'), 'date_fin' => now()->endOfWeek()->format('Y-m-d')])) }}"
+                @php
+                    $baseRoute = Auth::user()->roles->first()->code === 'enseignant' ? 'enseignant.presences.index' : 'presences.index';
+                @endphp
+                <a href="{{ route($baseRoute, array_merge(request()->query(), ['date_debut' => now()->startOfWeek()->format('Y-m-d'), 'date_fin' => now()->endOfWeek()->format('Y-m-d')])) }}"
                    class="text-xs bg-blue-100 hover:bg-blue-200 text-blue-800 px-3 py-1 rounded-full transition">
                     Cette semaine
                 </a>
-                <a href="{{ route('presences.index', array_merge(request()->query(), ['date_debut' => now()->startOfMonth()->format('Y-m-d'), 'date_fin' => now()->endOfMonth()->format('Y-m-d')])) }}"
+                <a href="{{ route($baseRoute, array_merge(request()->query(), ['date_debut' => now()->startOfMonth()->format('Y-m-d'), 'date_fin' => now()->endOfMonth()->format('Y-m-d')])) }}"
                    class="text-xs bg-green-100 hover:bg-green-200 text-green-800 px-3 py-1 rounded-full transition">
                     Ce mois
                 </a>
-                <a href="{{ route('presences.index', array_merge(request()->query(), ['date_debut' => now()->subDays(7)->format('Y-m-d'), 'date_fin' => now()->format('Y-m-d')])) }}"
+                <a href="{{ route($baseRoute, array_merge(request()->query(), ['date_debut' => now()->subDays(7)->format('Y-m-d'), 'date_fin' => now()->format('Y-m-d')])) }}"
                    class="text-xs bg-yellow-100 hover:bg-yellow-200 text-yellow-800 px-3 py-1 rounded-full transition">
                     Derniers 7 jours
                 </a>
-                <a href="{{ route('presences.index', array_merge(request()->query(), ['date_debut' => now()->subDays(30)->format('Y-m-d'), 'date_fin' => now()->format('Y-m-d')])) }}"
+                <a href="{{ route($baseRoute, array_merge(request()->query(), ['date_debut' => now()->subDays(30)->format('Y-m-d'), 'date_fin' => now()->format('Y-m-d')])) }}"
                    class="text-xs bg-purple-100 hover:bg-purple-200 text-purple-800 px-3 py-1 rounded-full transition">
                     Derniers 30 jours
                 </a>

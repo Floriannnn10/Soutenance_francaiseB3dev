@@ -15,9 +15,12 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use App\Traits\SonnerNotifier;
+use Carbon\Carbon;
 
 class SessionDeCoursController extends Controller
 {
+    use SonnerNotifier;
     /**
      * Afficher la liste des sessions de cours.
      */
@@ -244,26 +247,11 @@ class SessionDeCoursController extends Controller
             }
         }
 
-        // Créer la session de cours avec les bons noms de colonnes
-        $sessionDeCours = DB::table('course_sessions')->insertGetId([
-            'semester_id' => $request->semestre_id,
-            'classe_id' => $request->classe_id,
-            'matiere_id' => $request->matiere_id,
-            'enseignant_id' => $request->enseignant_id,
-            'type_cours_id' => $request->type_cours_id,
-            'status_id' => $request->status_id,
-            'start_time' => $request->start_time,
-            'end_time' => $request->end_time,
-            'location' => $request->location,
-            'notes' => $request->notes,
-            'annee_academique_id' => DB::table('semestres')
-                ->where('semestres.id', $request->semestre_id)
-                ->value('annee_academique_id'),
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        // Créer la session de cours
+        $sessionDeCours = SessionDeCours::create($request->all());
 
-        return redirect()->route('semestres.show', $request->semestre_id)
+        // Test direct avec Sonner
+        return redirect()->route('sessions-de-cours.index')
             ->with('success', 'Session de cours créée avec succès.');
     }
 
@@ -283,13 +271,27 @@ class SessionDeCoursController extends Controller
         // Vérifier si l'utilisateur peut modifier cette session
         $user = Auth::user();
         $peutModifier = true;
+
         if ($user && $user->roles->first()->code === 'coordinateur') {
+            // Les coordinateurs ne peuvent pas modifier les sessions en présentiel
+            if ($sessionDeCour->typeCours && $sessionDeCour->typeCours->nom === 'Présentiel') {
+                return redirect()->route('sessions-de-cours.index')
+                    ->with('error', 'Les coordinateurs ne peuvent pas modifier les sessions en présentiel. Seuls les enseignants peuvent les modifier.');
+            }
+
+            // Vérifier si l'année académique est terminée
             if ($anneeAcademique && $anneeAcademique->date_debut && $anneeAcademique->date_fin) {
                 $now = now();
                 $dateFin = \Carbon\Carbon::parse($anneeAcademique->date_fin);
                 if ($now->gt($dateFin)) {
                     $peutModifier = false;
                 }
+            }
+        } elseif ($user && $user->roles->first()->code === 'enseignant') {
+            // Les enseignants ne peuvent pas modifier leurs sessions en présentiel
+            if ($sessionDeCour->typeCours && $sessionDeCour->typeCours->nom === 'Présentiel') {
+                return redirect()->route('enseignant.sessions-de-cours.index')
+                    ->with('error', 'Les enseignants ne peuvent pas modifier les sessions en présentiel. Vous pouvez seulement visualiser et marquer les présences.');
             }
         }
 
@@ -373,25 +375,26 @@ class SessionDeCoursController extends Controller
             }
         }
 
-        // Mettre à jour la session de cours
-        $sessionDeCour->update([
-            'semester_id' => $request->semestre_id,
-            'classe_id' => $request->classe_id,
-            'matiere_id' => $request->matiere_id,
-            'enseignant_id' => $request->enseignant_id,
-            'type_cours_id' => $request->type_cours_id,
-            'status_id' => $request->status_id,
-            'start_time' => $request->start_time,
-            'end_time' => $request->end_time,
-            'location' => $request->location,
-            'notes' => $request->notes,
-            'annee_academique_id' => DB::table('semestres')
-                ->where('semestres.id', $request->semestre_id)
-                ->value('annee_academique_id'),
-        ]);
+        // Vérifier les permissions selon le rôle de l'utilisateur
+        $user = Auth::user();
+        if ($user && $user->roles->first()->code === 'coordinateur') {
+            // Les coordinateurs ne peuvent pas modifier les sessions en présentiel
+            if ($typeCours && $typeCours->nom === 'Présentiel') {
+                return redirect()->route('sessions-de-cours.index')
+                    ->with('error', 'Les coordinateurs ne peuvent pas modifier les sessions en présentiel. Seuls les enseignants peuvent les modifier.');
+            }
+        } elseif ($user && $user->roles->first()->code === 'enseignant') {
+            // Les enseignants ne peuvent pas modifier leurs sessions en présentiel
+            if ($typeCours && $typeCours->nom === 'Présentiel') {
+                return redirect()->route('enseignant.sessions-de-cours.index')
+                    ->with('error', 'Les enseignants ne peuvent pas modifier les sessions en présentiel. Vous pouvez seulement visualiser et marquer les présences.');
+            }
+        }
 
-        return redirect()->route('sessions-de-cours.index')
-            ->with('success', 'Session de cours mise à jour avec succès.');
+        // Mettre à jour la session de cours
+        $sessionDeCour->update($request->all());
+
+        return $this->successWithKey('session_updated', $this->getRouteName('index'));
     }
 
     /**
@@ -399,6 +402,22 @@ class SessionDeCoursController extends Controller
      */
     public function destroy(SessionDeCours $sessionDeCour): mixed
     {
+        // Vérifier les permissions selon le rôle de l'utilisateur
+        $user = Auth::user();
+        if ($user && $user->roles->first()->code === 'enseignant') {
+            // Les enseignants ne peuvent pas supprimer leurs sessions en présentiel
+            if ($sessionDeCour->typeCours && $sessionDeCour->typeCours->nom === 'Présentiel') {
+                if (request()->expectsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Les enseignants ne peuvent pas supprimer les sessions en présentiel.'
+                    ]);
+                }
+                return redirect()->route('enseignant.sessions-de-cours.index')
+                    ->with('error', 'Les enseignants ne peuvent pas supprimer les sessions en présentiel. Vous pouvez seulement visualiser et marquer les présences.');
+            }
+        }
+
         // Vérifier s'il y a des présences liées
         if ($sessionDeCour->presences()->count() > 0) {
             if (request()->expectsJson()) {
@@ -411,17 +430,10 @@ class SessionDeCoursController extends Controller
                 ->with('error', 'Impossible de supprimer cette session car elle contient des présences enregistrées.');
         }
 
+        // Supprimer la session de cours
         $sessionDeCour->delete();
 
-        if (request()->expectsJson()) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Session de cours supprimée avec succès.'
-            ]);
-        }
-
-        return redirect()->route('sessions-de-cours.index')
-            ->with('success', 'Session de cours supprimée avec succès.');
+        return $this->successWithKey('session_deleted', $this->getRouteName('index'));
     }
 
     /**
@@ -502,17 +514,15 @@ class SessionDeCoursController extends Controller
         $hasAccess = false;
 
         if ($user->roles->first()->code === 'admin') {
-            // Admin a accès à tout
             $hasAccess = true;
         } elseif ($user->roles->first()->code === 'coordinateur') {
-            // Coordinateur : vérifier si la session appartient à sa promotion
             $coordinateur = $user->coordinateur;
             if ($coordinateur && $coordinateur->promotion) {
                 $classesIds = $coordinateur->promotion->classes()->pluck('id');
                 $hasAccess = in_array($session->classe_id, $classesIds->toArray());
             }
         } elseif ($user->roles->first()->code === 'enseignant') {
-            // Enseignant : vérifier si c'est sa session
+            // Enseignant : vérifier si c'est sa session (pour tous types de cours)
             $enseignant = $user->enseignant;
             if ($enseignant) {
                 $hasAccess = $session->enseignant_id == $enseignant->id;
@@ -528,8 +538,21 @@ class SessionDeCoursController extends Controller
             $now = now();
             $dateFin = \Carbon\Carbon::parse($session->annee_date_fin);
             if ($now->gt($dateFin)) {
-                return redirect()->route('sessions-de-cours.show', $sessionId)
+                return redirect()->route($this->getRouteName('show'), $sessionId)
                     ->with('error', 'Cette année académique est terminée. Vous ne pouvez plus faire l\'appel.');
+            }
+        }
+
+        // Vérifier la fenêtre de modification de 2 semaines pour les enseignants
+        $user = Auth::user();
+        if ($user->roles->first()->code === 'enseignant') {
+            $sessionDate = \Carbon\Carbon::parse($session->start_time);
+            $now = now();
+            $deuxSemainesApres = $sessionDate->copy()->addWeeks(2);
+
+            if ($now->gt($deuxSemainesApres)) {
+                return redirect()->route($this->getRouteName('show'), $sessionId)
+                    ->with('error', 'Vous ne pouvez plus faire l\'appel après 2 semaines. La session a eu lieu le ' . $sessionDate->format('d/m/Y') . '.');
             }
         }
 
@@ -594,7 +617,7 @@ class SessionDeCoursController extends Controller
                 $hasAccess = in_array($session->classe_id, $classesIds->toArray());
             }
         } elseif ($user->roles->first()->code === 'enseignant') {
-            // Enseignant : vérifier si c'est sa session
+            // Enseignant : vérifier si c'est sa session (pour tous types de cours)
             $enseignant = $user->enseignant;
             if ($enseignant) {
                 $hasAccess = $session->enseignant_id == $enseignant->id;
@@ -610,8 +633,20 @@ class SessionDeCoursController extends Controller
             $now = now();
             $dateFin = \Carbon\Carbon::parse($session->date_fin);
             if ($now->gt($dateFin)) {
-                return redirect()->route('sessions-de-cours.show', $sessionId)
+                return redirect()->route($this->getRouteName('show'), $sessionId)
                     ->with('error', 'Cette année académique est terminée. Vous ne pouvez plus enregistrer les présences.');
+            }
+        }
+
+        // Vérifier la fenêtre de modification de 2 semaines pour les enseignants
+        if ($user->roles->first()->code === 'enseignant') {
+            $sessionDate = \Carbon\Carbon::parse($session->start_time);
+            $now = now();
+            $deuxSemainesApres = $sessionDate->copy()->addWeeks(2);
+
+            if ($now->gt($deuxSemainesApres)) {
+                return redirect()->route($this->getRouteName('show'), $sessionId)
+                    ->with('error', 'Vous ne pouvez plus modifier les présences après 2 semaines. La session a eu lieu le ' . $sessionDate->format('d/m/Y') . '.');
             }
         }
 
@@ -631,7 +666,7 @@ class SessionDeCoursController extends Controller
             ]);
         }
 
-        return redirect()->route('sessions-de-cours.show', $sessionId)
+        return redirect()->route($this->getRouteName('show'), $sessionId)
             ->with('success', 'Présences enregistrées avec succès.');
     }
 
@@ -686,7 +721,7 @@ class SessionDeCoursController extends Controller
                 $hasAccess = in_array($session->classe_id, $classesIds->toArray());
             }
         } elseif ($user->roles->first()->code === 'enseignant') {
-            // Enseignant : vérifier si c'est sa session
+            // Enseignant : vérifier si c'est sa session (pour tous types de cours)
             $enseignant = $user->enseignant;
             if ($enseignant) {
                 $hasAccess = $session->enseignant_id == $enseignant->id;

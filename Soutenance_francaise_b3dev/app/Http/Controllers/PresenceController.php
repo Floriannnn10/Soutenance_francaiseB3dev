@@ -5,12 +5,14 @@ namespace App\Http\Controllers;
 use App\Models\Presence;
 use App\Models\SessionDeCours;
 use App\Models\StatutPresence;
+use App\Traits\SonnerNotifier;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 
 class PresenceController extends Controller
 {
+    use SonnerNotifier;
     /**
      * Afficher la liste des présences
      */
@@ -29,10 +31,17 @@ class PresenceController extends Controller
                 $q->where('enseignant_id', $user->enseignant->id);
             });
         } elseif ($user->roles->first()->code === 'coordinateur') {
-            // Les coordinateurs voient les présences des sessions Workshop et E-learning
-            $query->whereHas('sessionDeCours.typeCours', function ($q) {
-                $q->whereIn('code', ['workshop', 'e_learning']);
-            });
+            // Les coordinateurs voient les présences de toutes les sessions de leur promotion
+            $coordinateur = $user->coordinateur;
+            if ($coordinateur && $coordinateur->promotion) {
+                $classesIds = $coordinateur->promotion->classes()->pluck('id');
+                $query->whereHas('sessionDeCours', function ($q) use ($classesIds) {
+                    $q->whereIn('classe_id', $classesIds);
+                });
+            } else {
+                // Si pas de promotion, ne voir aucune présence
+                $query->where('id', 0); // Condition impossible pour ne rien retourner
+            }
         } elseif ($user->roles->first()->code === 'etudiant') {
             // Les étudiants ne voient que leurs propres présences
             $query->where('etudiant_id', $user->etudiant->id);
@@ -91,6 +100,16 @@ class PresenceController extends Controller
             } else {
                 $classes = collect(); // Aucune classe si pas de promotion
             }
+        } elseif ($user->roles->first()->code === 'enseignant') {
+            // Les enseignants voient seulement les classes de leurs sessions
+            $enseignant = $user->enseignant;
+            if ($enseignant) {
+                $classes = \App\Models\Classe::whereHas('sessionsDeCours', function ($q) use ($enseignant) {
+                    $q->where('enseignant_id', $enseignant->id);
+                })->orderBy('nom')->get();
+            } else {
+                $classes = collect(); // Aucune classe si pas de profil enseignant
+            }
         }
 
         // Récupérer les statuts de présence pour le filtre
@@ -139,7 +158,7 @@ class PresenceController extends Controller
             );
         }
 
-        return redirect()->back()->with('success', 'Les présences ont été enregistrées avec succès.');
+        return $this->successWithKey('presences_saved');
     }
 
     public function update(Request $request, Presence $presence)
@@ -151,17 +170,25 @@ class PresenceController extends Controller
         $user = Auth::user();
 
         // Vérifier que l'utilisateur est autorisé à modifier la présence
-        if ($user->roles->first()->code === 'enseignant' && $presence->sessionDeCours->enseignant_id !== $user->enseignant->id) {
-            return redirect()->back()->with('error', 'Vous n\'êtes pas autorisé à modifier cette présence.');
-        }
+        if ($user->roles->first()->code === 'enseignant') {
+            // Les enseignants peuvent modifier les présences de leurs sessions
+            if ($presence->sessionDeCours->enseignant_id !== $user->enseignant->id) {
+                return $this->errorWithKey('unauthorized');
+            }
 
-        if ($user->roles->first()->code === 'coordinateur' && !in_array($presence->sessionDeCours->typeCours->code, ['workshop', 'e_learning'])) {
-            return redirect()->back()->with('error', 'Les coordinateurs ne peuvent modifier les présences que pour les workshops et les cours en e-learning.');
-        }
+            // Vérifier la fenêtre de modification de 2 semaines pour les enseignants
+            $sessionDate = \Carbon\Carbon::parse($presence->sessionDeCours->start_time);
+            $now = now();
+            $deuxSemainesApres = $sessionDate->copy()->addWeeks(2);
 
-        // Vérifier que la modification est faite dans les 2 semaines suivant la session
-        if (Carbon::parse($presence->enregistre_le)->diffInDays(Carbon::now()) > 14) {
-            return redirect()->back()->with('error', 'Les présences ne peuvent être modifiées que dans les 2 semaines suivant la session.');
+            if ($now->gt($deuxSemainesApres)) {
+                return $this->errorNotification('Vous ne pouvez plus modifier les présences après 2 semaines. La session a eu lieu le ' . $sessionDate->format('d/m/Y') . '.');
+            }
+        } elseif ($user->roles->first()->code === 'coordinateur') {
+            // Les coordinateurs ne peuvent modifier que les présences des workshops et e-learning
+            if (!in_array($presence->sessionDeCours->typeCours->code, ['workshop', 'e_learning'])) {
+                return $this->errorWithKey('coordinators_workshop_only');
+            }
         }
 
         $presence->update([
@@ -170,6 +197,6 @@ class PresenceController extends Controller
             'enregistre_le' => Carbon::now()
         ]);
 
-        return redirect()->back()->with('success', 'La présence a été modifiée avec succès.');
+        return $this->successWithKey('presence_updated');
     }
 }
