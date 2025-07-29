@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('etudiant_id')->constrained();
             $table->foreignId('course_session_id')->constrained('course_sessions');
             $table->foreignId('statut_presence_id')->constrained('statuts_presence');
-            $table->foreignId('enregistre_par_user_id')->constrained('users');
+            $table->foreignId('enregistre_par_user_id')->constrained('users')->onDelete('cascade');
             $table->dateTime('enregistre_le');
 
             $table->timestamps();

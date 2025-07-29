@@ -71,6 +71,7 @@ class SessionsWithPresenceSeeder extends Seeder
                 // Créer le statut s'il n'existe pas
                 $statutId = DB::table('statuts_session')->insertGetId([
                     'nom' => 'Programmée',
+                    'code' => 'programmee',
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);

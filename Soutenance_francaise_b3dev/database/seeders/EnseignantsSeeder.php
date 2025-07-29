@@ -51,7 +51,8 @@ class EnseignantsSeeder extends Seeder
 
         foreach ($enseignants as $enseignantData) {
             $user = User::create([
-                'name' => $enseignantData['prenom'] . ' ' . $enseignantData['nom'],
+                'nom' => $enseignantData['nom'],
+                'prenom' => $enseignantData['prenom'],
                 'email' => $enseignantData['email'],
                 'password' => Hash::make($enseignantData['password']),
             ]);

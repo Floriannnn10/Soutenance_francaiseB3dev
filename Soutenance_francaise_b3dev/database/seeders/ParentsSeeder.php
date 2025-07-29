@@ -30,16 +30,19 @@ class ParentsSeeder extends Seeder
         foreach ($etudiants as $etudiant) {
             // Créer un parent pour chaque étudiant
             $user = User::create([
-                'name' => "Parent de {$etudiant->prenom} {$etudiant->nom}",
+                'nom' => $etudiant->nom,
+                'prenom' => "Parent de {$etudiant->prenom}",
                 'email' => "parent.{$etudiant->email}",
                 'password' => bcrypt('password'),
-                'role_id' => $roleParent->id
             ]);
+
+            $user->roles()->attach($roleParent->id);
 
             $parent = ParentEtudiant::create([
                 'user_id' => $user->id,
                 'prenom' => 'Parent',
                 'nom' => $etudiant->nom,
+                'telephone' => '+22507000000',
                 'photo' => null
             ]);
 

@@ -38,6 +38,7 @@ use Illuminate\Support\Facades\Storage;
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Photo</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nom</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prénom</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Matières enseignées</th>
                         <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                     </tr>
@@ -56,6 +57,7 @@ use Illuminate\Support\Facades\Storage;
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-gray-900">{{ $enseignant->nom }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-gray-900">{{ $enseignant->prenom }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-gray-900">{{ $enseignant->user->email ?? '-' }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-gray-900">
                                 @if($enseignant->matieres->count())
                                     <ul class="list-disc list-inside">

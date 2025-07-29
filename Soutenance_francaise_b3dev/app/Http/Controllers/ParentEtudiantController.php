@@ -123,6 +123,7 @@ class ParentEtudiantController extends Controller
             'prenom' => 'required|string|max:255',
             'email' => ['required', 'email', 'unique:users,email,' . ($parent->user_id ?? ''), new ValidEmailDomain],
             'telephone' => 'required|string|max:20',
+            'password' => 'nullable|string|min:6|confirmed',
             'profession' => 'nullable|string|max:255',
             'adresse' => 'nullable|string',
             'photo' => 'nullable|image|max:2048',
@@ -132,11 +133,18 @@ class ParentEtudiantController extends Controller
 
         // Mettre à jour l'utilisateur
         if ($parent->user) {
-            $parent->user->update([
+            $userData = [
                 'nom' => $request->nom,
                 'prenom' => $request->prenom,
                 'email' => $request->email,
-            ]);
+            ];
+
+            // Mettre à jour le mot de passe si fourni
+            if ($request->filled('password')) {
+                $userData['password'] = bcrypt($request->password);
+            }
+
+            $parent->user->update($userData);
         }
 
         // Préparer les données du parent

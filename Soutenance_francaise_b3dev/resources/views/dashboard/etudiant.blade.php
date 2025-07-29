@@ -69,9 +69,9 @@
                             a 15.9155 15.9155 0 0 1 0 31.831
                             a 15.9155 15.9155 0 0 1 0 -31.831"
                             fill="none"
-                            stroke="{{ $tauxPresence >= 70 ? '#15803d' : ($tauxPresence >= 50 ? '#22c55e' : ($tauxPresence >= 30 ? '#f97316' : '#ef4444')) }}"
+                            stroke="{{ ($tauxPresence ?? 0) >= 70 ? '#15803d' : (($tauxPresence ?? 0) >= 50 ? '#22c55e' : (($tauxPresence ?? 0) >= 30 ? '#f97316' : '#ef4444')) }}"
                             stroke-width="3"
-                            stroke-dasharray="{{ $tauxPresence }}, 100"
+                            stroke-dasharray="{{ $tauxPresence ?? 0 }}, 100"
                         />
                     </svg>
                     <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
@@ -89,7 +89,7 @@
                     <div class="flex items-center justify-between p-3 bg-gray-50 rounded">
                         <div>
                             <p class="font-medium">{{ $absence->sessionDeCours->matiere->nom }}</p>
-                            <p class="text-sm text-gray-600">{{ $absence->sessionDeCours->date->format('d/m/Y H:i') }}</p>
+                            <p class="text-sm text-gray-600">{{ $absence->sessionDeCours->start_time ? $absence->sessionDeCours->start_time->format('d/m/Y H:i') : 'Date non disponible' }}</p>
                         </div>
                         <div>
                             @if($absence->justification)

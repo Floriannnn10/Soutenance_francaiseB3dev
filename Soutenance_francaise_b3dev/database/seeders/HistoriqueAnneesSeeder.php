@@ -14,10 +14,10 @@ class HistoriqueAnneesSeeder extends Seeder
 
         // Créer les années académiques passées
         $anneesPassées = [
-            ['nom' => '2020-2021', 'statut' => 'Terminée', 'date_debut' => '2020-09-01', 'date_fin' => '2021-08-31'],
-            ['nom' => '2021-2022', 'statut' => 'Terminée', 'date_debut' => '2021-09-01', 'date_fin' => '2022-08-31'],
-            ['nom' => '2022-2023', 'statut' => 'Terminée', 'date_debut' => '2022-09-01', 'date_fin' => '2023-08-31'],
-            ['nom' => '2023-2024', 'statut' => 'Terminée', 'date_debut' => '2023-09-01', 'date_fin' => '2024-08-31'],
+            ['nom' => '2020-2021', 'date_debut' => '2020-09-01', 'date_fin' => '2021-08-31'],
+            ['nom' => '2021-2022', 'date_debut' => '2021-09-01', 'date_fin' => '2022-08-31'],
+            ['nom' => '2022-2023', 'date_debut' => '2022-09-01', 'date_fin' => '2023-08-31'],
+            ['nom' => '2023-2024', 'date_debut' => '2023-09-01', 'date_fin' => '2024-08-31'],
         ];
 
         foreach ($anneesPassées as $annee) {
@@ -27,14 +27,13 @@ class HistoriqueAnneesSeeder extends Seeder
             if (!$existingAnnee) {
                 $anneeId = DB::table('annees_academiques')->insertGetId([
                     'nom' => $annee['nom'],
-                    'statut' => $annee['statut'],
                     'date_debut' => $annee['date_debut'],
                     'date_fin' => $annee['date_fin'],
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
 
-                echo "✅ Année académique créée: {$annee['nom']} ({$annee['statut']})\n";
+                echo "✅ Année académique créée: {$annee['nom']}\n";
 
                 // Créer les semestres pour cette année
                 $this->createSemestresForAnnee($anneeId, $annee['nom']);
@@ -48,18 +47,19 @@ class HistoriqueAnneesSeeder extends Seeder
 
     private function createSemestresForAnnee($anneeId, $anneeNom)
     {
+        // Extraire l'année de début (2020 de "2020-2021")
+        $anneeDebut = explode('-', $anneeNom)[0];
+
         $semestres = [
             [
                 'nom' => 'Semestre 1',
-                'date_debut' => Carbon::parse($anneeNom . '-09-01'),
-                'date_fin' => Carbon::parse($anneeNom . '-01-31'),
-                'statut' => 'Terminé'
+                'date_debut' => Carbon::create($anneeDebut, 9, 1),
+                'date_fin' => Carbon::create($anneeDebut + 1, 1, 31),
             ],
             [
                 'nom' => 'Semestre 2',
-                'date_debut' => Carbon::parse($anneeNom . '-02-01'),
-                'date_fin' => Carbon::parse($anneeNom . '-06-30'),
-                'statut' => 'Terminé'
+                'date_debut' => Carbon::create($anneeDebut + 1, 2, 1),
+                'date_fin' => Carbon::create($anneeDebut + 1, 6, 30),
             ]
         ];
 
@@ -76,12 +76,11 @@ class HistoriqueAnneesSeeder extends Seeder
                     'annee_academique_id' => $anneeId,
                     'date_debut' => $semestre['date_debut'],
                     'date_fin' => $semestre['date_fin'],
-                    'statut' => $semestre['statut'],
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
 
-                echo "  ✅ Semestre créé: {$semestre['nom']} ({$semestre['statut']})\n";
+                echo "  ✅ Semestre créé: {$semestre['nom']}\n";
             } else {
                 echo "  ℹ️ Semestre existe déjà: {$semestre['nom']}\n";
             }

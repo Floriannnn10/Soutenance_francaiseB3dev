@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\DB;
 
 class UserController extends Controller
 {
@@ -40,7 +41,7 @@ class UserController extends Controller
         // Filtre par rôle
         if ($request->filled('role_id')) {
             $query->whereHas('roles', function($q) use ($request) {
-                $q->where('id', $request->role_id);
+                $q->where('roles.id', $request->role_id);
             });
         }
 
@@ -229,20 +230,30 @@ class UserController extends Controller
 
     public function destroy(User $user)
     {
-        // Supprimer l'entité liée selon le rôle
-        if ($user->enseignant) {
-            $user->enseignant->delete();
+        try {
+            // Supprimer d'abord les présences liées à cet utilisateur
+            DB::table('presences')->where('enregistre_par_user_id', $user->id)->delete();
+
+            // Supprimer l'entité liée selon le rôle
+            if ($user->enseignant) {
+                $user->enseignant->delete();
+            }
+            if ($user->etudiant) {
+                $user->etudiant->delete();
+            }
+            if ($user->parent) {
+                $user->parent->delete();
+            }
+            if ($user->coordinateur) {
+                $user->coordinateur->delete();
+            }
+
+            // Supprimer l'utilisateur
+            $user->delete();
+
+            return redirect()->route('users.index')->with('success', 'Utilisateur supprimé avec succès.');
+        } catch (\Exception $e) {
+            return redirect()->route('users.index')->with('error', 'Erreur lors de la suppression : ' . $e->getMessage());
         }
-        if ($user->etudiant) {
-            $user->etudiant->delete();
-        }
-        if ($user->parent) {
-            $user->parent->delete();
-        }
-        if ($user->coordinateur) {
-            $user->coordinateur->delete();
-        }
-        $user->delete();
-        return redirect()->route('users.index')->with('success', 'Utilisateur supprimé avec succès.');
     }
 }

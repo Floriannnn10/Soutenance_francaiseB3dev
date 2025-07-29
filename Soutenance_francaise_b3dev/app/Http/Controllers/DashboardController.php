@@ -92,7 +92,53 @@ class DashboardController extends Controller
 
     private function etudiantDashboard()
     {
-        return view('dashboard.etudiant');
+        $user = Auth::user();
+        $etudiant = $user->etudiant;
+
+        if (!$etudiant) {
+            return redirect()->route('login')->with('error', 'Profil étudiant non trouvé.');
+        }
+
+        // Calculer le taux de présence
+        $totalPresences = $etudiant->presences()->count();
+        $presencesPresent = $etudiant->presences()->whereHas('statutPresence', function($q) {
+            $q->where('nom', 'Présent');
+        })->count();
+
+        $tauxPresence = $totalPresences > 0 ? round(($presencesPresent / $totalPresences) * 100, 1) : 0;
+
+        // Récupérer les absences (présences avec statut "Absent")
+        $absences = $etudiant->presences()->whereHas('statutPresence', function($q) {
+            $q->where('nom', 'Absent');
+        })->with(['sessionDeCours.matiere', 'sessionDeCours.classe', 'justification'])->get();
+
+        // Calculer l'évolution de la présence (pour le graphique)
+        $evolutionPresence = [];
+        $anneesAcademiques = \App\Models\AnneeAcademique::orderBy('date_debut', 'desc')->take(3)->get();
+
+        foreach ($anneesAcademiques as $annee) {
+            $presencesAnnee = $etudiant->presences()->whereHas('sessionDeCours', function($q) use ($annee) {
+                $q->where('annee_academique_id', $annee->id);
+            });
+
+            $totalAnnee = $presencesAnnee->count();
+            $presentsAnnee = $presencesAnnee->whereHas('statutPresence', function($q) {
+                $q->where('nom', 'Présent');
+            })->count();
+
+            $tauxAnnee = $totalAnnee > 0 ? round(($presentsAnnee / $totalAnnee) * 100, 1) : 0;
+
+            $evolutionPresence[] = [
+                'annee' => $annee->nom,
+                'taux' => $tauxAnnee
+            ];
+        }
+
+        return view('dashboard.etudiant', compact(
+            'tauxPresence',
+            'absences',
+            'evolutionPresence'
+        ));
     }
 
     private function parentDashboard()

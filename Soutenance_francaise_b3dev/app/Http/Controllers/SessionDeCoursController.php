@@ -257,7 +257,7 @@ class SessionDeCoursController extends Controller
             'location' => $request->location,
             'notes' => $request->notes,
             'annee_academique_id' => DB::table('semestres')
-                ->where('id', $request->semestre_id)
+                ->where('semestres.id', $request->semestre_id)
                 ->value('annee_academique_id'),
             'created_at' => now(),
             'updated_at' => now(),
@@ -386,7 +386,7 @@ class SessionDeCoursController extends Controller
             'location' => $request->location,
             'notes' => $request->notes,
             'annee_academique_id' => DB::table('semestres')
-                ->where('id', $request->semestre_id)
+                ->where('semestres.id', $request->semestre_id)
                 ->value('annee_academique_id'),
         ]);
 

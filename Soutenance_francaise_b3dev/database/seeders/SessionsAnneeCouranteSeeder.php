@@ -42,12 +42,16 @@ class SessionsAnneeCouranteSeeder extends Seeder
             $semestre1Id = DB::table('semestres')->insertGetId([
                 'nom' => 'Semestre 1',
                 'annee_academique_id' => $anneeCouranteId,
+                'date_debut' => '2024-09-01',
+                'date_fin' => '2025-01-31',
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
             $semestre2Id = DB::table('semestres')->insertGetId([
                 'nom' => 'Semestre 2',
                 'annee_academique_id' => $anneeCouranteId,
+                'date_debut' => '2025-02-01',
+                'date_fin' => '2025-06-30',
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);

@@ -144,7 +144,7 @@ class CoordinateurController extends Controller
             'photo' => 'nullable|image|max:2048',
         ]);
         // Vérifier unicité de la promotion (hors coordinateur actuel)
-        if (\App\Models\Coordinateur::where('promotion_id', $request->promotion_id)->where('id', '!=', $coordinateur->id)->exists()) {
+        if (\App\Models\Coordinateur::where('promotion_id', $request->promotion_id)->where('coordinateurs.id', '!=', $coordinateur->id)->exists()) {
             return back()->withInput()->withErrors(['promotion_id' => 'Cette promotion est déjà attribuée à un autre coordinateur.']);
         }
 
@@ -700,7 +700,7 @@ class CoordinateurController extends Controller
         // Vérifier les conflits d'horaire pour la classe (exclure la session actuelle)
         $conflitClasse = SessionDeCours::where('classe_id', $request->classe_id)
             ->where('annee_academique_id', $anneeActive->id)
-            ->where('id', '!=', $session->id)
+            ->where('course_sessions.id', '!=', $session->id)
             ->where(function($query) use ($request) {
                 $query->whereBetween('start_time', [$request->start_time, $request->end_time])
                     ->orWhereBetween('end_time', [$request->start_time, $request->end_time])
@@ -721,7 +721,7 @@ class CoordinateurController extends Controller
         // Vérifier les conflits d'horaire pour l'enseignant (exclure la session actuelle)
         $conflitEnseignant = SessionDeCours::where('enseignant_id', $request->enseignant_id)
             ->where('annee_academique_id', $anneeActive->id)
-            ->where('id', '!=', $session->id)
+            ->where('course_sessions.id', '!=', $session->id)
             ->where(function($query) use ($request) {
                 $query->whereBetween('start_time', [$request->start_time, $request->end_time])
                     ->orWhereBetween('end_time', [$request->start_time, $request->end_time])

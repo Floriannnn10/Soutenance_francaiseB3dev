@@ -30,10 +30,10 @@ class CoordinateursSeeder extends Seeder
         $coordinateurs = [
             [
                 'user' => [
-                    'name' => 'Sophie Bernard',
+                    'nom' => 'Bernard',
+                    'prenom' => 'Sophie',
                     'email' => 'sophie.bernard@example.com',
                     'password' => bcrypt('password'),
-                    'role_id' => $roleCoordinateur->id
                 ],
                 'coordinateur' => [
                     'prenom' => 'Sophie',
@@ -43,10 +43,10 @@ class CoordinateursSeeder extends Seeder
             ],
             [
                 'user' => [
-                    'name' => 'Michel Dubois',
+                    'nom' => 'Dubois',
+                    'prenom' => 'Michel',
                     'email' => 'michel.dubois@example.com',
                     'password' => bcrypt('password'),
-                    'role_id' => $roleCoordinateur->id
                 ],
                 'coordinateur' => [
                     'prenom' => 'Michel',
@@ -56,10 +56,10 @@ class CoordinateursSeeder extends Seeder
             ],
             [
                 'user' => [
-                    'name' => 'Claire Moreau',
+                    'nom' => 'Moreau',
+                    'prenom' => 'Claire',
                     'email' => 'claire.moreau@example.com',
                     'password' => bcrypt('password'),
-                    'role_id' => $roleCoordinateur->id
                 ],
                 'coordinateur' => [
                     'prenom' => 'Claire',
@@ -71,7 +71,9 @@ class CoordinateursSeeder extends Seeder
 
         foreach ($coordinateurs as $index => $data) {
             $user = User::create($data['user']);
+            $user->roles()->attach($roleCoordinateur->id);
             $coordinateur = new Coordinateur($data['coordinateur']);
+            $coordinateur->email = $data['user']['email'];
             $coordinateur->user()->associate($user);
             $coordinateur->promotion()->associate($promotions[$index % $promotions->count()]);
             $coordinateur->save();

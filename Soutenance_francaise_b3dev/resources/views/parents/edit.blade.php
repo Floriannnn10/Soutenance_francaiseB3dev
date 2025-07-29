@@ -49,6 +49,19 @@
                             </div>
 
                             <div>
+                                <label for="password" class="block text-sm font-medium text-gray-700">Nouveau mot de passe (optionnel)</label>
+                                <input type="password" name="password" id="password" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <p class="mt-1 text-xs text-gray-500">Laissez vide pour conserver le mot de passe actuel</p>
+                                @error('password')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                            </div>
+
+                            <div>
+                                <label for="password_confirmation" class="block text-sm font-medium text-gray-700">Confirmer le nouveau mot de passe</label>
+                                <input type="password" name="password_confirmation" id="password_confirmation" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                @error('password_confirmation')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                            </div>
+
+                            <div>
                                 <label for="telephone" class="block text-sm font-medium text-gray-700">Téléphone</label>
                                 <input type="text" name="telephone" id="telephone" value="{{ old('telephone', $parent->telephone) }}" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                 @error('telephone')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror

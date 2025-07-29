@@ -101,6 +101,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Relation avec l'enseignant (si l'utilisateur est un enseignant)
+     */
+    public function enseignant()
+    {
+        return $this->hasOne(\App\Models\Enseignant::class, 'user_id', 'id');
+    }
+
+    /**
      * Vérifier si l'utilisateur a un rôle spécifique
      */
     public function hasRole($role)

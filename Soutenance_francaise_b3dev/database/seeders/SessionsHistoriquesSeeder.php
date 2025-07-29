@@ -12,11 +12,13 @@ class SessionsHistoriquesSeeder extends Seeder
     {
         echo "=== Création des sessions historiques pour les années passées ===\n";
 
-        // Récupérer les années terminées
-        $anneesTerminees = DB::table('annees_academiques')->where('statut', 'Terminée')->get();
+        // Récupérer les années passées (exclure l'année courante)
+        $anneesPassées = DB::table('annees_academiques')
+            ->where('nom', '!=', '2024-2025')
+            ->get();
 
-        if ($anneesTerminees->isEmpty()) {
-            echo "❌ Aucune année terminée trouvée\n";
+        if ($anneesPassées->isEmpty()) {
+            echo "❌ Aucune année passée trouvée\n";
             return;
         }
 
@@ -33,7 +35,7 @@ class SessionsHistoriquesSeeder extends Seeder
             return;
         }
 
-        foreach ($anneesTerminees as $annee) {
+        foreach ($anneesPassées as $annee) {
             echo "\n--- Traitement de l'année {$annee->nom} ---\n";
 
             // Récupérer les semestres de cette année
