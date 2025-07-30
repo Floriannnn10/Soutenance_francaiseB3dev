@@ -5,14 +5,16 @@ namespace App\Http\Controllers;
 use App\Models\Presence;
 use App\Models\SessionDeCours;
 use App\Models\StatutPresence;
-use App\Traits\SonnerNotifier;
+use App\Traits\DaisyUINotifier;
+
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 
 class PresenceController extends Controller
 {
-    use SonnerNotifier;
+    use DaisyUINotifier;
+
     /**
      * Afficher la liste des présences
      */
@@ -158,7 +160,7 @@ class PresenceController extends Controller
             );
         }
 
-        return $this->successWithKey('presences_saved');
+        return $this->successNotification('Présences enregistrées avec succès !');
     }
 
     public function update(Request $request, Presence $presence)
@@ -173,7 +175,7 @@ class PresenceController extends Controller
         if ($user->roles->first()->code === 'enseignant') {
             // Les enseignants peuvent modifier les présences de leurs sessions
             if ($presence->sessionDeCours->enseignant_id !== $user->enseignant->id) {
-                return $this->errorWithKey('unauthorized');
+                return redirect()->back()->with('error', 'Vous n\'êtes pas autorisé à modifier cette présence.');
             }
 
             // Vérifier la fenêtre de modification de 2 semaines pour les enseignants
@@ -182,12 +184,12 @@ class PresenceController extends Controller
             $deuxSemainesApres = $sessionDate->copy()->addWeeks(2);
 
             if ($now->gt($deuxSemainesApres)) {
-                return $this->errorNotification('Vous ne pouvez plus modifier les présences après 2 semaines. La session a eu lieu le ' . $sessionDate->format('d/m/Y') . '.');
+                return redirect()->back()->with('error', 'Vous ne pouvez plus modifier les présences après 2 semaines. La session a eu lieu le ' . $sessionDate->format('d/m/Y') . '.');
             }
         } elseif ($user->roles->first()->code === 'coordinateur') {
             // Les coordinateurs ne peuvent modifier que les présences des workshops et e-learning
             if (!in_array($presence->sessionDeCours->typeCours->code, ['workshop', 'e_learning'])) {
-                return $this->errorWithKey('coordinators_workshop_only');
+                return redirect()->back()->with('error', 'Les coordinateurs ne peuvent modifier que les présences des workshops et e-learning.');
             }
         }
 
@@ -197,6 +199,67 @@ class PresenceController extends Controller
             'enregistre_le' => Carbon::now()
         ]);
 
-        return $this->successWithKey('presence_updated');
+        return $this->successNotification('Présence mise à jour avec succès !');
+    }
+
+    /**
+     * Affiche les présences pour les parents
+     */
+    public function parent()
+    {
+        $user = Auth::user();
+        $parent = $user->parent;
+
+        if (!$parent) {
+            abort(404, 'Parent non trouvé');
+        }
+
+        $enfants = $parent->etudiants()->with(['classe', 'presences.sessionDeCours.matiere'])->get();
+
+        return view('presences.parent', compact('enfants', 'parent'));
+    }
+
+    /**
+     * Affiche les présences des enfants du parent connecté
+     */
+    public function presencesEnfants()
+    {
+        $user = Auth::user();
+        $parent = $user->parent;
+
+        if (!$parent) {
+            abort(404, 'Parent non trouvé');
+        }
+
+        $enfants = $parent->etudiants()->with(['classe', 'presences.sessionDeCours.matiere'])->get();
+
+        return view('presences.enfants', compact('enfants', 'parent'));
+    }
+
+    /**
+     * Affiche les présences pour l'étudiant connecté
+     */
+    public function etudiant(Request $request)
+    {
+        $user = Auth::user();
+        $etudiant = $user->etudiant;
+
+        if (!$etudiant) {
+            abort(404, 'Profil étudiant non trouvé');
+        }
+
+        $perPage = $request->get('per_page', 15);
+
+        // Récupérer les présences de l'étudiant
+        $presences = Presence::with(['sessionDeCours.matiere', 'sessionDeCours.enseignant', 'sessionDeCours.classe', 'statutPresence'])
+            ->where('etudiant_id', $etudiant->id)
+            ->orderBy('enregistre_le', 'desc')
+            ->paginate($perPage);
+
+        // Récupérer les données pour les filtres
+        $matieres = \App\Models\Matiere::orderBy('nom')->get();
+        $statutsPresence = StatutPresence::orderBy('nom')->get();
+
+        return view('presences.etudiant', compact('presences', 'etudiant', 'matieres', 'statutsPresence'));
     }
 }

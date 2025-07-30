@@ -42,6 +42,13 @@ class AnneeAcademique extends Model
         return $this->hasMany(SessionDeCours::class, 'annee_academique_id');
     }
 
+    /**
+     * Relation avec les promotions
+     */
+    public function promotions(): HasMany
+    {
+        return $this->hasMany(Promotion::class, 'annee_academique_id');
+    }
 
 
     /**

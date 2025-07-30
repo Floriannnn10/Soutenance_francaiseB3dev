@@ -11,27 +11,99 @@ use App\Models\Semestre;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
+use App\Traits\DaisyUINotifier;
 
 class JustificationAbsenceController extends Controller
 {
+    use DaisyUINotifier;
     /**
      * Affiche la page de justification d'absence
      */
-    public function index()
+    public function index(Request $request)
     {
         $anneeActive = AnneeAcademique::getActive();
         $semestreActif = $anneeActive ? Semestre::getActiveForYear($anneeActive->id) : null;
 
-        $absences = Presence::with(['etudiant', 'sessionDeCours.matiere', 'sessionDeCours.enseignant', 'justification'])
+        // Récupérer les données pour les filtres
+        $etudiants = Etudiant::orderBy('nom')->get();
+        $matieres = \App\Models\Matiere::orderBy('nom')->get();
+        $enseignants = \App\Models\Enseignant::orderBy('nom')->get();
+
+        // Construire la requête avec filtres
+        $query = Presence::with(['etudiant', 'sessionDeCours.matiere', 'sessionDeCours.enseignant', 'justification'])
             ->whereHas('statutPresence', function($query) {
                 $query->where('code', 'absent');
             })
-            ->where('academic_year_id', $anneeActive?->id)
-            ->where('semester_id', $semestreActif?->id)
-            ->orderBy('enregistre_le', 'desc')
-            ->get();
+            ->whereHas('sessionDeCours', function($query) use ($anneeActive, $semestreActif) {
+                if ($anneeActive) {
+                    $query->where('annee_academique_id', $anneeActive->id);
+                }
+                if ($semestreActif) {
+                    $query->where('semester_id', $semestreActif->id);
+                }
+            });
 
-        return view('justifications.index', compact('absences', 'anneeActive', 'semestreActif'));
+        // Filtre par étudiant
+        if ($request->filled('etudiant_id')) {
+            $query->where('etudiant_id', $request->etudiant_id);
+        }
+
+        // Filtre par matière
+        if ($request->filled('matiere_id')) {
+            $query->whereHas('sessionDeCours', function($q) use ($request) {
+                $q->where('matiere_id', $request->matiere_id);
+            });
+        }
+
+        // Filtre par enseignant
+        if ($request->filled('enseignant_id')) {
+            $query->whereHas('sessionDeCours', function($q) use ($request) {
+                $q->where('enseignant_id', $request->enseignant_id);
+            });
+        }
+
+        // Filtre par statut de justification
+        if ($request->filled('statut_justification')) {
+            if ($request->statut_justification === 'justifiee') {
+                $query->whereHas('justification');
+            } elseif ($request->statut_justification === 'non_justifiee') {
+                $query->whereDoesntHave('justification');
+            }
+        }
+
+        // Filtre par date
+        if ($request->filled('date_debut')) {
+            $query->where('enregistre_le', '>=', $request->date_debut);
+        }
+        if ($request->filled('date_fin')) {
+            $query->where('enregistre_le', '<=', $request->date_fin . ' 23:59:59');
+        }
+
+        // Recherche par nom d'étudiant
+        if ($request->filled('search')) {
+            $query->whereHas('etudiant', function($q) use ($request) {
+                $q->where('nom', 'like', '%' . $request->search . '%')
+                  ->orWhere('prenom', 'like', '%' . $request->search . '%');
+            });
+        }
+
+                // Cloner la requête pour les statistiques (pour éviter les conflits)
+        $queryForStats = clone $query;
+
+        // Calculer les statistiques
+        $totalAbsences = $queryForStats->count();
+        $justifiees = $queryForStats->whereHas('justification')->count();
+        $nonJustifiees = $queryForStats->whereDoesntHave('justification')->count();
+
+
+
+        // Pagination avec 15 éléments par page
+        $absences = $query->orderBy('enregistre_le', 'desc')
+                         ->paginate(15)
+                         ->withQueryString();
+
+        return view('justifications.index', compact('absences', 'anneeActive', 'semestreActif', 'etudiants', 'matieres', 'enseignants', 'totalAbsences', 'justifiees', 'nonJustifiees'));
     }
 
     /**
@@ -50,22 +122,41 @@ class JustificationAbsenceController extends Controller
      */
     public function store(Request $request, $presenceId)
     {
+        // Debug: Log les données reçues
+        Log::info('JustificationAbsenceController::store - Données reçues', [
+            'presenceId' => $presenceId,
+            'request_data' => $request->all(),
+            'user_id' => Auth::id()
+        ]);
+
         $request->validate([
             'motif' => 'required|string|max:500',
-            'date_justification' => 'required|date|after_or_equal:today',
+            'date_justification' => 'required|date',
             'piece_jointe' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
         ]);
 
         $presence = \App\Models\Presence::findOrFail($presenceId);
+        Log::info('Presence trouvée', ['presence_id' => $presence->id, 'presence_data' => $presence->toArray()]);
+
         $session = $presence->sessionDeCours;
         $semestre = $session ? $session->semestre : null;
         $annee = $semestre ? $semestre->anneeAcademique : null;
+
+        Log::info('Vérifications période', [
+            'annee' => $annee ? $annee->toArray() : null,
+            'semestre' => $semestre ? $semestre->toArray() : null,
+            'annee_actif' => $annee ? $annee->actif : null,
+            'semestre_actif' => $semestre ? $semestre->actif : null
+        ]);
+
         if (!$annee || !$annee->actif || !$semestre || !$semestre->actif) {
+            Log::warning('Période non active - redirection');
             return redirect()->back()->with('error', "Impossible de justifier une absence sur une période non active.");
         }
 
         // Vérifier que l'absence n'est pas déjà justifiée
         if ($presence->justification) {
+            Log::warning('Absence déjà justifiée', ['presence_id' => $presence->id]);
             return back()->withErrors(['message' => 'Cette absence est déjà justifiée']);
         }
 
@@ -73,8 +164,20 @@ class JustificationAbsenceController extends Controller
         $dateAbsence = Carbon::parse($presence->enregistre_le);
         $dateJustification = Carbon::parse($request->date_justification);
 
-        if ($dateJustification->diffInDays($dateAbsence) > 14) {
-            return back()->withErrors(['message' => 'La justification doit être faite dans un délai de 2 semaines maximum']);
+        Log::info('Vérification délai', [
+            'date_absence' => $dateAbsence->toDateTimeString(),
+            'date_justification' => $dateJustification->toDateTimeString(),
+            'diff_days' => $dateJustification->diffInDays($dateAbsence)
+        ]);
+
+        // Permettre la justification pour les absences futures ou dans un délai de 2 semaines après
+        $now = Carbon::now();
+        $isFutureAbsence = $dateAbsence->isAfter($now);
+        $isWithinTwoWeeks = $dateAbsence->diffInDays($now) <= 14;
+
+        if (!$isFutureAbsence && !$isWithinTwoWeeks) {
+            Log::warning('Délai dépassé');
+            return back()->withErrors(['message' => 'La justification doit être faite dans un délai de 2 semaines maximum après l\'absence']);
         }
 
         $justification = new JustificationAbsence([
@@ -84,16 +187,26 @@ class JustificationAbsenceController extends Controller
             'justifie_par_user_id' => Auth::id(),
         ]);
 
+        Log::info('Justification créée', ['justification_data' => $justification->toArray()]);
+
         // Gérer le fichier joint si fourni
         if ($request->hasFile('piece_jointe')) {
             $path = $request->file('piece_jointe')->store('justifications', 'public');
             $justification->piece_jointe = $path;
+            Log::info('Fichier joint sauvegardé', ['path' => $path]);
         }
 
-        $justification->save();
-
-        return redirect()->route('justifications.index')
-            ->with('success', 'Absence justifiée avec succès');
+        try {
+            $justification->save();
+            Log::info('Justification sauvegardée avec succès', ['justification_id' => $justification->id]);
+            return $this->successNotification('Absence justifiée avec succès !', 'justifications.index');
+        } catch (\Exception $e) {
+            Log::error('Erreur lors de la sauvegarde de la justification', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return back()->withErrors(['message' => 'Erreur lors de la sauvegarde de la justification: ' . $e->getMessage()]);
+        }
     }
 
     /**
@@ -161,7 +274,7 @@ class JustificationAbsenceController extends Controller
         if ($request->hasFile('piece_jointe')) {
             // Supprimer l'ancien fichier
             if ($justification->piece_jointe) {
-                \Storage::disk('public')->delete($justification->piece_jointe);
+                Storage::disk('public')->delete($justification->piece_jointe);
             }
 
             $path = $request->file('piece_jointe')->store('justifications', 'public');
@@ -169,8 +282,7 @@ class JustificationAbsenceController extends Controller
             $justification->save();
         }
 
-        return redirect()->route('justifications.index')
-            ->with('success', 'Justification mise à jour avec succès');
+        return $this->warningNotification('Justification mise à jour avec succès !', 'justifications.index');
     }
 
     /**
@@ -189,12 +301,11 @@ class JustificationAbsenceController extends Controller
 
         // Supprimer le fichier joint s'il existe
         if ($justification->piece_jointe) {
-            \Storage::disk('public')->delete($justification->piece_jointe);
+            Storage::disk('public')->delete($justification->piece_jointe);
         }
 
         $justification->delete();
 
-        return redirect()->route('justifications.index')
-            ->with('success', 'Justification supprimée avec succès');
+        return $this->errorNotification('Justification supprimée avec succès !', 'justifications.index');
     }
 }

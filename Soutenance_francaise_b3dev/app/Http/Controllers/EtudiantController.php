@@ -6,6 +6,7 @@ use App\Models\Etudiant;
 use App\Models\Classe;
 use App\Models\ParentEtudiant;
 use App\Rules\ValidEmailDomain;
+use App\Traits\DaisyUINotifier;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
@@ -13,6 +14,7 @@ use Illuminate\Support\Facades\Storage;
 
 class EtudiantController extends Controller
 {
+    use DaisyUINotifier;
     /**
      * Display a listing of the resource.
      */
@@ -101,7 +103,7 @@ class EtudiantController extends Controller
             $etudiant->parents()->attach($request->parents);
         }
 
-        return redirect()->route('etudiants.index')->with('success', 'Étudiant créé avec succès.');
+        return $this->successNotification('Étudiant créé avec succès !', 'etudiants.index');
     }
 
     /**
@@ -195,7 +197,7 @@ class EtudiantController extends Controller
             $etudiant->parents()->detach();
         }
 
-        return redirect()->route('etudiants.index')->with('success', 'Étudiant mis à jour avec succès.');
+        return $this->warningNotification('Étudiant mis à jour avec succès !', 'etudiants.index');
     }
 
     /**
@@ -210,8 +212,7 @@ class EtudiantController extends Controller
 
         $etudiant->delete();
 
-        return redirect()->route('etudiants.index')
-            ->with('success', 'Étudiant supprimé avec succès.');
+        return $this->errorNotification('Étudiant supprimé avec succès !', 'etudiants.index');
     }
 
     /**
@@ -236,7 +237,6 @@ class EtudiantController extends Controller
 
         $etudiant->parents()->sync($request->parents);
 
-        return redirect()->route('etudiants.show', $etudiant)
-            ->with('success', 'Parents attribués avec succès.');
+        return $this->successNotification('Parents attribués avec succès !', 'etudiants.show', [$etudiant]);
     }
 }

@@ -12,6 +12,7 @@ use App\Models\Classe;
 use App\Models\Promotion;
 use App\Models\Matiere;
 use App\Rules\ValidEmailDomain;
+use App\Traits\DaisyUINotifier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
@@ -21,6 +22,7 @@ use Illuminate\Support\Facades\DB;
 
 class UserController extends Controller
 {
+    use DaisyUINotifier;
     public function index(Request $request)
     {
         $query = User::with('roles');
@@ -138,7 +140,7 @@ class UserController extends Controller
             ]);
         }
 
-        return redirect()->route('users.index')->with('success', 'Utilisateur créé avec succès.');
+        return $this->successNotification('Utilisateur créé avec succès !', 'users.index');
     }
 
     public function show(User $user)
@@ -225,7 +227,7 @@ class UserController extends Controller
         // Mettre à jour le rôle de l'utilisateur
         $user->roles()->sync([$request->role_id]);
 
-        return redirect()->route('users.index')->with('success', 'Utilisateur modifié avec succès.');
+        return $this->warningNotification('Utilisateur modifié avec succès !', 'users.index');
     }
 
     public function destroy(User $user)
@@ -251,9 +253,9 @@ class UserController extends Controller
             // Supprimer l'utilisateur
             $user->delete();
 
-            return redirect()->route('users.index')->with('success', 'Utilisateur supprimé avec succès.');
+            return $this->errorNotification('Utilisateur supprimé avec succès !', 'users.index');
         } catch (\Exception $e) {
-            return redirect()->route('users.index')->with('error', 'Erreur lors de la suppression : ' . $e->getMessage());
+            return $this->errorNotification('Erreur lors de la suppression : ' . $e->getMessage(), 'users.index');
         }
     }
 }

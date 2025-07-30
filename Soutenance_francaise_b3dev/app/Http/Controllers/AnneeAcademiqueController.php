@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\AnneeAcademique;
+use App\Traits\DaisyUINotifier;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
@@ -10,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 
 class AnneeAcademiqueController extends Controller
 {
+    use DaisyUINotifier;
     /**
      * Afficher la liste des années académiques.
      */
@@ -49,8 +51,7 @@ class AnneeAcademiqueController extends Controller
 
         $anneeAcademique = AnneeAcademique::create($data);
 
-        return redirect()->route('annees-academiques.index')
-            ->with('success', 'Année académique créée avec succès.');
+        return $this->successNotification('Année académique créée avec succès !', 'annees-academiques.index');
     }
 
     /**
@@ -87,8 +88,7 @@ class AnneeAcademiqueController extends Controller
 
         $anneeAcademique->update($data);
 
-        return redirect()->route('annees-academiques.index')
-            ->with('success', 'Année académique mise à jour avec succès.');
+        return $this->warningNotification('Année académique mise à jour avec succès !', 'annees-academiques.index');
     }
 
     /**
@@ -107,8 +107,7 @@ class AnneeAcademiqueController extends Controller
 
             $anneeAcademique->delete();
 
-            return redirect()->route('annees-academiques.index')
-                ->with('success', 'Année académique supprimée avec succès.');
+                    return $this->errorNotification('Année académique supprimée avec succès !', 'annees-academiques.index');
         } catch (\Exception $e) {
             return redirect()->route('annees-academiques.index')
                 ->with('error', 'Erreur lors de la suppression de l\'année académique : ' . $e->getMessage());

@@ -7,12 +7,16 @@ use App\Models\Etudiant;
 use App\Models\User;
 use App\Models\Role;
 use App\Rules\ValidEmailDomain;
+use App\Traits\DaisyUINotifier;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 
 class ParentEtudiantController extends Controller
 {
+    use DaisyUINotifier;
     /**
      * Display a listing of the resource.
      */
@@ -90,8 +94,7 @@ class ParentEtudiantController extends Controller
             $parent->etudiants()->attach($request->etudiants);
         }
 
-        return redirect()->route('parents.index')
-            ->with('success', 'Parent créé avec succès.');
+        return $this->successNotification('Parent créé avec succès !', 'parents.index');
     }
 
     /**
@@ -183,8 +186,7 @@ class ParentEtudiantController extends Controller
             $parent->etudiants()->detach();
         }
 
-        return redirect()->route('parents.index')
-            ->with('success', 'Parent mis à jour avec succès.');
+        return $this->warningNotification('Parent mis à jour avec succès !', 'parents.index');
     }
 
     /**
@@ -194,7 +196,45 @@ class ParentEtudiantController extends Controller
     {
         $parent->delete();
 
-        return redirect()->route('parents.index')
-            ->with('success', 'Parent supprimé avec succès.');
+        return $this->errorNotification('Parent supprimé avec succès !', 'parents.index');
+    }
+
+        /**
+     * Affiche les enfants du parent connecté
+     */
+        public function mesEnfants(): View
+    {
+        try {
+            $user = Auth::user();
+
+            if (!$user) {
+                abort(401, 'Utilisateur non connecté');
+            }
+
+            $debugInfo = [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'nom' => $user->nom,
+                'prenom' => $user->prenom,
+                'roles' => $user->roles->pluck('code')->toArray()
+            ];
+
+            $parent = $user->parent;
+
+            if (!$parent) {
+                $parent = ParentEtudiant::where('user_id', $user->id)->first();
+
+                if (!$parent) {
+                    return view('parents.debug', compact('debugInfo'));
+                }
+            }
+
+            $enfants = $parent->etudiants()->with(['classe', 'presences'])->get();
+
+            return view('parents.mes-enfants', compact('enfants', 'parent'));
+
+        } catch (\Exception $e) {
+            abort(500, 'Erreur: ' . $e->getMessage());
+        }
     }
 }

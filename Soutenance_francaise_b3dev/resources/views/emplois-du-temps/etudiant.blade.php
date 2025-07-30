@@ -30,16 +30,16 @@
                                 {{ Carbon\Carbon::parse($session->end_time)->format('H:i') }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {{ $session->matiere->nom }}
+                                {{ $session->matiere->nom ?? 'Non défini' }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {{ $session->enseignant->nom }} {{ $session->enseignant->prenom }}
+                                {{ ($session->enseignant->nom ?? '') }} {{ ($session->enseignant->prenom ?? '') }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {{ $session->typeCours->nom }}
+                                {{ $session->typeCours->nom ?? 'Non défini' }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {{ $session->statut->nom }}
+                                {{ $session->statutSession->nom ?? 'Non défini' }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                 {{ $session->location }}

@@ -20,4 +20,9 @@ class Promotion extends Model
     {
         return $this->hasOne(Coordinateur::class);
     }
+
+    public function anneeAcademique()
+    {
+        return $this->belongsTo(AnneeAcademique::class);
+    }
 }

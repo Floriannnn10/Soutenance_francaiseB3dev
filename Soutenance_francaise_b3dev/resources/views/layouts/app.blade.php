@@ -21,8 +21,22 @@
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
-    <!-- Sonner Toaster -->
-    <div id="sonner-toaster"></div>
+    <!-- Sonner pour les toasts -->
+    <script src="https://cdn.jsdelivr.net/npm/sonner@1.4.0/dist/index.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sonner@1.4.0/dist/index.css">
+    <script>
+        // Initialiser Sonner correctement
+        document.addEventListener('DOMContentLoaded', function() {
+            // Vérifier si Sonner est chargé
+            if (typeof window.toast === 'undefined') {
+                console.warn('Sonner non chargé correctement');
+            } else {
+                console.log('Sonner initialisé avec succès');
+            }
+        });
+    </script>
+
+
 
     <!-- Custom styles for icons fallback -->
     <style>
@@ -92,6 +106,17 @@
 </head>
 
 <body class="min-h-screen">
+    <!-- Sonner Toaster -->
+    <div id="sonner"></div>
+    <script>
+        // Initialiser Sonner - La bibliothèque expose directement window.toast
+        document.addEventListener('DOMContentLoaded', function() {
+            // Vérifier si Sonner est chargé
+            if (typeof window.toast === 'undefined') {
+                console.warn('Sonner toast non disponible, utilisation du fallback alert');
+            }
+        });
+    </script>
     @php
         $user = Auth::user();
         $roleCode = $user->roles->first()->code;
@@ -204,6 +229,9 @@
                         <a href="{{ route('presences.index') }}" class="text-gray-700 hover:text-blue-600 px-2 md:px-3 lg:px-4 py-2 text-xs md:text-sm font-medium whitespace-nowrap {{ request()->routeIs('presences.*') ? 'text-blue-600 font-semibold' : '' }}">
                             PRÉSENCES
                         </a>
+                        <a href="{{ route('etudiant-matiere-dropped.index') }}" class="text-gray-700 hover:text-blue-600 px-2 md:px-3 lg:px-4 py-2 text-xs md:text-sm font-medium whitespace-nowrap {{ request()->routeIs('etudiant-matiere-dropped.*') ? 'text-blue-600 font-semibold' : '' }}">
+                            ÉTUDIANTS DROPPÉS
+                        </a>
                         <a href="{{ route('profile.edit') }}" class="text-gray-700 hover:text-blue-600 px-2 md:px-3 lg:px-4 py-2 text-xs md:text-sm font-medium whitespace-nowrap {{ request()->routeIs('profile.edit') ? 'text-blue-600 font-semibold' : '' }}">
                             PROFIL
                         </a>
@@ -240,7 +268,7 @@
                         <a href="{{ route('dashboard') }}" class="text-gray-700 hover:text-blue-600 px-2 md:px-3 lg:px-4 py-2 text-xs md:text-sm font-medium whitespace-nowrap {{ request()->routeIs('dashboard') ? 'text-blue-600 font-semibold' : '' }}">
                             [ TABLEAU DE BORD ]
                         </a>
-                        <a href="{{ route('sessions-de-cours.index') }}" class="text-gray-700 hover:text-blue-600 px-2 md:px-3 lg:px-4 py-2 text-xs md:text-sm font-medium whitespace-nowrap {{ request()->routeIs('sessions-de-cours.*') ? 'text-blue-600 font-semibold' : '' }}">
+                        <a href="{{ route('cours.etudiant') }}" class="text-gray-700 hover:text-blue-600 px-2 md:px-3 lg:px-4 py-2 text-xs md:text-sm font-medium whitespace-nowrap {{ request()->routeIs('cours.etudiant') ? 'text-blue-600 font-semibold' : '' }}">
                             MES COURS
                         </a>
                         <a href="{{ route('presences.index') }}" class="text-gray-700 hover:text-blue-600 px-2 md:px-3 lg:px-4 py-2 text-xs md:text-sm font-medium whitespace-nowrap {{ request()->routeIs('presences.*') ? 'text-blue-600 font-semibold' : '' }}">
@@ -264,13 +292,13 @@
                         <a href="{{ route('dashboard') }}" class="text-gray-700 hover:text-blue-600 px-2 md:px-3 lg:px-4 py-2 text-xs md:text-sm font-medium whitespace-nowrap {{ request()->routeIs('dashboard') ? 'text-blue-600 font-semibold' : '' }}">
                             [ TABLEAU DE BORD ]
                         </a>
-                        <a href="{{ route('parents.index') }}" class="text-gray-700 hover:text-blue-600 px-2 md:px-3 lg:px-4 py-2 text-xs md:text-sm font-medium whitespace-nowrap {{ request()->routeIs('parents.*') ? 'text-blue-600 font-semibold' : '' }}">
+                        <a href="{{ route('parents.mes-enfants') }}" class="text-gray-700 hover:text-blue-600 px-2 md:px-3 lg:px-4 py-2 text-xs md:text-sm font-medium whitespace-nowrap {{ request()->routeIs('parents.*') ? 'text-blue-600 font-semibold' : '' }}">
                             MES ENFANTS
                         </a>
-                        <a href="{{ route('presences.index') }}" class="text-gray-700 hover:text-blue-600 px-2 md:px-3 lg:px-4 py-2 text-xs md:text-sm font-medium whitespace-nowrap {{ request()->routeIs('presences.*') ? 'text-blue-600 font-semibold' : '' }}">
+                        <a href="{{ route('presences.enfants') }}" class="text-gray-700 hover:text-blue-600 px-2 md:px-3 lg:px-4 py-2 text-xs md:text-sm font-medium whitespace-nowrap {{ request()->routeIs('presences.*') ? 'text-blue-600 font-semibold' : '' }}">
                             PRÉSENCES DE MES ENFANTS
                         </a>
-                        <a href="{{ route('emplois-du-temps.index') }}" class="text-gray-700 hover:text-blue-600 px-2 md:px-3 lg:px-4 py-2 text-xs md:text-sm font-medium whitespace-nowrap {{ request()->routeIs('emplois-du-temps.*') ? 'text-blue-600 font-semibold' : '' }}">
+                        <a href="{{ route('emplois-du-temps.enfants') }}" class="text-gray-700 hover:text-blue-600 px-2 md:px-3 lg:px-4 py-2 text-xs md:text-sm font-medium whitespace-nowrap {{ request()->routeIs('emplois-du-temps.*') ? 'text-blue-600 font-semibold' : '' }}">
                             EMPLOI DU TEMPS
                         </a>
                         <a href="{{ route('profile.edit') }}" class="text-gray-700 hover:text-blue-600 px-2 md:px-3 lg:px-4 py-2 text-xs md:text-sm font-medium whitespace-nowrap {{ request()->routeIs('profile.edit') ? 'text-blue-600 font-semibold' : '' }}">
@@ -376,7 +404,7 @@
                     <a href="{{ route('dashboard') }}" class="block px-4 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 transition {{ request()->routeIs('dashboard') ? 'text-blue-600 font-semibold' : '' }}">
                         [ TABLEAU DE BORD ]
                     </a>
-                    <a href="{{ route('sessions-de-cours.index') }}" class="block px-4 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 transition {{ request()->routeIs('sessions-de-cours.*') ? 'text-blue-600 font-semibold' : '' }}">
+                    <a href="{{ route('cours.etudiant') }}" class="block px-4 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 transition {{ request()->routeIs('cours.etudiant') ? 'text-blue-600 font-semibold' : '' }}">
                         MES COURS
                     </a>
                     <a href="{{ route('presences.index') }}" class="block px-4 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 transition {{ request()->routeIs('presences.*') ? 'text-blue-600 font-semibold' : '' }}">
@@ -389,13 +417,13 @@
                     <a href="{{ route('dashboard') }}" class="block px-4 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 transition {{ request()->routeIs('dashboard') ? 'text-blue-600 font-semibold' : '' }}">
                         [ TABLEAU DE BORD ]
                     </a>
-                    <a href="{{ route('parents.index') }}" class="block px-4 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 transition {{ request()->routeIs('parents.*') ? 'text-blue-600 font-semibold' : '' }}">
+                    <a href="{{ route('parents.mes-enfants') }}" class="block px-4 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 transition {{ request()->routeIs('parents.*') ? 'text-blue-600 font-semibold' : '' }}">
                         MES ENFANTS
                     </a>
-                    <a href="{{ route('presences.index') }}" class="block px-4 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 transition {{ request()->routeIs('presences.*') ? 'text-blue-600 font-semibold' : '' }}">
+                    <a href="{{ route('presences.enfants') }}" class="block px-4 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 transition {{ request()->routeIs('presences.*') ? 'text-blue-600 font-semibold' : '' }}">
                         PRÉSENCES DE MES ENFANTS
                     </a>
-                    <a href="{{ route('emplois-du-temps.index') }}" class="block px-4 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 transition {{ request()->routeIs('emplois-du-temps.*') ? 'text-blue-600 font-semibold' : '' }}">
+                    <a href="{{ route('emplois-du-temps.enfants') }}" class="block px-4 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 transition {{ request()->routeIs('emplois-du-temps.*') ? 'text-blue-600 font-semibold' : '' }}">
                         EMPLOI DU TEMPS
                     </a>
                 @endif
@@ -440,7 +468,60 @@
     </script>
 
     @stack('scripts')
-    @include('components.sonner-toaster')
+
+    <!-- Notifications DaisyUI pour les messages flash -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            @if(session('success'))
+                console.log('Flash success:', '{{ session('success') }}');
+                if (typeof window.showNotification === 'function') {
+                    window.showNotification('success', '{{ session('success') }}');
+                } else {
+                    console.error('showNotification function not found');
+                }
+            @endif
+
+            @if(session('error'))
+                console.log('Flash error:', '{{ session('error') }}');
+                if (typeof window.showNotification === 'function') {
+                    window.showNotification('error', '{{ session('error') }}');
+                } else {
+                    console.error('showNotification function not found');
+                }
+            @endif
+
+            @if(session('warning'))
+                console.log('Flash warning:', '{{ session('warning') }}');
+                if (typeof window.showNotification === 'function') {
+                    window.showNotification('warning', '{{ session('warning') }}');
+                } else {
+                    console.error('showNotification function not found');
+                }
+            @endif
+
+            @if(session('info'))
+                console.log('Flash info:', '{{ session('info') }}');
+                if (typeof window.showNotification === 'function') {
+                    window.showNotification('info', '{{ session('info') }}');
+                } else {
+                    console.error('showNotification function not found');
+                }
+            @endif
+
+            <!-- Gestion des erreurs de validation -->
+            @if($errors->any())
+                @foreach($errors->all() as $error)
+                    console.log('Validation error:', '{{ $error }}');
+                    if (typeof window.showNotification === 'function') {
+                        window.showNotification('error', '{{ $error }}');
+                    } else {
+                        console.error('showNotification function not found');
+                    }
+                @endforeach
+            @endif
+        });
+    </script>
+
 </body>
 
 </html>

@@ -21,14 +21,15 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 use App\Rules\ValidEmailDomain;
-use App\Traits\SonnerNotifier;
+use App\Traits\DaisyUINotifier;
+
 use Exception;
 
 use function Laravel\Prompts\error;
 
 class CoordinateurController extends Controller
 {
-    use SonnerNotifier;
+    use DaisyUINotifier;
 
     /**
      * Display a listing of the resource.
@@ -111,8 +112,7 @@ class CoordinateurController extends Controller
             $user->update(['photo' => $photoPath]);
         }
 
-        return redirect()->route('coordinateurs.index')
-            ->with('success', 'Coordinateur créé avec succès.');
+        return $this->successNotification('Coordinateur créé avec succès !', 'coordinateurs.index');
     }
 
     /**
@@ -180,8 +180,7 @@ class CoordinateurController extends Controller
 
         $coordinateur->update($data);
 
-        return redirect()->route('coordinateurs.show', $coordinateur->id)
-            ->with('success', 'Coordinateur mis à jour avec succès.');
+        return $this->warningNotification('Coordinateur mis à jour avec succès !', 'coordinateurs.show', [$coordinateur->id]);
     }
 
     /**
@@ -191,8 +190,7 @@ class CoordinateurController extends Controller
     {
         $coordinateur->delete();
 
-        return redirect()->route('coordinateurs.index')
-            ->with('success', 'Coordinateur supprimé avec succès.');
+        return $this->errorNotification('Coordinateur supprimé avec succès !', 'coordinateurs.index');
     }
 
     /**

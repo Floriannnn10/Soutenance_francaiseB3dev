@@ -3,12 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\Promotion;
+use App\Traits\DaisyUINotifier;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
 class PromotionController extends Controller
 {
+    use DaisyUINotifier;
     public function index(): View
     {
         $promotions = Promotion::all();
@@ -42,7 +44,7 @@ class PromotionController extends Controller
             'annee_academique_id' => $anneeAcademique->id
         ]);
 
-        return redirect()->route('promotions.index')->with('success', 'Promotion créée avec succès.');
+        return $this->successNotification('Promotion créée avec succès !', 'promotions.index');
     }
 
     public function edit(Promotion $promotion): View
@@ -56,12 +58,12 @@ class PromotionController extends Controller
             'nom' => 'required|string|max:255|unique:promotions,nom,' . $promotion->id,
         ]);
         $promotion->update(['nom' => $request->nom]);
-        return redirect()->route('promotions.index')->with('success', 'Promotion modifiée avec succès.');
+        return $this->warningNotification('Promotion modifiée avec succès !', 'promotions.index');
     }
 
     public function destroy(Promotion $promotion): RedirectResponse
     {
         $promotion->delete();
-        return redirect()->route('promotions.index')->with('success', 'Promotion supprimée avec succès.');
+        return $this->errorNotification('Promotion supprimée avec succès !', 'promotions.index');
     }
 }

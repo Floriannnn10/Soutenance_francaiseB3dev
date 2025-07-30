@@ -82,7 +82,29 @@ class EmploiDuTempsController extends Controller
             }
         }
 
-        $sessions = $sessionsQuery->orderBy('start_time')->get();
+        // Filtres supplémentaires
+        if ($request->has('enseignant_id') && $request->enseignant_id) {
+            $sessionsQuery->where('enseignant_id', $request->enseignant_id);
+        }
+
+        if ($request->has('type_cours_id') && $request->type_cours_id) {
+            $sessionsQuery->where('type_cours_id', $request->type_cours_id);
+        }
+
+        if ($request->has('statut_id') && $request->statut_id) {
+            $sessionsQuery->where('status_id', $request->statut_id);
+        }
+
+        if ($request->has('date_debut') && $request->date_debut) {
+            $sessionsQuery->where('start_time', '>=', $request->date_debut);
+        }
+
+        if ($request->has('date_fin') && $request->date_fin) {
+            $sessionsQuery->where('start_time', '<=', $request->date_fin . ' 23:59:59');
+        }
+
+        // Pagination
+        $sessions = $sessionsQuery->orderBy('start_time')->paginate(15);
 
         return view('emplois-du-temps.coordinateur', compact(
             'classes',
@@ -251,5 +273,39 @@ class EmploiDuTempsController extends Controller
                 'message' => 'Erreur lors de la suppression: ' . $e->getMessage()
             ]);
         }
+    }
+
+    /**
+     * Affiche les emplois du temps pour les parents
+     */
+    public function parent()
+    {
+        $user = Auth::user();
+        $parent = $user->parent;
+
+        if (!$parent) {
+            abort(404, 'Parent non trouvé');
+        }
+
+        $enfants = $parent->etudiants()->with(['classe'])->get();
+
+        return view('emplois-du-temps.parent', compact('enfants', 'parent'));
+    }
+
+    /**
+     * Affiche les emplois du temps des enfants du parent connecté
+     */
+    public function emploisDuTempsEnfants()
+    {
+        $user = Auth::user();
+        $parent = $user->parent;
+
+        if (!$parent) {
+            abort(404, 'Parent non trouvé');
+        }
+
+        $enfants = $parent->etudiants()->with(['classe'])->get();
+
+        return view('emplois-du-temps.enfants', compact('enfants', 'parent'));
     }
 }

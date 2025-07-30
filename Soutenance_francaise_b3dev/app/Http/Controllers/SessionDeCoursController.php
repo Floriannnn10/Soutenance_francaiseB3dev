@@ -15,12 +15,14 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
-use App\Traits\SonnerNotifier;
+
 use Carbon\Carbon;
+use App\Traits\DaisyUINotifier;
 
 class SessionDeCoursController extends Controller
 {
-    use SonnerNotifier;
+    use DaisyUINotifier;
+
     /**
      * Afficher la liste des sessions de cours.
      */
@@ -251,8 +253,7 @@ class SessionDeCoursController extends Controller
         $sessionDeCours = SessionDeCours::create($request->all());
 
         // Test direct avec Sonner
-        return redirect()->route('sessions-de-cours.index')
-            ->with('success', 'Session de cours créée avec succès.');
+        return $this->successNotification('Session de cours créée avec succès !', 'sessions-de-cours.index');
     }
 
 
@@ -394,7 +395,7 @@ class SessionDeCoursController extends Controller
         // Mettre à jour la session de cours
         $sessionDeCour->update($request->all());
 
-        return $this->successWithKey('session_updated', $this->getRouteName('index'));
+        return $this->warningNotification('Session mise à jour avec succès !', $this->getRouteName('index'));
     }
 
     /**
@@ -433,7 +434,7 @@ class SessionDeCoursController extends Controller
         // Supprimer la session de cours
         $sessionDeCour->delete();
 
-        return $this->successWithKey('session_deleted', $this->getRouteName('index'));
+        return $this->errorNotification('Session supprimée avec succès !', $this->getRouteName('index'));
     }
 
     /**
@@ -472,8 +473,7 @@ class SessionDeCoursController extends Controller
         $statutReportee = StatutSession::where('nom', 'Reportée')->first();
         $sessionDeCour->update(['statut_session_id' => $statutReportee->id]);
 
-        return redirect()->route('sessions-de-cours.index')
-            ->with('success', 'Session reportée avec succès.');
+        return $this->warningNotification('Session reportée avec succès !', 'sessions-de-cours.index');
     }
 
     /**
@@ -666,8 +666,7 @@ class SessionDeCoursController extends Controller
             ]);
         }
 
-        return redirect()->route($this->getRouteName('show'), $sessionId)
-            ->with('success', 'Présences enregistrées avec succès.');
+        return $this->successNotification('Présences enregistrées avec succès !', $this->getRouteName('show'), [$sessionId]);
     }
 
     /**
@@ -923,5 +922,32 @@ class SessionDeCoursController extends Controller
             return 'enseignant.sessions-de-cours.' . $route;
         }
         return 'sessions-de-cours.' . $route;
+    }
+
+    /**
+     * Afficher les cours pour l'étudiant
+     */
+    public function etudiant(Request $request): View
+    {
+        $user = Auth::user();
+        $etudiant = $user->etudiant;
+
+        if (!$etudiant) {
+            abort(404, 'Profil étudiant non trouvé');
+        }
+
+        // Récupérer les sessions de cours de l'étudiant
+        $sessions = SessionDeCours::with(['matiere', 'enseignant', 'classe', 'typeCours', 'statutSession'])
+            ->where('classe_id', $etudiant->classe_id)
+            ->where('annee_academique_id', $etudiant->classe->promotion->annee_academique_id)
+            ->orderBy('start_time', 'desc')
+            ->paginate(15);
+
+        // Récupérer les données pour les filtres
+        $matieres = Matiere::orderBy('nom')->get();
+        $typesCours = TypeCours::orderBy('nom')->get();
+        $statutsSession = StatutSession::orderBy('nom')->get();
+
+        return view('sessions-de-cours.etudiant', compact('sessions', 'matieres', 'typesCours', 'statutsSession'));
     }
 }

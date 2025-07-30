@@ -54,4 +54,30 @@ class Etudiant extends Model
     {
         return $this->belongsToMany(ParentEtudiant::class, 'parent_etudiant', 'etudiant_id', 'parent_id');
     }
+
+    /**
+     * Relation : un étudiant peut avoir abandonné plusieurs matières
+     */
+    public function matieresDropped(): HasMany
+    {
+        return $this->hasMany(EtudiantMatiereDropped::class);
+    }
+
+    /**
+     * Vérifier si l'étudiant a abandonné une matière spécifique
+     */
+    public function hasDroppedMatiere($matiereId, $anneeAcademiqueId = null, $semestreId = null): bool
+    {
+        $query = $this->matieresDropped()->where('matiere_id', $matiereId);
+
+        if ($anneeAcademiqueId) {
+            $query->where('annee_academique_id', $anneeAcademiqueId);
+        }
+
+        if ($semestreId) {
+            $query->where('semestre_id', $semestreId);
+        }
+
+        return $query->exists();
+    }
 }

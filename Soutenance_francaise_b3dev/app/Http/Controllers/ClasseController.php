@@ -4,10 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\Classe;
 use App\Models\Promotion;
+use App\Traits\DaisyUINotifier;
 use Illuminate\Http\Request;
 
 class ClasseController extends Controller
 {
+    use DaisyUINotifier;
     /**
      * Display a listing of the resource.
      */
@@ -38,8 +40,7 @@ class ClasseController extends Controller
 
         Classe::create($validated);
 
-        return redirect()->route('classes.index')
-            ->with('success', 'Classe créée avec succès.');
+        return $this->successNotification('Classe créée avec succès !', 'classes.index');
     }
 
     /**
@@ -72,8 +73,7 @@ class ClasseController extends Controller
 
         $class->update($validated);
 
-        return redirect()->route('classes.index')
-            ->with('success', 'Classe mise à jour avec succès.');
+        return $this->warningNotification('Classe mise à jour avec succès !', 'classes.index');
     }
 
     /**
@@ -83,7 +83,6 @@ class ClasseController extends Controller
     {
         $class->delete();
 
-        return redirect()->route('classes.index')
-            ->with('success', 'Classe supprimée avec succès.');
+        return $this->errorNotification('Classe supprimée avec succès !', 'classes.index');
     }
 }

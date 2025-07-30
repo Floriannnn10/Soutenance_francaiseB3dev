@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Matiere;
+use App\Traits\DaisyUINotifier;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
@@ -10,6 +11,7 @@ use App\Models\Enseignant;
 
 class MatiereController extends Controller
 {
+    use DaisyUINotifier;
     /**
      * Display a listing of the resource.
      */
@@ -54,8 +56,7 @@ class MatiereController extends Controller
             $matiere->enseignants()->attach($request->enseignants);
         }
 
-        return redirect()->route('matieres.index')
-            ->with('success', 'Matière créée avec succès.');
+        return $this->successNotification('Matière créée avec succès !', 'matieres.index');
     }
 
     /**
@@ -100,8 +101,7 @@ class MatiereController extends Controller
         // Synchroniser les enseignants
         $matiere->enseignants()->sync($request->enseignants ?? []);
 
-        return redirect()->route('matieres.index')
-            ->with('success', 'Matière mise à jour avec succès.');
+        return $this->warningNotification('Matière mise à jour avec succès !', 'matieres.index');
     }
 
     /**
@@ -116,7 +116,6 @@ class MatiereController extends Controller
 
         $matiere->delete();
 
-        return redirect()->route('matieres.index')
-            ->with('success', 'Matière supprimée avec succès.');
+        return $this->errorNotification('Matière supprimée avec succès !', 'matieres.index');
     }
 }

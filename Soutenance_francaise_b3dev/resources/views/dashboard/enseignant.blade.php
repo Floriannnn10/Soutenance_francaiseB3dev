@@ -2,12 +2,14 @@
 
 @section('content')
 <div class="container mx-auto px-4 py-8">
+
+
     <h2 class="text-2xl font-bold mb-6">Tableau de bord Enseignant</h2>
 
     <!-- Emploi du temps pour la semaine actuelle -->
-    @if(isset($emploiDuTemps) && isset($emploiDuTemps['semaine']))
+    @if(isset($emploiDuTemps) && !empty($emploiDuTemps))
         <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
-            <h3 class="text-lg font-semibold mb-4 text-blue-600">{{ $emploiDuTemps['semaine']['titre'] }}</h3>
+            <h3 class="text-lg font-semibold mb-4 text-blue-600">Mon emploi du temps (Cours en présentiel uniquement)</h3>
             <div class="overflow-x-auto">
                 <table class="min-w-full bg-white">
                     <thead class="bg-gray-100">
@@ -22,7 +24,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach($emploiDuTemps['creneaux'] as $horaire => $creneau)
+                        @foreach($emploiDuTemps as $horaire => $creneau)
                         <tr>
                             <td class="py-2 px-4 border font-medium">{{ $horaire }}</td>
                             @foreach(['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'] as $jour)
@@ -38,10 +40,14 @@
                                                 <p>Salle: {{ $creneau[$jour]['salle'] }}</p>
                                                 <p>{{ $creneau[$jour]['date'] }}</p>
                                             </div>
-                                            <div class="mt-2">
+                                            <div class="mt-2 space-y-1">
                                                 <a href="{{ route('enseignant.sessions-de-cours.show', $creneau[$jour]['session_id']) }}"
-                                                   class="text-xs text-blue-600 hover:text-blue-800">
+                                                   class="text-xs text-blue-600 hover:text-blue-800 block">
                                                     Voir détails
+                                                </a>
+                                                <a href="{{ route('enseignant.sessions-de-cours.appel', $creneau[$jour]['session_id']) }}"
+                                                   class="text-xs bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700 block text-center">
+                                                    Faire l'appel
                                                 </a>
                                             </div>
                                         </div>
@@ -69,6 +75,41 @@
                 </div>
                 <h3 class="text-lg font-medium text-gray-900">Aucun cours programmé</h3>
                 <p class="text-gray-500">Vous n'avez pas de cours programmés pour cette semaine.</p>
+            </div>
+        </div>
+    @endif
+
+    <!-- Liste des sessions récentes -->
+    @if(isset($sessions) && $sessions->count() > 0)
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h3 class="text-lg font-semibold mb-4">Sessions récentes</h3>
+            <div class="space-y-4">
+                @foreach($sessions as $session)
+                    <div class="border rounded-lg p-4">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h4 class="font-semibold">{{ $session->matiere->nom }}</h4>
+                                <p class="text-sm text-gray-600">{{ $session->classe->nom }} - {{ $session->typeCours->nom }}</p>
+                                <p class="text-sm text-gray-500">{{ $session->start_time->format('d/m/Y H:i') }} - {{ $session->end_time->format('H:i') }}</p>
+                            </div>
+                            <div class="flex flex-col space-y-2">
+                                <span class="px-2 py-1 text-xs rounded-full
+                                    @if($session->statutSession->nom === 'Programmée') bg-green-100 text-green-800
+                                    @elseif($session->statutSession->nom === 'Planifiée') bg-yellow-100 text-yellow-800
+                                    @else bg-gray-100 text-gray-800
+                                    @endif">
+                                    {{ $session->statutSession->nom }}
+                                </span>
+                                @if($session->typeCours->nom === 'Présentiel')
+                                    <a href="{{ route('enseignant.sessions-de-cours.appel', $session->id) }}"
+                                       class="text-xs bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700 text-center">
+                                        Faire l'appel
+                                    </a>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
             </div>
         </div>
     @endif

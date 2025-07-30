@@ -2,22 +2,6 @@
     <div class="max-w-3xl mx-auto py-10">
         <div class="bg-white rounded-lg shadow p-8">
             <h1 class="text-2xl font-bold text-gray-900 mb-6">Créer un utilisateur</h1>
-            @if(session('success'))
-                <div class="mb-4 p-4 rounded bg-green-100 text-green-800 border border-green-200 flex items-center animate-fade-in">
-                    <svg class="w-5 h-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                    </svg>
-                    <span>{{ session('success') }}</span>
-                </div>
-            @endif
-            @if($errors->any())
-                <div class="mb-4 p-4 rounded bg-red-100 text-red-800 border border-red-200 flex items-center animate-fade-in">
-                    <svg class="w-5 h-5 mr-2 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                    <span>{{ $errors->first() }}</span>
-                </div>
-            @endif
             <form method="POST" action="{{ route('users.store') }}" enctype="multipart/form-data" class="space-y-6">
                 @csrf
                 <div class="grid grid-cols-2 gap-4">

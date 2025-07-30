@@ -99,6 +99,8 @@
                         </div>
                     </button>
 
+
+
                     <button onclick="openPresenceModal()"
                             class="group relative bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-6 py-4 rounded-xl transition-all duration-200 transform hover:scale-105 hover:shadow-lg">
                         <div class="flex items-center justify-between">
@@ -177,6 +179,90 @@
                 </div>
             </div>
 
+            <!-- Filtres avancés -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <div class="flex items-center space-x-3">
+                        <div class="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg">
+                            <svg class="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.207A1 1 0 013 6.5V4z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Filtres avancés</h3>
+                    </div>
+                    <button onclick="resetFilters()" class="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors">
+                        Réinitialiser les filtres
+                    </button>
+                </div>
+
+                <form id="filterForm" method="GET" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- Garder les paramètres existants -->
+                    @if(request('annee_id'))
+                        <input type="hidden" name="annee_id" value="{{ request('annee_id') }}">
+                    @endif
+                    @if(request('classe_id'))
+                        <input type="hidden" name="classe_id" value="{{ request('classe_id') }}">
+                    @endif
+
+                    <div class="space-y-2">
+                        <label for="filter_enseignant" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Enseignant</label>
+                        <select id="filter_enseignant" name="enseignant_id" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 transition-colors">
+                            <option value="">Tous les enseignants</option>
+                            @foreach($enseignants as $enseignant)
+                                <option value="{{ $enseignant->id }}" {{ request('enseignant_id') == $enseignant->id ? 'selected' : '' }}>
+                                    {{ $enseignant->prenom }} {{ $enseignant->nom }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label for="filter_type" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Type de cours</label>
+                        <select id="filter_type" name="type_cours_id" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 transition-colors">
+                            <option value="">Tous les types</option>
+                            @foreach($typesCours as $type)
+                                <option value="{{ $type->id }}" {{ request('type_cours_id') == $type->id ? 'selected' : '' }}>
+                                    {{ $type->nom }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label for="filter_statut" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Statut</label>
+                        <select id="filter_statut" name="statut_id" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 transition-colors">
+                            <option value="">Tous les statuts</option>
+                            @foreach($statutsSession as $statut)
+                                <option value="{{ $statut->id }}" {{ request('statut_id') == $statut->id ? 'selected' : '' }}>
+                                    {{ $statut->nom }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label for="filter_date_debut" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Date début</label>
+                        <input type="date" id="filter_date_debut" name="date_debut" value="{{ request('date_debut') }}"
+                               class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 transition-colors">
+                    </div>
+
+                    <div class="space-y-2">
+                        <label for="filter_date_fin" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Date fin</label>
+                        <input type="date" id="filter_date_fin" name="date_fin" value="{{ request('date_fin') }}"
+                               class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 transition-colors">
+                    </div>
+
+                    <div class="flex items-end">
+                        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                            <span>Filtrer</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
             <!-- Liste des sessions avec design moderne -->
             <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
                 <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600">
@@ -189,7 +275,7 @@
         </div>
                             <div>
                                 <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Sessions de cours</h3>
-                                <p class="text-sm text-gray-600 dark:text-gray-400">{{ $sessions->count() }} session(s) trouvée(s)</p>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">{{ $sessions->total() }} session(s) trouvée(s) - Page {{ $sessions->currentPage() }} sur {{ $sessions->lastPage() }}</p>
                 </div>
             </div>
                     </div>
@@ -324,6 +410,21 @@
                             @endforelse
                         </tbody>
                     </table>
+                </div>
+
+                <!-- Pagination -->
+                @if($sessions->hasPages())
+                    <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-2 text-sm text-gray-700 dark:text-gray-300">
+                                <span>Affichage de {{ $sessions->firstItem() ?? 0 }} à {{ $sessions->lastItem() ?? 0 }} sur {{ $sessions->total() }} résultats</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                {{ $sessions->appends(request()->query())->links() }}
+                            </div>
+                        </div>
+                    </div>
+                @endif
             </div>
         </div>
     </div>
@@ -572,6 +673,8 @@
 </div>
 
 <script>
+
+
         // Gestion du changement d'année académique
         document.getElementById('annee_select')?.addEventListener('change', function() {
             const selectedOption = this.options[this.selectedIndex];
@@ -580,6 +683,8 @@
                 window.location.href = url;
             }
         });
+
+
 
         // Filtres
         document.querySelectorAll('#filter_classe, #filter_enseignant, #filter_type, #filter_statut').forEach(filter => {
@@ -631,100 +736,96 @@ function openCreateModal() {
         }
 
         // Soumission du formulaire de session
-        document.getElementById('sessionForm').addEventListener('submit', function(e) {
-            e.preventDefault();
+        document.addEventListener('DOMContentLoaded', function() {
+            const sessionForm = document.getElementById('sessionForm');
+            if (sessionForm) {
+                console.log('Formulaire sessionForm trouvé, attachement de l\'événement submit...');
+                sessionForm.addEventListener('submit', function(e) {
+                    console.log('Formulaire soumis !');
+                    e.preventDefault();
 
-            const formData = new FormData(this);
-            const sessionId = document.getElementById('session_id').value;
+                    const formData = new FormData(this);
+                    const sessionId = document.getElementById('session_id').value;
 
-                        // Debug: Afficher les données envoyées
-            console.log('Session ID:', sessionId);
-            for (let [key, value] of formData.entries()) {
-                console.log(key + ': ' + value);
-            }
-
-                        // Si c'est une modification, s'assurer que les bonnes valeurs sont envoyées
-            if (sessionId) {
-                // Récupérer les valeurs originales de la session
-                const typeCoursSelect = document.getElementById('type_cours_id');
-                const enseignantSelect = document.getElementById('enseignant_id');
-
-                // Attendre un court délai pour s'assurer que tous les événements sont terminés
-                setTimeout(() => {
-                    // Forcer les bonnes valeurs dans le FormData
-                    formData.set('type_cours_id', typeCoursSelect.value);
-                    formData.set('enseignant_id', enseignantSelect.value);
-
-                    console.log('Valeurs forcées après délai:');
-                    console.log('type_cours_id:', typeCoursSelect.value);
-                    console.log('enseignant_id:', enseignantSelect.value);
-
-                    // Envoyer la requête
-                    sendRequest();
-                }, 100);
-
-                return; // Sortir de la fonction pour éviter l'envoi immédiat
-            }
-
-                        // Fonction pour envoyer la requête
-            function sendRequest() {
-                const url = sessionId ? `/coordinateur/session/${sessionId}` : '/coordinateur/creer-session';
-                const method = sessionId ? 'PUT' : 'POST';
-
-                console.log('URL:', url);
-                console.log('Method:', method);
-
-                fetch(url, {
-                    method: method,
-                    body: formData,
-                    headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    // Debug: Afficher les données envoyées
+                    console.log('Session ID:', sessionId);
+                    for (let [key, value] of formData.entries()) {
+                        console.log(key + ': ' + value);
                     }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // Afficher notification de succès avec Sonner
-                        if (data.notification && window.showNotification) {
-                            window.showNotification(data.notification.type, data.notification.message);
-                        } else if (window.SonnerHelper) {
-                            window.SonnerHelper.success(data.message || 'Opération réussie');
-                        } else if (window.toast) {
-                            window.toast.success(data.message || 'Opération réussie');
-                        }
 
-                        closeSessionModal();
-                        location.reload();
-                    } else {
-                        // Afficher notification d'erreur avec Sonner
-                        if (data.notification && window.showNotification) {
-                            window.showNotification(data.notification.type, data.notification.message);
-                        } else if (window.SonnerHelper) {
-                            window.SonnerHelper.error(data.message || 'Une erreur est survenue');
-                        } else if (window.toast) {
-                            window.toast.error(data.message || 'Une erreur est survenue');
-                        } else {
-                            alert('Erreur: ' + data.message);
-                        }
+                    // Si c'est une modification, s'assurer que les bonnes valeurs sont envoyées
+                    if (sessionId) {
+                        // Récupérer les valeurs originales de la session
+                        const typeCoursSelect = document.getElementById('type_cours_id');
+                        const enseignantSelect = document.getElementById('enseignant_id');
+
+                        // Attendre un court délai pour s'assurer que tous les événements sont terminés
+                        setTimeout(() => {
+                            // Forcer les bonnes valeurs dans le FormData
+                            formData.set('type_cours_id', typeCoursSelect.value);
+                            formData.set('enseignant_id', enseignantSelect.value);
+
+                            console.log('Valeurs forcées après délai:');
+                            console.log('type_cours_id:', typeCoursSelect.value);
+                            console.log('enseignant_id:', enseignantSelect.value);
+
+                            // Envoyer la requête
+                            sendRequest();
+                        }, 100);
+
+                        return; // Sortir de la fonction pour éviter l'envoi immédiat
                     }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
 
-                    // Afficher notification d'erreur avec Sonner
-                    if (window.SonnerHelper) {
-                        window.SonnerHelper.error('Une erreur est survenue lors de la communication avec le serveur');
-                    } else if (window.toast) {
-                        window.toast.error('Une erreur est survenue lors de la communication avec le serveur');
-                    } else {
-                        alert('Une erreur est survenue');
+                    // Fonction pour envoyer la requête
+                    function sendRequest() {
+                        const url = sessionId ? `/coordinateur/session/${sessionId}` : '/coordinateur/creer-session';
+                        const method = sessionId ? 'PUT' : 'POST';
+
+                        console.log('URL:', url);
+                        console.log('Method:', method);
+
+                        fetch(url, {
+                            method: method,
+                            body: formData,
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                            }
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            console.log('Réponse reçue:', data);
+
+                            if (data.success) {
+                                console.log('Succès détecté, affichage notification...');
+                                // Afficher notification de succès avec DaisyUI
+                                window.showSuccess(data.message || 'Opération réussie');
+
+                                closeSessionModal();
+                                // Retarder le rechargement pour laisser le temps à la notification de s'afficher
+                                setTimeout(() => {
+                                    location.reload();
+                                }, 2000);
+                            } else {
+                                console.log('Erreur détectée, affichage notification...');
+                                // Afficher notification d'erreur avec DaisyUI
+                                window.showError(data.message || 'Une erreur est survenue');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+
+                            // Afficher notification d'erreur avec DaisyUI
+                            window.showError('Une erreur est survenue lors de la communication avec le serveur');
+                        });
+                    }
+
+                    // Si c'est une création, envoyer immédiatement
+                    if (!sessionId) {
+                        sendRequest();
                     }
                 });
-            }
-
-            // Si c'est une création, envoyer immédiatement
-            if (!sessionId) {
-                sendRequest();
+            } else {
+                console.error('Formulaire sessionForm non trouvé !');
             }
         });
 
@@ -1072,5 +1173,36 @@ function deleteSession(sessionId) {
 
         // Variable globale pour suivre l'état d'édition
         let isCurrentlyEditing = false;
+
+        // Fonction pour réinitialiser les filtres
+        function resetFilters() {
+            // Réinitialiser tous les champs de filtre
+            document.getElementById('filter_enseignant').value = '';
+            document.getElementById('filter_type').value = '';
+            document.getElementById('filter_statut').value = '';
+            document.getElementById('filter_date_debut').value = '';
+            document.getElementById('filter_date_fin').value = '';
+
+            // Soumettre le formulaire pour appliquer les filtres réinitialisés
+            document.getElementById('filterForm').submit();
+        }
+
+        // Fonction pour appliquer les filtres automatiquement lors du changement
+        function applyFilters() {
+            document.getElementById('filterForm').submit();
+        }
+
+        // Écouter les changements sur les filtres pour application automatique
+        document.addEventListener('DOMContentLoaded', function() {
+            const filterInputs = document.querySelectorAll('#filterForm select, #filterForm input[type="date"]');
+
+            filterInputs.forEach(input => {
+                input.addEventListener('change', function() {
+                    // Appliquer les filtres après un délai pour éviter trop de requêtes
+                    clearTimeout(window.filterTimeout);
+                    window.filterTimeout = setTimeout(applyFilters, 500);
+                });
+            });
+        });
 </script>
 </x-app-layout>

@@ -7,6 +7,9 @@ use App\Models\AnneeAcademique;
 use App\Models\Semestre;
 use App\Models\Coordinateur;
 use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
+use Illuminate\View\View;
+use App\Models\SessionDeCours;
 
 class DashboardController extends Controller
 {
@@ -27,7 +30,7 @@ class DashboardController extends Controller
             case 'enseignant':
                 return $this->enseignantDashboard();
             case 'etudiant':
-                return $this->etudiantDashboard();
+                return redirect()->route('dashboard.etudiant');
             case 'parent':
                 return $this->parentDashboard();
             default:
@@ -101,12 +104,18 @@ class DashboardController extends Controller
             ->take(10)
             ->get();
 
-        // Récupérer les sessions en présentiel pour l'emploi du temps
+        // Récupérer les sessions en présentiel pour l'emploi du temps (semaine actuelle + 2 semaines)
+        $now = Carbon::now();
+        $startOfWeek = $now->copy()->startOfWeek();
+        $endOfPeriod = $now->copy()->addWeeks(2)->endOfWeek();
+
         $sessionsPresentiel = \App\Models\SessionDeCours::with(['classe', 'matiere', 'typeCours'])
             ->where('enseignant_id', $enseignant->id)
             ->whereHas('typeCours', function($q) {
                 $q->where('nom', 'Présentiel');
             })
+            ->where('start_time', '>=', $startOfWeek)
+            ->where('start_time', '<=', $endOfPeriod)
             ->orderBy('start_time')
             ->get();
 
@@ -119,98 +128,88 @@ class DashboardController extends Controller
             '16:00-18:00' => '16:00'
         ];
 
-        foreach ($creneaux as $horaire => $heure) {
-            $emploiDuTemps[$horaire] = [
-                'horaire' => $horaire,
-                'lundi' => null,
-                'mardi' => null,
-                'mercredi' => null,
-                'jeudi' => null,
-                'vendredi' => null,
-                'samedi' => null
-            ];
+        // Vérifier s'il y a des sessions pour cette période
+        $hasSessions = $sessionsPresentiel->count() > 0;
 
-            // Utiliser les noms de jours en anglais pour Carbon
-            $joursAnglais = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-            $joursFrancais = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+        if ($hasSessions) {
+            foreach ($creneaux as $horaire => $heure) {
+                $emploiDuTemps[$horaire] = [
+                    'horaire' => $horaire,
+                    'lundi' => null,
+                    'mardi' => null,
+                    'mercredi' => null,
+                    'jeudi' => null,
+                    'vendredi' => null,
+                    'samedi' => null
+                ];
 
-            foreach ($joursAnglais as $index => $jourAnglais) {
-                $jourFrancais = $joursFrancais[$index];
+                // Utiliser les noms de jours en anglais pour Carbon
+                $joursAnglais = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+                $joursFrancais = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
 
-                // Calculer la date du prochain jour de la semaine
-                $dateJour = now()->startOfWeek()->next($jourAnglais);
-                $heureDebut = $dateJour->copy()->setTimeFromTimeString($heure);
-                $heureFin = $heureDebut->copy()->addHours(2);
+                foreach ($joursAnglais as $index => $jourAnglais) {
+                    $jourFrancais = $joursFrancais[$index];
 
-                // Chercher une session pour ce créneau (dans les 4 prochaines semaines)
-                $session = $sessionsPresentiel->where('start_time', '>=', $heureDebut)
-                    ->where('start_time', '<', $heureFin)
-                    ->where('start_time', '<=', now()->addWeeks(4))
-                    ->first();
+                    // Calculer la date du prochain jour de la semaine
+                    $dateJour = $now->copy()->startOfWeek()->next($jourAnglais);
+                    $heureDebut = $dateJour->copy()->setTimeFromTimeString($heure);
+                    $heureFin = $heureDebut->copy()->addHours(2);
 
-                if ($session) {
-                    $emploiDuTemps[$horaire][$jourFrancais] = [
-                        'matiere' => $session->matiere->nom,
-                        'classe' => $session->classe->nom,
-                        'type' => 'presentiel',
-                        'date' => $session->start_time->format('d/m/Y')
-                    ];
+                    // Chercher une session pour ce créneau (plus flexible)
+                    $session = $sessionsPresentiel->where('start_time', '>=', $heureDebut->copy()->subMinutes(30))
+                        ->where('start_time', '<', $heureFin->copy()->addMinutes(30))
+                        ->first();
+
+                    if ($session) {
+                        $emploiDuTemps[$horaire][$jourFrancais] = [
+                            'matiere' => $session->matiere->nom,
+                            'classe' => $session->classe->nom,
+                            'type' => 'presentiel',
+                            'date' => $session->start_time->format('d/m/Y'),
+                            'heure_debut' => $session->start_time->format('H:i'),
+                            'heure_fin' => $session->end_time->format('H:i'),
+                            'salle' => $session->lieu ?: 'Non spécifiée',
+                            'session_id' => $session->id
+                        ];
+                    }
                 }
             }
         }
 
-        return view('dashboard.enseignant', compact('sessions', 'emploiDuTemps'));
+        return view('dashboard.enseignant', compact('sessions', 'emploiDuTemps', 'hasSessions'));
     }
 
-    private function etudiantDashboard()
+    /**
+     * Dashboard pour les étudiants
+     */
+    public function etudiantDashboard(): View
     {
         $user = Auth::user();
         $etudiant = $user->etudiant;
 
         if (!$etudiant) {
-            return redirect()->route('login')->with('error', 'Profil étudiant non trouvé.');
+            abort(404, 'Profil étudiant non trouvé');
         }
 
-        // Calculer le taux de présence
-        $totalPresences = $etudiant->presences()->count();
-        $presencesPresent = $etudiant->presences()->whereHas('statutPresence', function($q) {
-            $q->where('nom', 'Présent');
-        })->count();
+        // Récupérer les sessions de cours de l'étudiant pour cette semaine
+        $sessions = SessionDeCours::with(['matiere', 'enseignant', 'classe'])
+            ->where('classe_id', $etudiant->classe_id)
+            ->where('annee_academique_id', $etudiant->classe->promotion->annee_academique_id)
+            ->whereBetween('start_time', [
+                Carbon::now()->startOfWeek()->copy(),
+                Carbon::now()->endOfWeek()->copy()
+            ])
+            ->orderBy('start_time')
+            ->orderBy('start_time')
+            ->get();
 
-        $tauxPresence = $totalPresences > 0 ? round(($presencesPresent / $totalPresences) * 100, 1) : 0;
+        // Récupérer les matières droppées de l'étudiant
+        $matieresDropped = $etudiant->matieresDropped()
+            ->with(['matiere', 'anneeAcademique', 'semestre'])
+            ->where('date_drop', '>=', Carbon::now()->subDays(30)) // Seulement les abandons récents
+            ->get();
 
-        // Récupérer les absences (présences avec statut "Absent")
-        $absences = $etudiant->presences()->whereHas('statutPresence', function($q) {
-            $q->where('nom', 'Absent');
-        })->with(['sessionDeCours.matiere', 'sessionDeCours.classe', 'justification'])->get();
-
-        // Calculer l'évolution de la présence (pour le graphique)
-        $evolutionPresence = [];
-        $anneesAcademiques = \App\Models\AnneeAcademique::orderBy('date_debut', 'desc')->take(3)->get();
-
-        foreach ($anneesAcademiques as $annee) {
-            $presencesAnnee = $etudiant->presences()->whereHas('sessionDeCours', function($q) use ($annee) {
-                $q->where('annee_academique_id', $annee->id);
-            });
-
-            $totalAnnee = $presencesAnnee->count();
-            $presentsAnnee = $presencesAnnee->whereHas('statutPresence', function($q) {
-                $q->where('nom', 'Présent');
-            })->count();
-
-            $tauxAnnee = $totalAnnee > 0 ? round(($presentsAnnee / $totalAnnee) * 100, 1) : 0;
-
-            $evolutionPresence[] = [
-                'annee' => $annee->nom,
-                'taux' => $tauxAnnee
-            ];
-        }
-
-        return view('dashboard.etudiant', compact(
-            'tauxPresence',
-            'absences',
-            'evolutionPresence'
-        ));
+        return view('dashboard.etudiant', compact('etudiant', 'sessions', 'matieresDropped'));
     }
 
     private function parentDashboard()

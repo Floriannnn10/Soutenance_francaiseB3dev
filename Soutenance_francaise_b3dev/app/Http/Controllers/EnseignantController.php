@@ -17,9 +17,11 @@ use App\Models\SessionDeCours;
 use App\Models\TypeCours;
 use App\Models\AnneeAcademique;
 use App\Rules\ValidEmailDomain;
+use App\Traits\DaisyUINotifier;
 
 class EnseignantController extends Controller
 {
+    use DaisyUINotifier;
     /**
      * Display a listing of the resource.
      */
@@ -93,8 +95,7 @@ class EnseignantController extends Controller
             $enseignant->matieres()->attach($request->matieres);
         }
 
-        return redirect()->route('enseignants.index')
-            ->with('success', 'Enseignant créé avec succès.');
+        return $this->successNotification('Enseignant créé avec succès !', 'enseignants.index');
     }
 
     /**
@@ -163,8 +164,7 @@ class EnseignantController extends Controller
         // Synchroniser les matières avec cet enseignant
         $enseignant->matieres()->sync($request->matieres ?? []);
 
-        return redirect()->route('enseignants.index')
-            ->with('success', 'Enseignant mis à jour avec succès.');
+        return $this->warningNotification('Enseignant mis à jour avec succès !', 'enseignants.index');
     }
 
     /**
@@ -179,8 +179,7 @@ class EnseignantController extends Controller
 
         $enseignant->delete();
 
-        return redirect()->route('enseignants.index')
-            ->with('success', 'Enseignant supprimé avec succès.');
+        return $this->errorNotification('Enseignant supprimé avec succès !', 'enseignants.index');
     }
 
     /**

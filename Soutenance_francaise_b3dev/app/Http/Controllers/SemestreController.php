@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Semestre;
 use App\Models\AnneeAcademique;
+use App\Traits\DaisyUINotifier;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
@@ -11,6 +12,7 @@ use Illuminate\Support\Facades\DB;
 
 class SemestreController extends Controller
 {
+    use DaisyUINotifier;
     /**
      * Afficher la liste des semestres.
      */
@@ -50,8 +52,7 @@ class SemestreController extends Controller
 
         Semestre::create($request->all());
 
-        return redirect()->route('semestres.index')
-            ->with('success', 'Semestre créé avec succès.');
+        return $this->successNotification('Semestre créé avec succès !', 'semestres.index');
     }
 
     /**
@@ -109,8 +110,7 @@ class SemestreController extends Controller
 
         $semestre->update($request->all());
 
-        return redirect()->route('semestres.index')
-            ->with('success', 'Semestre mis à jour avec succès.');
+        return $this->warningNotification('Semestre mis à jour avec succès !', 'semestres.index');
     }
 
     /**
@@ -131,8 +131,7 @@ class SemestreController extends Controller
 
             $semestre->delete();
 
-            return redirect()->route('semestres.index')
-                ->with('success', 'Semestre supprimé avec succès.');
+                    return $this->errorNotification('Semestre supprimé avec succès !', 'semestres.index');
         } catch (\Exception $e) {
             return redirect()->route('semestres.index')
                 ->with('error', 'Erreur lors de la suppression du semestre : ' . $e->getMessage());

@@ -1,153 +1,116 @@
-@extends('layouts.app')
+<x-app-layout>
+    <x-slot name="header">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+            {{ __('Tableau de bord - Étudiant') }}
+        </h2>
+    </x-slot>
 
-@section('content')
-<div class="container mx-auto px-4 py-8">
-    <h2 class="text-2xl font-bold mb-6">Tableau de bord Étudiant</h2>
-
-    <!-- Emploi du temps -->
-    <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
-        <h3 class="text-lg font-semibold mb-4">Mon emploi du temps</h3>
-        <div class="overflow-x-auto">
-            <table class="min-w-full bg-white">
-                <thead class="bg-gray-100">
-                    <tr>
-                        <th class="py-2 px-4 border">Horaire</th>
-                        <th class="py-2 px-4 border">Lundi</th>
-                        <th class="py-2 px-4 border">Mardi</th>
-                        <th class="py-2 px-4 border">Mercredi</th>
-                        <th class="py-2 px-4 border">Jeudi</th>
-                        <th class="py-2 px-4 border">Vendredi</th>
-                        <th class="py-2 px-4 border">Samedi</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($emploiDuTemps ?? [] as $creneau)
-                    <tr>
-                        <td class="py-2 px-4 border">{{ $creneau['horaire'] }}</td>
-                        @foreach(['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'] as $jour)
-                            <td class="py-2 px-4 border">
-                                @if(isset($creneau[$jour]))
-                                    <div class="p-2 rounded
-                                        @if($creneau[$jour]['type'] === 'presentiel')
-                                            bg-blue-100
-                                        @elseif($creneau[$jour]['type'] === 'e-learning')
-                                            bg-green-100
-                                        @else
-                                            bg-yellow-100
-                                        @endif
-                                    ">
-                                        <p class="font-semibold">{{ $creneau[$jour]['matiere'] }}</p>
-                                        <p class="text-sm">{{ $creneau[$jour]['enseignant'] }}</p>
-                                        <p class="text-xs text-gray-600">{{ $creneau[$jour]['type'] }}</p>
-                                    </div>
-                                @endif
-                            </td>
-                        @endforeach
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <!-- Statistiques de présence -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-        <!-- Taux de présence global -->
-        <div class="bg-white rounded-lg shadow-lg p-6">
-            <h3 class="text-lg font-semibold mb-4">Mon taux de présence</h3>
-            <div class="flex items-center justify-center">
-                <div class="relative w-32 h-32">
-                    <svg class="w-full h-full" viewBox="0 0 36 36">
-                        <path d="M18 2.0845
-                            a 15.9155 15.9155 0 0 1 0 31.831
-                            a 15.9155 15.9155 0 0 1 0 -31.831"
-                            fill="none"
-                            stroke="#eee"
-                            stroke-width="3"
-                        />
-                        <path d="M18 2.0845
-                            a 15.9155 15.9155 0 0 1 0 31.831
-                            a 15.9155 15.9155 0 0 1 0 -31.831"
-                            fill="none"
-                            stroke="{{ ($tauxPresence ?? 0) >= 70 ? '#15803d' : (($tauxPresence ?? 0) >= 50 ? '#22c55e' : (($tauxPresence ?? 0) >= 30 ? '#f97316' : '#ef4444')) }}"
-                            stroke-width="3"
-                            stroke-dasharray="{{ $tauxPresence ?? 0 }}, 100"
-                        />
-                    </svg>
-                    <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
-                        <span class="text-2xl font-bold">{{ number_format($tauxPresence ?? 0, 1) }}%</span>
+    <div class="py-12">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            <!-- Informations de l'étudiant -->
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
+                <div class="p-6">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0 h-16 w-16">
+                            @if($etudiant->photo)
+                                <img class="h-16 w-16 rounded-full" src="{{ asset('storage/' . $etudiant->photo) }}" alt="">
+                            @else
+                                <div class="h-16 w-16 rounded-full bg-blue-200 flex items-center justify-center">
+                                    <span class="text-xl font-semibold text-blue-800">
+                                        {{ strtoupper(substr($etudiant->prenom, 0, 1) . substr($etudiant->nom, 0, 1)) }}
+                                    </span>
+                                </div>
+                            @endif
+                        </div>
+                        <div class="ml-6">
+                            <h3 class="text-2xl font-bold text-gray-900">{{ $etudiant->prenom }} {{ $etudiant->nom }}</h3>
+                            <p class="text-gray-600">{{ $etudiant->classe->nom ?? 'Classe non définie' }}</p>
+                            <p class="text-sm text-gray-500">{{ $etudiant->email ?? 'Email non renseigné' }}</p>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Historique des absences -->
-        <div class="bg-white rounded-lg shadow-lg p-6">
-            <h3 class="text-lg font-semibold mb-4">Historique des absences</h3>
-            <div class="space-y-4">
-                @forelse($absences ?? [] as $absence)
-                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded">
-                        <div>
-                            <p class="font-medium">{{ $absence->sessionDeCours->matiere->nom }}</p>
-                            <p class="text-sm text-gray-600">{{ $absence->sessionDeCours->start_time ? $absence->sessionDeCours->start_time->format('d/m/Y H:i') : 'Date non disponible' }}</p>
+            <!-- Emploi du temps de la semaine -->
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
+                <div class="p-6">
+                    <h3 class="text-lg font-semibold mb-4">📅 Emploi du temps de la semaine</h3>
+                    @if($sessions->count() > 0)
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            @foreach($sessions as $session)
+                                <div class="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                                    <div class="flex justify-between items-start mb-2">
+                                        <h4 class="font-semibold text-gray-900">{{ $session->matiere->nom }}</h4>
+                                        <span class="text-sm text-gray-500">{{ $session->start_time->format('d/m/Y') }}</span>
+                                    </div>
+                                    <p class="text-sm text-gray-600">{{ $session->start_time->format('H:i') }} - {{ $session->end_time->format('H:i') }}</p>
+                                    <p class="text-sm text-gray-500">{{ $session->enseignant->prenom }} {{ $session->enseignant->nom }}</p>
+                                    <span class="inline-block px-2 py-1 text-xs rounded-full
+                                        @if($session->typeCours->code === 'presentiel') bg-blue-100 text-blue-800
+                                        @elseif($session->typeCours->code === 'workshop') bg-green-100 text-green-800
+                                        @else bg-purple-100 text-purple-800 @endif">
+                                        {{ $session->typeCours->nom }}
+                                    </span>
+                                </div>
+                            @endforeach
                         </div>
-                        <div>
-                            @if($absence->justification)
-                                <span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-sm">Justifiée</span>
-                            @else
-                                <span class="px-2 py-1 bg-red-100 text-red-800 rounded-full text-sm">Non justifiée</span>
-                            @endif
-                        </div>
-                    </div>
-                @empty
-                    <p class="text-center text-gray-500">Aucune absence enregistrée</p>
-                @endforelse
+                    @else
+                        <p class="text-gray-500 text-center py-4">Aucune session de cours cette semaine.</p>
+                    @endif
+                </div>
+            </div>
+
+            <!-- Liens rapides -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <a href="{{ route('emplois-du-temps.etudiant') }}" class="bg-blue-500 hover:bg-blue-700 text-white p-6 rounded-lg text-center">
+                    <div class="text-2xl mb-2">📋</div>
+                    <h3 class="font-semibold">Emploi du temps</h3>
+                    <p class="text-sm opacity-90">Voir mon emploi du temps complet</p>
+                </a>
+
+                <a href="{{ route('presences.etudiant') }}" class="bg-green-500 hover:bg-green-700 text-white p-6 rounded-lg text-center">
+                    <div class="text-2xl mb-2">✅</div>
+                    <h3 class="font-semibold">Mes présences</h3>
+                    <p class="text-sm opacity-90">Consulter mon historique de présence</p>
+                </a>
+
+                <a href="{{ route('profile.edit') }}" class="bg-purple-500 hover:bg-purple-700 text-white p-6 rounded-lg text-center">
+                    <div class="text-2xl mb-2">👤</div>
+                    <h3 class="font-semibold">Mon profil</h3>
+                    <p class="text-sm opacity-90">Modifier mes informations</p>
+                </a>
             </div>
         </div>
     </div>
 
-    <!-- Comparaison avec les années précédentes -->
-    <div class="bg-white rounded-lg shadow-lg p-6">
-        <h3 class="text-lg font-semibold mb-4">Évolution du taux de présence</h3>
-        <div id="chartEvolution"></div>
-    </div>
-</div>
-
-@push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const evolutionData = @json($evolutionPresence ?? []);
-
-    if (evolutionData.length > 0) {
-        new ApexCharts(document.querySelector("#chartEvolution"), {
-            series: [{
-                name: 'Taux de présence',
-                data: evolutionData.map(item => item.taux)
-            }],
-            chart: {
-                type: 'line',
-                height: 350
-            },
-            xaxis: {
-                categories: evolutionData.map(item => item.annee)
-            },
-            yaxis: {
-                labels: {
-                    formatter: function(val) {
-                        return val + "%"
+    <!-- Notification des matières droppées -->
+    @if($matieresDropped->count() > 0)
+        <script>
+            // Attendre 30 secondes avant d'afficher la notification
+            setTimeout(function() {
+                @foreach($matieresDropped as $drop)
+                    // Afficher un toast pour chaque matière droppée
+                    if (typeof window.toast !== 'undefined' && typeof window.toast.error === 'function') {
+                        try {
+                            window.toast.error(
+                                '⚠️ Vous avez abandonné la matière "{{ $drop->matiere->nom }}" le {{ $drop->date_drop->format("d/m/Y") }}. ' +
+                                'Vous devrez la reprendre l\'année suivante.',
+                                {
+                                    duration: 10000, // 10 secondes
+                                    position: 'top-right'
+                                }
+                            );
+                        } catch (error) {
+                            console.error('Erreur lors de l\'affichage du toast:', error);
+                            alert('⚠️ Vous avez abandonné la matière "{{ $drop->matiere->nom }}" le {{ $drop->date_drop->format("d/m/Y") }}. Vous devrez la reprendre l\'année suivante.');
+                        }
+                    } else {
+                        // Fallback si toast n'est pas disponible
+                        console.warn('Sonner toast non disponible, utilisation du fallback alert');
+                        alert('⚠️ Vous avez abandonné la matière "{{ $drop->matiere->nom }}" le {{ $drop->date_drop->format("d/m/Y") }}. Vous devrez la reprendre l\'année suivante.');
                     }
-                }
-            },
-            markers: {
-                size: 6
-            },
-            stroke: {
-                curve: 'smooth'
-            }
-        }).render();
-    }
-});
-</script>
-@endpush
-@endsection
+                @endforeach
+            }, 30000); // 30 secondes
+        </script>
+    @endif
+</x-app-layout>

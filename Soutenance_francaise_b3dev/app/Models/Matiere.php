@@ -29,4 +29,30 @@ class Matiere extends Model
     {
         return $this->belongsToMany(Enseignant::class, 'enseignant_matiere', 'matiere_id', 'enseignant_id');
     }
+
+    /**
+     * Relation : une matière peut être abandonnée par plusieurs étudiants
+     */
+    public function etudiantsDropped(): HasMany
+    {
+        return $this->hasMany(EtudiantMatiereDropped::class);
+    }
+
+    /**
+     * Obtenir le nombre d'étudiants qui ont abandonné cette matière
+     */
+    public function getDroppedStudentsCount($anneeAcademiqueId = null, $semestreId = null): int
+    {
+        $query = $this->etudiantsDropped();
+
+        if ($anneeAcademiqueId) {
+            $query->where('annee_academique_id', $anneeAcademiqueId);
+        }
+
+        if ($semestreId) {
+            $query->where('semestre_id', $semestreId);
+        }
+
+        return $query->count();
+    }
 }

@@ -4,12 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\Notification;
 use App\Models\User;
+use App\Traits\DaisyUINotifier;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
 class NotificationController extends Controller
 {
+    use DaisyUINotifier;
     /**
      * Display a listing of the resource.
      */
@@ -55,8 +57,7 @@ class NotificationController extends Controller
         // Attacher les utilisateurs
         $notification->utilisateurs()->attach($request->utilisateurs);
 
-        return redirect()->route('notifications.index')
-            ->with('success', 'Notification créée avec succès.');
+        return $this->successNotification('Notification créée avec succès !', 'notifications.index');
     }
 
     /**
@@ -97,8 +98,7 @@ class NotificationController extends Controller
         // Mettre à jour les utilisateurs
         $notification->utilisateurs()->sync($request->utilisateurs);
 
-        return redirect()->route('notifications.index')
-            ->with('success', 'Notification mise à jour avec succès.');
+        return $this->warningNotification('Notification mise à jour avec succès !', 'notifications.index');
     }
 
     /**
@@ -108,8 +108,7 @@ class NotificationController extends Controller
     {
         $notification->delete();
 
-        return redirect()->route('notifications.index')
-            ->with('success', 'Notification supprimée avec succès.');
+        return $this->errorNotification('Notification supprimée avec succès !', 'notifications.index');
     }
 
     /**
@@ -121,7 +120,6 @@ class NotificationController extends Controller
             'read_at' => now(),
         ]);
 
-        return redirect()->back()
-            ->with('success', 'Notification marquée comme lue.');
+        return $this->successNotification('Notification marquée comme lue !');
     }
 }

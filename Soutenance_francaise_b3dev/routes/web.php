@@ -18,6 +18,7 @@ use App\Http\Controllers\EmploiDuTempsController;
 use App\Http\Controllers\JustificationAbsenceController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PromotionController;
+use App\Http\Controllers\EtudiantMatiereDroppedController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -39,8 +40,13 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+// Route de test pour les notifications
+Route::get('/test-notifications', function () {
+    return view('test-notifications');
+})->name('test-notifications');
 
     // Routes pour l'administrateur
     Route::middleware(['role:admin'])->group(function () {
@@ -54,6 +60,7 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('etudiants', EtudiantController::class);
         Route::get('/etudiants/{etudiant}/attribuer-parents', [EtudiantController::class, 'attribuerParents'])->name('etudiants.attribuer-parents');
         Route::post('/etudiants/{etudiant}/store-parents', [EtudiantController::class, 'storeParents'])->name('etudiants.store-parents');
+
         Route::resource('parents', ParentEtudiantController::class);
         Route::resource('promotions', PromotionController::class);
 
@@ -71,7 +78,13 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/sessions-de-cours/{session}/appel', [SessionDeCoursController::class, 'appel'])->name('sessions-de-cours.appel');
         Route::get('/api/sessions-de-cours/{session}', [SessionDeCoursController::class, 'getSessionJson'])->name('api.sessions-de-cours.show');
         Route::resource('emplois-du-temps', EmploiDuTempsController::class);
-        Route::resource('justifications', JustificationAbsenceController::class);
+        Route::get('/justifications', [JustificationAbsenceController::class, 'index'])->name('justifications.index');
+        Route::get('/justifications/create/{presenceId}', [JustificationAbsenceController::class, 'create'])->name('justifications.create');
+        Route::post('/justifications/store/{presenceId}', [JustificationAbsenceController::class, 'store'])->name('justifications.store');
+        Route::get('/justifications/{justificationId}', [JustificationAbsenceController::class, 'show'])->name('justifications.show');
+        Route::get('/justifications/{justificationId}/edit', [JustificationAbsenceController::class, 'edit'])->name('justifications.edit');
+        Route::put('/justifications/{justificationId}', [JustificationAbsenceController::class, 'update'])->name('justifications.update');
+        Route::delete('/justifications/{justificationId}', [JustificationAbsenceController::class, 'destroy'])->name('justifications.destroy');
         Route::get('/statistiques', [StatistiquesController::class, 'index'])->name('statistiques.index');
         Route::get('/graphiques', [StatistiquesController::class, 'graphiques'])->name('graphiques');
 
@@ -89,6 +102,11 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/coordinateur/session/{session}/etudiants', [CoordinateurController::class, 'getEtudiantsClasse'])->name('coordinateur.get-etudiants');
         Route::get('/coordinateur/session/{session}/presences', [CoordinateurController::class, 'getPresencesSession'])->name('coordinateur.get-presences');
         Route::get('/coordinateur/sessions-presentiel', [CoordinateurController::class, 'getSessionsPresentiel'])->name('coordinateur.sessions-presentiel');
+
+        // Routes pour gérer les étudiants qui ont abandonné une matière
+        Route::resource('etudiant-matiere-dropped', EtudiantMatiereDroppedController::class);
+        Route::get('/etudiant-matiere-dropped-statistics', [EtudiantMatiereDroppedController::class, 'statistics'])->name('etudiant-matiere-dropped.statistics');
+        Route::post('/etudiant-matiere-dropped-filter', [EtudiantMatiereDroppedController::class, 'filter'])->name('etudiant-matiere-dropped.filter');
     });
 
     // Routes pour l'enseignant
@@ -117,14 +135,40 @@ Route::middleware(['auth'])->group(function () {
 
     // Routes pour l'étudiant
     Route::middleware(['role:etudiant'])->group(function () {
+        Route::get('/dashboard/etudiant', [DashboardController::class, 'etudiantDashboard'])->name('dashboard.etudiant');
         Route::get('/emplois-du-temps/etudiant', [EmploiDuTempsController::class, 'etudiant'])->name('emplois-du-temps.etudiant');
         Route::get('/presences/etudiant', [PresenceController::class, 'etudiant'])->name('presences.etudiant');
+        Route::get('/cours/etudiant', [SessionDeCoursController::class, 'etudiant'])->name('cours.etudiant');
     });
+
+        // Route temporaire pour tester sans middleware
+    Route::get('/test-parents', function() {
+        return 'Route de test fonctionne !';
+    });
+
+    // Route pour vérifier le rôle de l'utilisateur
+    Route::get('/check-role', function() {
+        $user = \Illuminate\Support\Facades\Auth::user();
+        $role = $user->roles->first();
+        return response()->json([
+            'user_id' => $user->id,
+            'user_email' => $user->email,
+            'role_code' => $role ? $role->code : 'aucun',
+            'role_name' => $role ? $role->nom : 'aucun'
+        ]);
+    })->name('check-role');
+
+    // Routes communes pour tous les rôles (sans middleware de rôle spécifique)
+    Route::get('/emplois-du-temps', [EmploiDuTempsController::class, 'index'])->name('emplois-du-temps.index');
+    Route::get('/presences', [PresenceController::class, 'index'])->name('presences.index');
 
     // Routes pour le parent
     Route::middleware(['role:parent'])->group(function () {
+        Route::get('/parents/mes-enfants', [ParentEtudiantController::class, 'mesEnfants'])->name('parents.mes-enfants');
         Route::get('/emplois-du-temps/parent', [EmploiDuTempsController::class, 'parent'])->name('emplois-du-temps.parent');
         Route::get('/presences/parent', [PresenceController::class, 'parent'])->name('presences.parent');
+        Route::get('/presences/enfants', [PresenceController::class, 'presencesEnfants'])->name('presences.enfants');
+        Route::get('/emplois-du-temps/enfants', [EmploiDuTempsController::class, 'emploisDuTempsEnfants'])->name('emplois-du-temps.enfants');
     });
 
     // Routes pour les notifications (accessibles à tous les utilisateurs authentifiés)
@@ -133,8 +177,6 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/notifications/marquer-toutes-lues', [NotificationController::class, 'marquerToutesLues'])->name('notifications.marquer-toutes-lues');
 });
 
-// Routes de test pour Sonner
-Route::get('/test-sonner', [App\Http\Controllers\TestSonnerController::class, 'index'])->name('test-sonner');
-Route::post('/test-sonner', [App\Http\Controllers\TestSonnerController::class, 'test'])->name('test-sonner.post');
+
 
 require __DIR__.'/auth.php';
