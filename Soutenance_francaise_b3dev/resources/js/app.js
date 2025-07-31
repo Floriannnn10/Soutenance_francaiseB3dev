@@ -58,12 +58,13 @@ window.showNotification = function(type, message) {
     document.body.appendChild(toast);
     console.log('Toast added to DOM:', toast);
 
-    // Supprimer automatiquement après 5 secondes
+    // Supprimer automatiquement après 20 secondes pour les notifications de drop
+    const duration = type === 'warning' ? 20000 : 5000;
     setTimeout(() => {
         if (toast.parentNode) {
             toast.remove();
         }
-    }, 5000);
+    }, duration);
 };
 
 // Fonction pour gérer les réponses JSON des contrôleurs

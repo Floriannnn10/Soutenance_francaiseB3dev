@@ -35,7 +35,10 @@ class Coordinateur extends Model
 
     public function classes()
     {
-        return $this->promotion ? $this->promotion->classes() : collect();
+        if (!$this->promotion) {
+            return collect();
+        }
+        return $this->promotion->classes();
     }
 
     public function anneesAcademiques()

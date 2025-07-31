@@ -32,30 +32,14 @@ class SessionDeCoursController extends Controller
         $perPage = in_array($perPage, [10, 15, 25, 50]) ? $perPage : 15;
 
         // Charger les sessions avec toutes les informations jointes
-        $sessionsQuery = DB::table('course_sessions')
-            ->select(
-                'course_sessions.*',
-                'matieres.nom as matiere_nom',
-                'classes.nom as classe_nom',
-                'enseignants.nom as enseignant_nom',
-                'enseignants.prenom as enseignant_prenom',
-                'statuts_session.nom as statut_nom',
-                'semestres.nom as semestre_nom',
-                'annees_academiques.nom as annee_nom',
-                'annees_academiques.id as annee_id',
-                'annees_academiques.date_debut as annee_date_debut',
-                'annees_academiques.date_fin as annee_date_fin',
-                'types_cours.nom as type_cours_nom',
-                'types_cours.code as type_cours_code'
-            )
-            ->leftJoin('matieres', 'course_sessions.matiere_id', '=', 'matieres.id')
-            ->leftJoin('classes', 'course_sessions.classe_id', '=', 'classes.id')
-            ->leftJoin('enseignants', 'course_sessions.enseignant_id', '=', 'enseignants.id')
-            ->leftJoin('statuts_session', 'course_sessions.status_id', '=', 'statuts_session.id')
-            ->leftJoin('semestres', 'course_sessions.semester_id', '=', 'semestres.id')
-            ->leftJoin('annees_academiques', 'semestres.annee_academique_id', '=', 'annees_academiques.id')
-            ->leftJoin('types_cours', 'course_sessions.type_cours_id', '=', 'types_cours.id')
-            ->orderBy('course_sessions.start_time', 'desc');
+        $sessionsQuery = SessionDeCours::with([
+            'matiere',
+            'classe',
+            'enseignant',
+            'statutSession',
+            'semestre.anneeAcademique',
+            'typeCours'
+        ])->orderBy('start_time', 'desc');
 
         // Filtrer selon le rôle de l'utilisateur
         $user = Auth::user();
@@ -63,40 +47,57 @@ class SessionDeCoursController extends Controller
             // Coordinateur : voir seulement les sessions de sa promotion
             $coordinateur = $user->coordinateur;
             if ($coordinateur && $coordinateur->promotion) {
-                $classesIds = $coordinateur->promotion->classes()->pluck('id');
-                $sessionsQuery->whereIn('course_sessions.classe_id', $classesIds);
+                try {
+                    $classesIds = $coordinateur->promotion->classes()->pluck('id');
+                    $sessionsQuery->whereIn('classe_id', $classesIds);
+                } catch (\Exception $e) {
+                    // En cas d'erreur, ne pas afficher de sessions
+                    $sessionsQuery->where('id', 0);
+                }
+            } else {
+                // Si pas de promotion, aucune session
+                $sessionsQuery->where('id', 0);
             }
         } elseif ($user && $user->roles->first()->code === 'enseignant') {
             // Enseignant : voir seulement ses sessions
             $enseignant = $user->enseignant;
             if ($enseignant) {
-                $sessionsQuery->where('course_sessions.enseignant_id', $enseignant->id);
+                $sessionsQuery->where('enseignant_id', $enseignant->id);
+            } else {
+                // Si pas de profil enseignant, aucune session
+                $sessionsQuery->where('id', 0);
             }
         }
 
         // Appliquer les filtres si présents
         if ($request->filled('annee_academique_id')) {
-            $sessionsQuery->where('annees_academiques.id', $request->annee_academique_id);
+            $sessionsQuery->whereHas('semestre.anneeAcademique', function($query) use ($request) {
+                $query->where('id', $request->annee_academique_id);
+            });
         }
 
         if ($request->filled('semestre_id')) {
-            $sessionsQuery->where('course_sessions.semester_id', $request->semestre_id);
+            $sessionsQuery->where('semester_id', $request->semestre_id);
         }
 
         if ($request->filled('classe_id')) {
-            $sessionsQuery->where('course_sessions.classe_id', $request->classe_id);
+            $sessionsQuery->where('classe_id', $request->classe_id);
         }
 
         if ($request->filled('matiere_id')) {
-            $sessionsQuery->where('course_sessions.matiere_id', $request->matiere_id);
+            $sessionsQuery->where('matiere_id', $request->matiere_id);
         }
 
         if ($request->filled('status_id')) {
-            $sessionsQuery->where('course_sessions.status_id', $request->status_id);
+            $sessionsQuery->where('status_id', $request->status_id);
         }
 
-        // Paginer les résultats
-        $sessions = $sessionsQuery->paginate($perPage)->appends($request->query());
+        // Séparer les sessions récentes et futures
+        $sessionsRecentes = (clone $sessionsQuery)->where('start_time', '<=', now())->get();
+        $sessionsFutures = (clone $sessionsQuery)->where('start_time', '>', now())->get();
+
+        // Paginer les résultats (sessions récentes par défaut)
+        $sessions = $sessionsQuery->where('start_time', '<=', now())->paginate($perPage)->appends($request->query());
 
         // Récupérer les données pour les filtres
         $anneesAcademiques = AnneeAcademique::orderBy('nom', 'desc')->get();
@@ -118,7 +119,7 @@ class SessionDeCoursController extends Controller
         // Récupérer seulement les types de cours autorisés
         $typesCours = TypeCours::whereIn('nom', ['Présentiel', 'E-learning', 'Workshop'])->orderBy('nom')->get();
 
-        return view('sessions-de-cours.index', compact('sessions', 'anneesAcademiques', 'semestres', 'classes', 'matieres', 'typesCours'));
+        return view('sessions-de-cours.index', compact('sessions', 'sessionsRecentes', 'sessionsFutures', 'anneesAcademiques', 'semestres', 'classes', 'matieres', 'typesCours'));
     }
 
     /**
@@ -166,9 +167,42 @@ class SessionDeCoursController extends Controller
         $semestres = $semestresQuery->get();
 
         $matieres = Matiere::all();
-        $enseignants = Enseignant::all();
         $typesCours = TypeCours::whereIn('nom', ['Présentiel', 'E-learning', 'Workshop'])->get();
         $statutsSession = StatutSession::all();
+
+        // Filtrer les enseignants selon le rôle et le type de cours
+        $enseignants = collect();
+        $coordinateurs = collect();
+
+        if ($user && $user->roles->first()->code === 'coordinateur') {
+            // Coordinateur : voir seulement les enseignants de sa promotion + lui-même
+            $coordinateur = $user->coordinateur;
+            if ($coordinateur && $coordinateur->promotion) {
+                $classesIds = $coordinateur->promotion->classes()->pluck('id');
+
+                // Récupérer les enseignants qui ont des sessions dans ces classes
+                $enseignantsIds = SessionDeCours::whereIn('classe_id', $classesIds)
+                    ->distinct()
+                    ->pluck('enseignant_id');
+
+                $enseignants = Enseignant::whereIn('id', $enseignantsIds)->get();
+
+                // Ajouter le coordinateur lui-même s'il a un profil enseignant
+                $coordinateurEnseignant = Enseignant::where('user_id', $coordinateur->user_id)->first();
+                if ($coordinateurEnseignant && !$enseignants->contains('id', $coordinateurEnseignant->id)) {
+                    $enseignants->push($coordinateurEnseignant);
+                }
+            }
+        } elseif ($user && $user->roles->first()->code === 'enseignant') {
+            // Enseignant : voir seulement lui-même
+            $enseignant = $user->enseignant;
+            if ($enseignant) {
+                $enseignants = collect([$enseignant]);
+            }
+        } else {
+            // Admin : voir tous les enseignants
+            $enseignants = Enseignant::all();
+        }
 
         // Récupérer les coordinateurs pour les cours Workshop et E-learning
         $coordinateurs = \App\Models\Coordinateur::with('user')->get();
@@ -808,29 +842,15 @@ class SessionDeCoursController extends Controller
         $perPage = $request->get('per_page', 15);
         $perPage = in_array($perPage, [10, 15, 25, 50]) ? $perPage : 15;
 
-        // Charger les sessions historiques (années terminées)
-        $sessionsQuery = DB::table('course_sessions')
-            ->select(
-                'course_sessions.*',
-                'matieres.nom as matiere_nom',
-                'classes.nom as classe_nom',
-                'enseignants.nom as enseignant_nom',
-                'enseignants.prenom as enseignant_prenom',
-                'statuts_session.nom as statut_nom',
-                'semestres.nom as semestre_nom',
-                'annees_academiques.nom as annee_nom',
-                'types_cours.nom as type_cours_nom',
-                'types_cours.code as type_cours_code'
-            )
-            ->leftJoin('matieres', 'course_sessions.matiere_id', '=', 'matieres.id')
-            ->leftJoin('classes', 'course_sessions.classe_id', '=', 'classes.id')
-            ->leftJoin('enseignants', 'course_sessions.enseignant_id', '=', 'enseignants.id')
-            ->leftJoin('statuts_session', 'course_sessions.status_id', '=', 'statuts_session.id')
-            ->leftJoin('semestres', 'course_sessions.semester_id', '=', 'semestres.id')
-            ->leftJoin('annees_academiques', 'semestres.annee_academique_id', '=', 'annees_academiques.id')
-            ->leftJoin('types_cours', 'course_sessions.type_cours_id', '=', 'types_cours.id')
-            ->where('annees_academiques.statut', 'Terminée')
-            ->orderBy('course_sessions.start_time', 'desc');
+        // Charger toutes les sessions (récentes et futures)
+        $sessionsQuery = SessionDeCours::with([
+            'matiere',
+            'classe',
+            'enseignant',
+            'statutSession',
+            'semestre.anneeAcademique',
+            'typeCours'
+        ])->orderBy('start_time', 'desc');
 
         // Filtrer selon le rôle de l'utilisateur
         $user = Auth::user();
@@ -838,58 +858,54 @@ class SessionDeCoursController extends Controller
             // Coordinateur : voir seulement les sessions de sa promotion
             $coordinateur = $user->coordinateur;
             if ($coordinateur && $coordinateur->promotion) {
-                $classesIds = $coordinateur->promotion->classes()->pluck('id');
-                $sessionsQuery->whereIn('course_sessions.classe_id', $classesIds);
+                try {
+                    $classesIds = $coordinateur->promotion->classes()->pluck('id');
+                    $sessionsQuery->whereIn('classe_id', $classesIds);
+                } catch (\Exception $e) {
+                    // En cas d'erreur, ne pas afficher de sessions
+                    $sessionsQuery->where('id', 0);
+                }
+            } else {
+                // Si pas de promotion, aucune session
+                $sessionsQuery->where('id', 0);
             }
         } elseif ($user && $user->roles->first()->code === 'enseignant') {
             // Enseignant : voir seulement ses sessions
             $enseignant = $user->enseignant;
             if ($enseignant) {
-                $sessionsQuery->where('course_sessions.enseignant_id', $enseignant->id);
+                $sessionsQuery->where('enseignant_id', $enseignant->id);
+            } else {
+                // Si pas de profil enseignant, aucune session
+                $sessionsQuery->where('id', 0);
             }
         }
 
         // Appliquer les filtres si présents
         if ($request->filled('annee_academique_id')) {
-            $sessionsQuery->where('annees_academiques.id', $request->annee_academique_id);
+            $sessionsQuery->whereHas('semestre.anneeAcademique', function($query) use ($request) {
+                $query->where('id', $request->annee_academique_id);
+            });
         }
 
         if ($request->filled('semestre_id')) {
-            $sessionsQuery->where('course_sessions.semester_id', $request->semestre_id);
+            $sessionsQuery->where('semester_id', $request->semestre_id);
         }
 
         if ($request->filled('classe_id')) {
-            $sessionsQuery->where('course_sessions.classe_id', $request->classe_id);
+            $sessionsQuery->where('classe_id', $request->classe_id);
         }
 
         if ($request->filled('matiere_id')) {
-            $sessionsQuery->where('course_sessions.matiere_id', $request->matiere_id);
+            $sessionsQuery->where('matiere_id', $request->matiere_id);
         }
 
         // Paginer les résultats
         $sessions = $sessionsQuery->paginate($perPage)->appends($request->query());
 
         // Récupérer les données pour les filtres
-        $anneesAcademiques = DB::table('annees_academiques')
-            ->select('id', 'nom', 'date_debut', 'date_fin')
-            ->orderBy('nom', 'desc')
-            ->get()
-            ->filter(function($annee) {
-                // Filtrer seulement les années terminées
-                if ($annee->date_debut && $annee->date_fin) {
-                    $now = now();
-                    $dateFin = \Carbon\Carbon::parse($annee->date_fin);
-                    return $now->gt($dateFin);
-                }
-                return false;
-            });
+        $anneesAcademiques = AnneeAcademique::orderBy('nom', 'desc')->get();
 
-        $semestres = Semestre::with('anneeAcademique')
-            ->whereHas('anneeAcademique', function($query) {
-                $query->where('date_fin', '<', now());
-            })
-            ->orderBy('nom')
-            ->get();
+        $semestres = Semestre::with('anneeAcademique')->orderBy('nom')->get();
 
         $matieres = Matiere::orderBy('nom')->get();
 

@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Notification;
+use App\Models\CustomNotification;
 use App\Models\User;
 use App\Traits\DaisyUINotifier;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Notifications\Notification;
 
 class NotificationController extends Controller
 {
@@ -17,7 +19,7 @@ class NotificationController extends Controller
      */
     public function index(Request $request): View
     {
-        $query = Notification::with(['utilisateurs']);
+        $query = CustomNotification::with(['utilisateurs']);
 
         if ($request->filled('type')) {
             $query->where('type', $request->type);
@@ -49,7 +51,7 @@ class NotificationController extends Controller
             'utilisateurs.*' => 'exists:users,id',
         ]);
 
-        $notification = Notification::create([
+        $notification = CustomNotification::create([
             'message' => $request->message,
             'type' => $request->type,
         ]);
@@ -63,7 +65,7 @@ class NotificationController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Notification $notification): View
+    public function show(CustomNotification $notification): View
     {
         $notification->load(['utilisateurs']);
         return view('notifications.show', compact('notification'));
@@ -72,7 +74,7 @@ class NotificationController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Notification $notification): View
+    public function edit(CustomNotification $notification): View
     {
         $utilisateurs = User::all();
         return view('notifications.edit', compact('notification', 'utilisateurs'));
@@ -81,7 +83,7 @@ class NotificationController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Notification $notification): RedirectResponse
+    public function update(Request $request, CustomNotification $notification): RedirectResponse
     {
         $request->validate([
             'message' => 'required|string',
@@ -95,31 +97,79 @@ class NotificationController extends Controller
             'type' => $request->type,
         ]);
 
-        // Mettre à jour les utilisateurs
+        // Synchroniser les utilisateurs
         $notification->utilisateurs()->sync($request->utilisateurs);
 
-        return $this->warningNotification('Notification mise à jour avec succès !', 'notifications.index');
+        return $this->successNotification('Notification mise à jour avec succès !', 'notifications.index');
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Notification $notification): RedirectResponse
+    public function destroy(CustomNotification $notification): RedirectResponse
     {
         $notification->delete();
 
-        return $this->errorNotification('Notification supprimée avec succès !', 'notifications.index');
+        return $this->successNotification('Notification supprimée avec succès !', 'notifications.index');
     }
 
     /**
-     * Marquer une notification comme lue.
+     * Marquer une notification comme lue pour l'utilisateur connecté
      */
-    public function marquerLue(Notification $notification): RedirectResponse
+        public function marquerLue(CustomNotification $notification): JsonResponse
     {
-        $notification->utilisateurs()->updateExistingPivot(auth()->id(), [
-            'read_at' => now(),
-        ]);
+        $user = \Illuminate\Support\Facades\Auth::user();
 
-        return $this->successNotification('Notification marquée comme lue !');
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'Utilisateur non connecté']);
+        }
+
+        $notification->utilisateurs()->updateExistingPivot($user->id, ['lu_a' => true]);
+
+        return response()->json(['success' => true, 'message' => 'Notification marquée comme lue']);
+    }
+
+    /**
+     * Marquer toutes les notifications comme lues pour l'utilisateur connecté
+     */
+    public function marquerToutesLues(): JsonResponse
+    {
+        $user = \Illuminate\Support\Facades\Auth::user();
+
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'Utilisateur non connecté']);
+        }
+
+                // Marquer toutes les notifications comme lues
+        $notifications = CustomNotification::whereHas('utilisateurs', function($query) use ($user) {
+            $query->where('user_id', $user->id)->where('lu_a', false);
+        })->get();
+
+        foreach ($notifications as $notification) {
+            $notification->utilisateurs()->updateExistingPivot($user->id, ['lu_a' => true]);
+        }
+
+        return response()->json(['success' => true, 'message' => 'Toutes les notifications ont été marquées comme lues']);
+    }
+
+    /**
+     * Obtenir les notifications non lues pour l'utilisateur connecté
+     */
+    public function getNotificationsNonLues(): JsonResponse
+    {
+        $user = \Illuminate\Support\Facades\Auth::user();
+
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'Utilisateur non connecté']);
+        }
+
+        $notifications = CustomNotification::whereHas('utilisateurs', function($query) use ($user) {
+            $query->where('user_id', $user->id)->where('lu_a', false);
+        })->orderBy('created_at', 'desc')->get();
+
+        return response()->json([
+            'success' => true,
+            'notifications' => $notifications
+        ]);
     }
 }

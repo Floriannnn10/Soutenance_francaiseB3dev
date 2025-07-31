@@ -19,10 +19,22 @@
                 @endphp
                 @if(!$anneeTerminee)
                     @if(($isCoordinateur && ($type === 'workshop' || $typeCode === 'workshop' || $type === 'e-learning' || $typeCode === 'e_learning' || $type === 'elearning')) || ($isEnseignant && ($type === 'presentiel' || $typeCode === 'presentiel')))
-                        <a href="{{ route('sessions-de-cours.appel', $session->id) }}"
-                           class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md flex items-center">
-                            <i class="fas fa-clipboard-check mr-2"></i>Faire l'Appel
-                        </a>
+                        @php
+                            $sessionStartTime = \Carbon\Carbon::parse($session->start_time);
+                            $now = now();
+                            $canTakeAttendance = $sessionStartTime <= $now;
+                        @endphp
+
+                        @if($canTakeAttendance)
+                            <a href="{{ route('sessions-de-cours.appel', $session->id) }}"
+                               class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md flex items-center">
+                                <i class="fas fa-clipboard-check mr-2"></i>Faire l'Appel
+                            </a>
+                        @else
+                            <span class="bg-yellow-500 text-white font-medium py-2 px-4 rounded-md flex items-center cursor-not-allowed" title="Le cours n'a pas encore commencé">
+                                <i class="fas fa-clock mr-2"></i>Pas encore commencé
+                            </span>
+                        @endif
                     @endif
                     @if(!($isEnseignant && ($type === 'presentiel' || $typeCode === 'presentiel')))
                         <a href="{{ route('sessions-de-cours.edit', $session->id) }}"

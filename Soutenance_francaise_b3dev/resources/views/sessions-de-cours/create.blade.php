@@ -319,15 +319,27 @@
                 if (selectedType && (selectedType.includes('workshop') || selectedType.includes('e-learning'))) {
                     // Pour Workshop et E-learning, afficher seulement les coordinateurs
                     let coordinateurCount = 0;
+                    let currentUserCoordinateur = null;
+
                     allEnseignantOptions.forEach(option => {
                         if (option.value && option.getAttribute('data-role') === 'coordinateur') {
                             enseignantSelect.appendChild(option.cloneNode(true));
                             coordinateurCount++;
+
+                            // Vérifier si c'est l'utilisateur connecté
+                            if (option.textContent.includes('(Coordinateur)')) {
+                                currentUserCoordinateur = option.value;
+                            }
                         }
                     });
 
+                    // Sélectionner automatiquement le coordinateur connecté s'il est disponible
+                    if (currentUserCoordinateur) {
+                        enseignantSelect.value = currentUserCoordinateur;
+                    }
+
                     // Afficher le message d'aide
-                    helpMessage.textContent = `Pour les cours de type "${typeCoursSelect.options[typeCoursSelect.selectedIndex].text}", seuls les coordinateurs pédagogiques peuvent être sélectionnés comme enseignants.`;
+                    helpMessage.textContent = `Pour les cours de type "${typeCoursSelect.options[typeCoursSelect.selectedIndex].text}", seuls les coordinateurs pédagogiques peuvent être sélectionnés comme enseignants. Le coordinateur connecté a été automatiquement sélectionné.`;
                     helpMessage.style.display = 'block';
 
                     // Si aucun coordinateur n'est disponible

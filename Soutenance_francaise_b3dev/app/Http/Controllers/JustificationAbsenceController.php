@@ -24,25 +24,69 @@ class JustificationAbsenceController extends Controller
     {
         $anneeActive = AnneeAcademique::getActive();
         $semestreActif = $anneeActive ? Semestre::getActiveForYear($anneeActive->id) : null;
+        $user = Auth::user();
 
-        // Récupérer les données pour les filtres
-        $etudiants = Etudiant::orderBy('nom')->get();
-        $matieres = \App\Models\Matiere::orderBy('nom')->get();
-        $enseignants = \App\Models\Enseignant::orderBy('nom')->get();
+        // Filtrer les données selon le rôle de l'utilisateur
+        if ($user->roles->first()->code === 'coordinateur') {
+            $coordinateur = $user->coordinateur;
+            if (!$coordinateur || !$coordinateur->promotion) {
+                return view('justifications.index', [
+                    'presences' => collect(),
+                    'etudiants' => collect(),
+                    'matieres' => collect(),
+                    'enseignants' => collect(),
+                    'totalAbsences' => 0,
+                    'justifiees' => 0,
+                    'nonJustifiees' => 0,
+                    'anneeActive' => $anneeActive,
+                    'semestreActif' => $semestreActif
+                ]);
+            }
 
-        // Construire la requête avec filtres
-        $query = Presence::with(['etudiant', 'sessionDeCours.matiere', 'sessionDeCours.enseignant', 'justification'])
-            ->whereHas('statutPresence', function($query) {
-                $query->where('code', 'absent');
-            })
-            ->whereHas('sessionDeCours', function($query) use ($anneeActive, $semestreActif) {
-                if ($anneeActive) {
-                    $query->where('annee_academique_id', $anneeActive->id);
-                }
-                if ($semestreActif) {
-                    $query->where('semester_id', $semestreActif->id);
-                }
-            });
+            // Récupérer les classes de la promotion du coordinateur
+            $classes = \App\Models\Classe::where('promotion_id', $coordinateur->promotion_id)->pluck('id');
+
+            // Récupérer les étudiants de ces classes
+            $etudiants = Etudiant::whereIn('classe_id', $classes)->orderBy('nom')->get();
+            $matieres = \App\Models\Matiere::orderBy('nom')->get();
+            $enseignants = \App\Models\Enseignant::orderBy('nom')->get();
+
+            // Construire la requête avec filtres pour les étudiants du coordinateur
+            $query = Presence::with(['etudiant', 'sessionDeCours.matiere', 'sessionDeCours.enseignant', 'justification'])
+                ->whereHas('statutPresence', function($query) {
+                    $query->where('code', 'absent');
+                })
+                ->whereHas('etudiant', function($query) use ($classes) {
+                    $query->whereIn('classe_id', $classes);
+                })
+                ->whereHas('sessionDeCours', function($query) use ($anneeActive, $semestreActif) {
+                    if ($anneeActive) {
+                        $query->where('annee_academique_id', $anneeActive->id);
+                    }
+                    if ($semestreActif) {
+                        $query->where('semester_id', $semestreActif->id);
+                    }
+                });
+        } else {
+            // Pour les autres rôles (admin, etc.), afficher toutes les données
+            $etudiants = Etudiant::orderBy('nom')->get();
+            $matieres = \App\Models\Matiere::orderBy('nom')->get();
+            $enseignants = \App\Models\Enseignant::orderBy('nom')->get();
+
+            // Construire la requête avec filtres
+            $query = Presence::with(['etudiant', 'sessionDeCours.matiere', 'sessionDeCours.enseignant', 'justification'])
+                ->whereHas('statutPresence', function($query) {
+                    $query->where('code', 'absent');
+                })
+                ->whereHas('sessionDeCours', function($query) use ($anneeActive, $semestreActif) {
+                    if ($anneeActive) {
+                        $query->where('annee_academique_id', $anneeActive->id);
+                    }
+                    if ($semestreActif) {
+                        $query->where('semester_id', $semestreActif->id);
+                    }
+                });
+        }
 
         // Filtre par étudiant
         if ($request->filled('etudiant_id')) {

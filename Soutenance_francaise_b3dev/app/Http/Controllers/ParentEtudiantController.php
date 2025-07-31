@@ -202,39 +202,55 @@ class ParentEtudiantController extends Controller
         /**
      * Affiche les enfants du parent connecté
      */
-        public function mesEnfants(): View
+    public function mesEnfants(): View
     {
         try {
             $user = Auth::user();
 
             if (!$user) {
-                abort(401, 'Utilisateur non connecté');
+                return view('parents.error', ['message' => 'Utilisateur non connecté']);
             }
 
-            $debugInfo = [
-                'user_id' => $user->id,
-                'email' => $user->email,
-                'nom' => $user->nom,
-                'prenom' => $user->prenom,
-                'roles' => $user->roles->pluck('code')->toArray()
-            ];
-
+            // Essayer de récupérer le parent via la relation
             $parent = $user->parent;
 
+            // Si pas de relation, essayer de le trouver directement
             if (!$parent) {
                 $parent = ParentEtudiant::where('user_id', $user->id)->first();
 
                 if (!$parent) {
-                    return view('parents.debug', compact('debugInfo'));
+                    return view('parents.error', [
+                        'message' => 'Aucun profil parent trouvé pour cet utilisateur',
+                        'user_info' => [
+                            'id' => $user->id,
+                            'email' => $user->email,
+                            'nom' => $user->nom,
+                            'prenom' => $user->prenom,
+                            'roles' => $user->roles->pluck('code')->toArray()
+                        ]
+                    ]);
                 }
             }
 
-            $enfants = $parent->etudiants()->with(['classe', 'presences'])->get();
+            // Récupérer les enfants avec leurs relations
+            $enfants = $parent->etudiants()->with(['classe', 'presences.statutPresence'])->get();
 
             return view('parents.mes-enfants', compact('enfants', 'parent'));
 
         } catch (\Exception $e) {
-            abort(500, 'Erreur: ' . $e->getMessage());
+            Log::error('Erreur dans mesEnfants', [
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return view('parents.error', [
+                'message' => 'Erreur: ' . $e->getMessage(),
+                'user_info' => [
+                    'id' => Auth::id(),
+                    'error' => $e->getMessage()
+                ]
+            ]);
         }
     }
 }

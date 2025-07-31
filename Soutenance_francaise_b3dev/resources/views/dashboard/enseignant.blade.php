@@ -113,6 +113,33 @@
             </div>
         </div>
     @endif
+
+    <!-- Liens rapides -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-8">
+        <a href="{{ route('agenda.enseignant') }}" class="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white p-6 rounded-lg text-center shadow-lg hover:shadow-xl transition-all duration-300">
+            <div class="text-3xl mb-3">📅</div>
+            <h3 class="font-semibold text-lg">Mon Agenda</h3>
+            <p class="text-sm opacity-90">Voir mon calendrier de cours</p>
+        </a>
+
+        <a href="{{ route('enseignant.sessions-de-cours.index') }}" class="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white p-6 rounded-lg text-center shadow-lg hover:shadow-xl transition-all duration-300">
+            <div class="text-3xl mb-3">📋</div>
+            <h3 class="font-semibold text-lg">Mes Sessions</h3>
+            <p class="text-sm opacity-90">Gérer mes sessions de cours</p>
+        </a>
+
+        <a href="{{ route('enseignant.presences.index') }}" class="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white p-6 rounded-lg text-center shadow-lg hover:shadow-xl transition-all duration-300">
+            <div class="text-3xl mb-3">✅</div>
+            <h3 class="font-semibold text-lg">Présences</h3>
+            <p class="text-sm opacity-90">Gérer les présences</p>
+        </a>
+
+        <a href="{{ route('profile.edit') }}" class="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white p-6 rounded-lg text-center shadow-lg hover:shadow-xl transition-all duration-300">
+            <div class="text-3xl mb-3">👤</div>
+            <h3 class="font-semibold text-lg">Mon profil</h3>
+            <p class="text-sm opacity-90">Modifier mes informations</p>
+        </a>
+    </div>
 </div>
 @endsection
 

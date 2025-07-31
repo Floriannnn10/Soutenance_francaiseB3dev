@@ -5,12 +5,10 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use App\Models\Coordinateur;
 use App\Models\Enseignant;
+use App\Models\User;
 
 class AddEnseignantToCoordinateursSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
         $this->command->info('Ajout des profils enseignants aux coordinateurs...');
@@ -28,16 +26,17 @@ class AddEnseignantToCoordinateursSeeder extends Seeder
                     'user_id' => $coordinateur->user_id,
                     'nom' => $coordinateur->nom,
                     'prenom' => $coordinateur->prenom,
+                    'email' => $coordinateur->email,
                 ]);
 
-                $this->command->info("Profil enseignant cree pour {$coordinateur->prenom} {$coordinateur->nom}");
+                $this->command->info("✅ Profil enseignant créé pour {$coordinateur->prenom} {$coordinateur->nom}");
                 $count++;
             } else {
-                $this->command->line("Profil enseignant deja existant pour {$coordinateur->prenom} {$coordinateur->nom}");
+                $this->command->line("⏭️  Profil enseignant déjà existant pour {$coordinateur->prenom} {$coordinateur->nom}");
             }
         }
 
-        $this->command->info("{$count} profils enseignants ont ete crees pour les coordinateurs.");
-        $this->command->info('Les coordinateurs peuvent maintenant creer des sessions Workshop et E-learning.');
+        $this->command->info("\n🎉 {$count} profils enseignants ont été créés pour les coordinateurs.");
+        $this->command->info('Les coordinateurs peuvent maintenant créer des sessions Workshop et E-learning.');
     }
 }

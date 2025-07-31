@@ -34,7 +34,32 @@ class StatistiquesController extends Controller
 
     private function getTauxPresenceEtudiants($anneeAcademique)
     {
-        $etudiants = Etudiant::with(['presences' => function($query) use ($anneeAcademique) {
+        $user = \Illuminate\Support\Facades\Auth::user();
+
+        // Filtrer les étudiants selon le rôle
+        $etudiantsQuery = Etudiant::query();
+
+        if ($user->roles->first()->code === 'coordinateur') {
+            $coordinateur = $user->coordinateur;
+            if ($coordinateur && $coordinateur->promotion) {
+                $classesIds = $coordinateur->promotion->classes()->pluck('id');
+                $etudiantsQuery->whereIn('classe_id', $classesIds);
+            } else {
+                return []; // Aucun étudiant si pas de promotion
+            }
+        } elseif ($user->roles->first()->code === 'enseignant') {
+            $enseignant = $user->enseignant;
+            if ($enseignant) {
+                $etudiantsQuery->whereHas('classe.sessionsDeCours', function($q) use ($enseignant) {
+                    $q->where('enseignant_id', $enseignant->id);
+                });
+            } else {
+                return []; // Aucun étudiant si pas de profil enseignant
+            }
+        }
+        // Pour admin et autres rôles, tous les étudiants sont visibles
+
+        $etudiants = $etudiantsQuery->with(['presences' => function($query) use ($anneeAcademique) {
             $query->whereHas('sessionDeCours', function($q) use ($anneeAcademique) {
                 $q->where('annee_academique_id', $anneeAcademique->id);
             });
@@ -77,7 +102,31 @@ class StatistiquesController extends Controller
 
     private function getTauxPresenceClasses($anneeAcademique)
     {
-        $classes = Classe::with(['etudiants.presences' => function($query) use ($anneeAcademique) {
+        $user = \Illuminate\Support\Facades\Auth::user();
+
+        // Filtrer les classes selon le rôle
+        $classesQuery = Classe::query();
+
+        if ($user->roles->first()->code === 'coordinateur') {
+            $coordinateur = $user->coordinateur;
+            if ($coordinateur && $coordinateur->promotion) {
+                $classesQuery->where('promotion_id', $coordinateur->promotion_id);
+            } else {
+                return []; // Aucune classe si pas de promotion
+            }
+        } elseif ($user->roles->first()->code === 'enseignant') {
+            $enseignant = $user->enseignant;
+            if ($enseignant) {
+                $classesQuery->whereHas('sessionsDeCours', function($q) use ($enseignant) {
+                    $q->where('enseignant_id', $enseignant->id);
+                });
+            } else {
+                return []; // Aucune classe si pas de profil enseignant
+            }
+        }
+        // Pour admin et autres rôles, toutes les classes sont visibles
+
+        $classes = $classesQuery->with(['etudiants.presences' => function($query) use ($anneeAcademique) {
             $query->whereHas('sessionDeCours', function($q) use ($anneeAcademique) {
                 $q->where('annee_academique_id', $anneeAcademique->id);
             });
@@ -109,13 +158,38 @@ class StatistiquesController extends Controller
 
     private function getVolumeCoursParType($anneeAcademique)
     {
+        $user = \Illuminate\Support\Facades\Auth::user();
         $typesCours = TypeCours::all();
         $data = [];
 
         foreach ($typesCours as $type) {
-            $volumeHoraire = SessionDeCours::where('annee_academique_id', $anneeAcademique->id)
-                ->where('type_cours_id', $type->id)
-                ->sum('duree');
+            $sessionsQuery = SessionDeCours::where('annee_academique_id', $anneeAcademique->id)
+                ->where('type_cours_id', $type->id);
+
+            // Filtrer selon le rôle
+            if ($user->roles->first()->code === 'coordinateur') {
+                $coordinateur = $user->coordinateur;
+                if ($coordinateur && $coordinateur->promotion) {
+                    $classesIds = $coordinateur->promotion->classes()->pluck('id');
+                    $sessionsQuery->whereIn('classe_id', $classesIds);
+                } else {
+                    continue; // Ignorer ce type si pas de promotion
+                }
+            } elseif ($user->roles->first()->code === 'enseignant') {
+                $enseignant = $user->enseignant;
+                if ($enseignant) {
+                    $sessionsQuery->where('enseignant_id', $enseignant->id);
+                } else {
+                    continue; // Ignorer ce type si pas de profil enseignant
+                }
+            }
+            // Pour admin et autres rôles, toutes les sessions sont visibles
+
+            $sessions = $sessionsQuery->get();
+
+            $volumeHoraire = $sessions->sum(function($session) {
+                return $session->duree;
+            });
 
             $data[] = [
                 'type' => $type->nom,
@@ -128,6 +202,7 @@ class StatistiquesController extends Controller
 
     private function getVolumeCoursCumule($anneeAcademique)
     {
+        $user = \Illuminate\Support\Facades\Auth::user();
         $annees = AnneeAcademique::where('date_fin', '<=', $anneeAcademique->date_fin)
             ->orderBy('date_debut')
             ->get();
@@ -136,7 +211,45 @@ class StatistiquesController extends Controller
         $cumule = 0;
 
         foreach ($annees as $annee) {
-            $volume = SessionDeCours::where('annee_academique_id', $annee->id)->sum('duree');
+            $sessionsQuery = SessionDeCours::where('annee_academique_id', $annee->id);
+
+            // Filtrer selon le rôle
+            if ($user->roles->first()->code === 'coordinateur') {
+                $coordinateur = $user->coordinateur;
+                if ($coordinateur && $coordinateur->promotion) {
+                    $classesIds = $coordinateur->promotion->classes()->pluck('id');
+                    $sessionsQuery->whereIn('classe_id', $classesIds);
+                } else {
+                    $volume = 0;
+                    $cumule += $volume;
+                    $data[] = [
+                        'annee' => $annee->nom,
+                        'volume' => $volume,
+                        'cumule' => $cumule
+                    ];
+                    continue;
+                }
+            } elseif ($user->roles->first()->code === 'enseignant') {
+                $enseignant = $user->enseignant;
+                if ($enseignant) {
+                    $sessionsQuery->where('enseignant_id', $enseignant->id);
+                } else {
+                    $volume = 0;
+                    $cumule += $volume;
+                    $data[] = [
+                        'annee' => $annee->nom,
+                        'volume' => $volume,
+                        'cumule' => $cumule
+                    ];
+                    continue;
+                }
+            }
+            // Pour admin et autres rôles, toutes les sessions sont visibles
+
+            $sessions = $sessionsQuery->get();
+            $volume = $sessions->sum(function($session) {
+                return $session->duree;
+            });
             $cumule += $volume;
 
             $data[] = [

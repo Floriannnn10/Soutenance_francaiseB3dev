@@ -82,4 +82,15 @@ class SessionDeCours extends Model
     {
         return $this->hasMany(SessionDeCours::class, 'replacement_for_session_id');
     }
+
+    /**
+     * Calcule la durée de la session en minutes
+     */
+    public function getDureeAttribute()
+    {
+        if ($this->start_time && $this->end_time) {
+            return $this->start_time->diffInMinutes($this->end_time);
+        }
+        return 0;
+    }
 }

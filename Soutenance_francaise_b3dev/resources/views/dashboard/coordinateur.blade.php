@@ -105,25 +105,9 @@
                                 </svg>
                             </div>
                             <div class="ml-4">
-                                <p class="text-sm font-medium text-gray-600">Taux Présence (Statut)</p>
+                                <p class="text-sm font-medium text-gray-600">Taux Présence</p>
                                 <p class="text-2xl font-semibold text-gray-900">{{ $stats['taux_presence_statut'] }}%</p>
                                 <p class="text-xs text-gray-500">{{ $stats['total_presences'] }} présences</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-white dark:bg-gray-800 shadow-sm rounded-lg p-6">
-                        <div class="flex items-center">
-                            <div class="p-3 rounded-full bg-blue-50 p-4 rounded-lg">
-                                <div class="flex items-center">
-                                    <div class="p-2 bg-blue-100 rounded-lg">
-                                        <i class="fas fa-chart-line text-blue-600"></i>
-                                    </div>
-                                    <div class="ml-4">
-                                        <p class="text-sm font-medium text-gray-600">Taux Présence</p>
-                                        <p class="text-2xl font-semibold text-gray-900">{{ $stats['taux_presence_statut'] }}%</p>
-                                    </div>
-                                </div>
                             </div>
                         </div>
                     </div>

@@ -11,24 +11,75 @@ use App\Models\Etudiant;
 use App\Models\Matiere;
 use App\Models\AnneeAcademique;
 use App\Models\Semestre;
+use App\Services\DropNotificationService;
+use App\Traits\DaisyUINotifier;
 
 class EtudiantMatiereDroppedController extends Controller
 {
+    use DaisyUINotifier;
+
+    protected $dropNotificationService;
+
+    public function __construct(DropNotificationService $dropNotificationService)
+    {
+        $this->dropNotificationService = $dropNotificationService;
+    }
     /**
      * Afficher la liste des étudiants qui ont abandonné des matières
      */
     public function index(): View
     {
-        $drops = EtudiantMatiereDropped::with([
+        $user = Auth::user();
+
+        // Construire la requête de base
+        $dropsQuery = EtudiantMatiereDropped::with([
             'etudiant.classe',
             'matiere',
             'anneeAcademique',
             'semestre',
             'droppedByUser'
-        ])->orderBy('date_drop', 'desc')->get();
+        ]);
 
-        // Données pour les filtres
-        $etudiants = Etudiant::with('classe')->get();
+        // Filtrer selon le rôle de l'utilisateur
+        if ($user->roles->first()->code === 'coordinateur') {
+            $coordinateur = $user->coordinateur;
+            if ($coordinateur && $coordinateur->promotion) {
+                try {
+                    // Récupérer les classes de la promotion du coordinateur
+                    $classesIds = $coordinateur->promotion->classes()->pluck('id');
+                    // Filtrer les abandons pour les étudiants de ces classes
+                    $dropsQuery->whereHas('etudiant', function($query) use ($classesIds) {
+                        $query->whereIn('classe_id', $classesIds);
+                    });
+                } catch (\Exception $e) {
+                    // En cas d'erreur, ne pas afficher d'abandons
+                    $dropsQuery->where('id', 0);
+                }
+            } else {
+                // Si pas de promotion, aucun abandon
+                $dropsQuery->where('id', 0); // Condition impossible
+            }
+        }
+
+        $drops = $dropsQuery->orderBy('date_drop', 'desc')->get();
+
+        // Données pour les filtres (filtrées selon le rôle)
+        if ($user->roles->first()->code === 'coordinateur') {
+            $coordinateur = $user->coordinateur;
+            if ($coordinateur && $coordinateur->promotion) {
+                try {
+                    $classesIds = $coordinateur->promotion->classes()->pluck('id');
+                    $etudiants = Etudiant::whereIn('classe_id', $classesIds)->with('classe')->get();
+                } catch (\Exception $e) {
+                    $etudiants = collect();
+                }
+            } else {
+                $etudiants = collect();
+            }
+        } else {
+            $etudiants = Etudiant::with('classe')->get();
+        }
+
         $matieres = Matiere::all();
 
         return view('etudiant-matiere-dropped.index', compact('drops', 'etudiants', 'matieres'));
@@ -39,10 +90,33 @@ class EtudiantMatiereDroppedController extends Controller
      */
     public function create(): View
     {
-        $etudiants = Etudiant::with('classe')->get();
+        $user = Auth::user();
+
+        // Filtrer les étudiants selon le rôle de l'utilisateur
+        if ($user->roles->first()->code === 'coordinateur') {
+            $coordinateur = $user->coordinateur;
+            if ($coordinateur && $coordinateur->promotion) {
+                try {
+                    // Récupérer les classes de la promotion du coordinateur
+                    $classesIds = $coordinateur->promotion->classes()->pluck('id');
+                    // Récupérer seulement les étudiants de ces classes
+                    $etudiants = Etudiant::whereIn('classe_id', $classesIds)->with('classe')->get();
+                } catch (\Exception $e) {
+                    // Si erreur, aucun étudiant
+                    $etudiants = collect();
+                }
+            } else {
+                // Si pas de promotion, aucun étudiant
+                $etudiants = collect();
+            }
+        } else {
+            // Pour les autres rôles (admin, etc.), tous les étudiants
+            $etudiants = Etudiant::with('classe')->get();
+        }
+
         $matieres = Matiere::all();
-        $anneesAcademiques = AnneeAcademique::where('active', true)->get();
-        $semestres = Semestre::where('active', true)->get();
+        $anneesAcademiques = AnneeAcademique::where('actif', 1)->get();
+        $semestres = Semestre::where('actif', 1)->get();
 
         return view('etudiant-matiere-dropped.create', compact('etudiants', 'matieres', 'anneesAcademiques', 'semestres'));
     }
@@ -86,9 +160,12 @@ class EtudiantMatiereDroppedController extends Controller
             'dropped_by' => Auth::id(),
         ]);
 
+        // Envoyer les notifications de drop
+        $this->dropNotificationService->sendDropNotifications($drop);
+
         return response()->json([
             'success' => true,
-            'message' => 'Étudiant marqué comme ayant abandonné la matière avec succès.',
+            'message' => 'Étudiant marqué comme ayant abandonné la matière avec succès. Les notifications ont été envoyées.',
             'drop' => $drop->load(['etudiant', 'matiere', 'anneeAcademique', 'semestre'])
         ]);
     }
@@ -108,7 +185,30 @@ class EtudiantMatiereDroppedController extends Controller
      */
     public function edit(EtudiantMatiereDropped $etudiant_matiere_dropped): View
     {
-        $etudiants = Etudiant::with('classe')->get();
+        $user = Auth::user();
+
+        // Filtrer les étudiants selon le rôle de l'utilisateur
+        if ($user->roles->first()->code === 'coordinateur') {
+            $coordinateur = $user->coordinateur;
+            if ($coordinateur && $coordinateur->promotion) {
+                try {
+                    // Récupérer les classes de la promotion du coordinateur
+                    $classesIds = $coordinateur->promotion->classes()->pluck('id');
+                    // Récupérer seulement les étudiants de ces classes
+                    $etudiants = Etudiant::whereIn('classe_id', $classesIds)->with('classe')->get();
+                } catch (\Exception $e) {
+                    // Si erreur, aucun étudiant
+                    $etudiants = collect();
+                }
+            } else {
+                // Si pas de promotion, aucun étudiant
+                $etudiants = collect();
+            }
+        } else {
+            // Pour les autres rôles (admin, etc.), tous les étudiants
+            $etudiants = Etudiant::with('classe')->get();
+        }
+
         $matieres = Matiere::all();
         $anneesAcademiques = AnneeAcademique::all();
         $semestres = Semestre::all();
@@ -165,11 +265,11 @@ class EtudiantMatiereDroppedController extends Controller
         $stats = [
             'total_drops' => EtudiantMatiereDropped::count(),
             'drops_this_year' => EtudiantMatiereDropped::whereHas('anneeAcademique', function($query) {
-                $query->where('active', true);
+                $query->where('actif', 1);
             })->count(),
             'top_dropped_matieres' => Matiere::withCount(['etudiantsDropped' => function($query) {
                 $query->whereHas('anneeAcademique', function($q) {
-                    $q->where('active', true);
+                    $q->where('actif', 1);
                 });
             }])->orderBy('etudiants_dropped_count', 'desc')->take(5)->get(),
         ];

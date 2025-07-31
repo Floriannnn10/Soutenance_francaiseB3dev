@@ -7,30 +7,84 @@
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 text-gray-900">
-                    @if($enfants->count() > 0)
-                        @foreach($enfants as $enfant)
-                            <div class="mb-8 border rounded-lg p-6 bg-gray-50">
-                                <h3 class="text-xl font-semibold mb-4">{{ $enfant->prenom }} {{ $enfant->nom }}</h3>
-                                <p class="text-gray-600 mb-4">{{ $enfant->classe->nom ?? 'Classe non assignée' }}</p>
+            @if(count($emploisDuTemps) > 0)
+                @foreach($emploisDuTemps as $enfantId => $emploi)
+                    @php
+                        $enfant = $emploi['etudiant'];
+                        $sessions = $emploi['sessions'];
+                    @endphp
 
-                                @if($enfant->classe)
-                                    <div class="bg-white rounded-lg p-4">
-                                        <p class="text-gray-600">L'emploi du temps pour la classe {{ $enfant->classe->nom }} sera bientôt disponible.</p>
-                                    </div>
-                                @else
-                                    <p class="text-gray-500 text-center py-4">Aucun emploi du temps disponible pour cet enfant.</p>
-                                @endif
-                            </div>
-                        @endforeach
-                    @else
-                        <div class="text-center py-12">
-                            <p class="text-gray-500">Aucun enfant trouvé dans votre compte.</p>
+                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-8">
+                        <div class="p-6">
+                            <h3 class="text-xl font-semibold text-gray-900 mb-4">
+                                📚 {{ $enfant->prenom }} {{ $enfant->nom }} - {{ $enfant->classe->nom ?? 'Classe non assignée' }}
+                            </h3>
+
+                            @if($sessions->count() > 0)
+                                <div class="overflow-x-auto">
+                                    <table class="min-w-full bg-white border border-gray-200">
+                                        <thead class="bg-gray-50">
+                                            <tr>
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Heure</th>
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Matière</th>
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Enseignant</th>
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Statut</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="bg-white divide-y divide-gray-200">
+                                            @foreach($sessions as $session)
+                                                <tr class="hover:bg-gray-50">
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                        {{ $session->start_time->format('d/m/Y') }}
+                                                    </td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                        {{ $session->start_time->format('H:i') }} - {{ $session->end_time->format('H:i') }}
+                                                    </td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                        {{ $session->matiere->nom ?? 'Non défini' }}
+                                                    </td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                        {{ ($session->enseignant->prenom ?? '') }} {{ ($session->enseignant->nom ?? '') }}
+                                                    </td>
+                                                    <td class="px-6 py-4 whitespace-nowrap">
+                                                        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                                                            {{ $session->typeCours->nom ?? 'Non défini' }}
+                                                        </span>
+                                                    </td>
+                                                    <td class="px-6 py-4 whitespace-nowrap">
+                                                        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                                            {{ $session->statutSession->nom ?? 'Non défini' }}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            @else
+                                <div class="text-center py-8">
+                                    <p class="text-gray-600">
+                                        Aucune session programmée pour {{ $enfant->prenom }}.
+                                    </p>
+                                </div>
+                            @endif
                         </div>
-                    @endif
+                    </div>
+                @endforeach
+            @else
+                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                    <div class="p-6 text-center">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">
+                            Aucun enfant trouvé
+                        </h3>
+                        <p class="text-gray-600">
+                            Vous n'avez pas encore d'enfants associés à votre compte parent.
+                        </p>
+                    </div>
                 </div>
-            </div>
+            @endif
         </div>
     </div>
 </x-app-layout>

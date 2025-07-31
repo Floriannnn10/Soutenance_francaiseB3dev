@@ -131,10 +131,29 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900">
                     <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-semibold">Sessions Historiques ({{ $sessions->total() }} résultats)</h3>
+                        <h3 class="text-lg font-semibold">Sessions de Cours ({{ $sessions->total() }} résultats)</h3>
                         <div class="text-sm text-gray-600">
-                            Affichage en lecture seule - Années terminées
+                            Sessions récentes et futures
                         </div>
+                    </div>
+
+                    <!-- DEBUG INFO -->
+                    <div class="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded mb-4">
+                        <strong>DEBUG:</strong><br>
+                        - Total sessions: {{ $sessions->total() }}<br>
+                        - Count: {{ $sessions->count() }}<br>
+                        - User: {{ Auth::user()->nom }} {{ Auth::user()->prenom }}<br>
+                        - Role: {{ Auth::user()->roles->first()->code ?? 'N/A' }}<br>
+                        @if(Auth::user()->roles->first()->code === 'coordinateur')
+                            @php $coordinateur = Auth::user()->coordinateur; @endphp
+                            - Coordinateur: {{ $coordinateur ? 'Oui' : 'Non' }}<br>
+                            @if($coordinateur && $coordinateur->promotion)
+                                - Promotion: {{ $coordinateur->promotion->nom }}<br>
+                                - Classes: {{ $coordinateur->promotion->classes->count() }}<br>
+                            @else
+                                - Promotion: Aucune<br>
+                            @endif
+                        @endif
                     </div>
 
                     @if($sessions->count() > 0)
@@ -178,22 +197,22 @@
                                                 </div>
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                {{ $session->matiere_nom ?? 'N/A' }}
+                                                {{ $session->matiere->nom ?? 'N/A' }}
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                {{ $session->classe_nom ?? 'N/A' }}
+                                                {{ $session->classe->nom ?? 'N/A' }}
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                {{ $session->enseignant_prenom ?? 'N/A' }} {{ $session->enseignant_nom ?? 'N/A' }}
+                                                {{ $session->enseignant->prenom ?? 'N/A' }} {{ $session->enseignant->nom ?? 'N/A' }}
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap">
                                                 <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full
-                                                    @if($session->type_cours_nom === 'Présentiel') bg-blue-100 text-blue-800
-                                                    @elseif($session->type_cours_nom === 'E-learning') bg-green-100 text-green-800
-                                                    @elseif($session->type_cours_nom === 'Workshop') bg-purple-100 text-purple-800
+                                                    @if($session->typeCours->nom === 'Présentiel') bg-blue-100 text-blue-800
+                                                    @elseif($session->typeCours->nom === 'E-learning') bg-green-100 text-green-800
+                                                    @elseif($session->typeCours->nom === 'Workshop') bg-purple-100 text-purple-800
                                                     @else bg-gray-100 text-gray-800
                                                     @endif">
-                                                    {{ $session->type_cours_nom ?? 'N/A' }}
+                                                    {{ $session->typeCours->nom ?? 'N/A' }}
                                                 </span>
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -218,8 +237,8 @@
                     @else
                         <div class="text-center py-8">
                             <div class="text-gray-500 text-lg mb-4">
-                                <i class="fas fa-history text-4xl mb-4"></i>
-                                <p>Aucune session historique trouvée</p>
+                                <i class="fas fa-calendar-times text-4xl mb-4"></i>
+                                <p>Aucune session de cours trouvée</p>
                             </div>
                             <p class="text-gray-400">Aucune session ne correspond aux critères de recherche.</p>
                         </div>

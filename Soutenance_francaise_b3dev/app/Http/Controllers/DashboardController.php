@@ -191,25 +191,79 @@ class DashboardController extends Controller
             abort(404, 'Profil étudiant non trouvé');
         }
 
-        // Récupérer les sessions de cours de l'étudiant pour cette semaine
-        $sessions = SessionDeCours::with(['matiere', 'enseignant', 'classe'])
+        $anneeActive = AnneeAcademique::getActive() ?? AnneeAcademique::orderBy('date_debut', 'desc')->first();
+        $debutSemaine = Carbon::now()->startOfWeek();
+        $finSemaine = Carbon::now()->endOfWeek();
+
+        $sessions = SessionDeCours::with(['matiere', 'enseignant', 'typeCours', 'statutSession', 'classe'])
             ->where('classe_id', $etudiant->classe_id)
-            ->where('annee_academique_id', $etudiant->classe->promotion->annee_academique_id)
-            ->whereBetween('start_time', [
-                Carbon::now()->startOfWeek()->copy(),
-                Carbon::now()->endOfWeek()->copy()
-            ])
-            ->orderBy('start_time')
+            ->where('annee_academique_id', $anneeActive->id)
+            ->whereBetween('start_time', [$debutSemaine, $finSemaine])
             ->orderBy('start_time')
             ->get();
 
-        // Récupérer les matières droppées de l'étudiant
+        // Générer l'emploi du temps comme dans emploiSemaine
+        $emploiDuTemps = [];
+        $creneaux = [
+            '08:00-10:00' => '8:00',
+            '10:00-12:00' => '10:00',
+            '14:00-16:00' => '14:00',
+            '16:00-18:00' => '16:00'
+        ];
+        foreach ($creneaux as $horaire => $heure) {
+            $emploiDuTemps[$horaire] = [
+                'horaire' => $horaire,
+                'lundi' => null,
+                'mardi' => null,
+                'mercredi' => null,
+                'jeudi' => null,
+                'vendredi' => null,
+                'samedi' => null
+            ];
+            $joursAnglais = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+            $joursFrancais = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+            foreach ($joursAnglais as $index => $jourAnglais) {
+                $jourFrancais = $joursFrancais[$index];
+                $dateJour = $debutSemaine->copy()->next($jourAnglais);
+                $heureDebut = $dateJour->copy()->setTimeFromTimeString($heure);
+                $heureFin = $heureDebut->copy()->addHours(2);
+                $session = $sessions->where('start_time', '>=', $heureDebut->copy()->subMinutes(30))
+                    ->where('start_time', '<', $heureFin->copy()->addMinutes(30))
+                    ->first();
+                if ($session) {
+                    $emploiDuTemps[$horaire][$jourFrancais] = [
+                        'matiere' => $session->matiere->nom,
+                        'enseignant' => $session->enseignant->prenom . ' ' . $session->enseignant->nom,
+                        'type' => $session->typeCours->nom,
+                        'lieu' => $session->location ?? 'Non spécifié',
+                        'date' => $session->start_time->format('d/m/Y'),
+                        'heure_debut' => $session->start_time->format('H:i'),
+                        'heure_fin' => $session->end_time->format('H:i'),
+                        'session_id' => $session->id
+                    ];
+                }
+            }
+        }
+
         $matieresDropped = $etudiant->matieresDropped()
             ->with(['matiere', 'anneeAcademique', 'semestre'])
-            ->where('date_drop', '>=', Carbon::now()->subDays(30)) // Seulement les abandons récents
+            ->where('date_drop', '>=', Carbon::now()->subDays(30))
             ->get();
 
-        return view('dashboard.etudiant', compact('etudiant', 'sessions', 'matieresDropped'));
+        $statistiques = [
+            'total_cours' => $sessions->count(),
+            'matieres_uniques' => $sessions->unique('matiere_id')->count(),
+            'heures_total' => $sessions->count() * 2,
+            'jours_avec_cours' => $sessions->groupBy(function($session) {
+                return strtolower($session->start_time->format('l'));
+            })->count(),
+            'prochain_cours' => $sessions->where('start_time', '>', now())->first(),
+            'cours_aujourd_hui' => $sessions->where('start_time', '>=', now()->startOfDay())
+                ->where('start_time', '<=', now()->endOfDay())
+                ->count()
+        ];
+
+        return view('dashboard.etudiant', compact('etudiant', 'sessions', 'matieresDropped', 'statistiques', 'debutSemaine', 'finSemaine', 'emploiDuTemps'));
     }
 
     private function parentDashboard()

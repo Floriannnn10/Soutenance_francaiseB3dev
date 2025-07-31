@@ -123,61 +123,7 @@
             </div>
         </div>
 
-            <!-- Filtres avec design moderne -->
-            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-                <div class="flex items-center space-x-3 mb-6">
-                    <div class="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg">
-                        <svg class="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
-                        </svg>
-                    </div>
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Filtres</h3>
-                </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-{{ $classeFiltree ? '3' : '4' }} gap-6">
-                    @if(!$classeFiltree)
-                    <div class="space-y-2">
-                        <label for="filter_classe" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Classe</label>
-                        <select id="filter_classe" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 transition-colors">
-                        <option value="">Toutes les classes</option>
-                        @foreach($classes as $classe)
-                            <option value="{{ $classe->id }}">{{ $classe->nom }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                    @endif
-
-                    <div class="space-y-2">
-                        <label for="filter_enseignant" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Enseignant</label>
-                        <select id="filter_enseignant" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 transition-colors">
-                        <option value="">Tous les enseignants</option>
-                        @foreach($enseignants as $enseignant)
-                                <option value="{{ $enseignant->id }}">{{ $enseignant->prenom }} {{ $enseignant->nom }}</option>
-                        @endforeach
-                    </select>
-                </div>
-
-                    <div class="space-y-2">
-                        <label for="filter_type" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Type de cours</label>
-                        <select id="filter_type" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 transition-colors">
-                        <option value="">Tous les types</option>
-                        @foreach($typesCours as $type)
-                            <option value="{{ $type->id }}">{{ $type->nom }}</option>
-                        @endforeach
-                    </select>
-                </div>
-
-                    <div class="space-y-2">
-                        <label for="filter_statut" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Statut</label>
-                        <select id="filter_statut" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 transition-colors">
-                            <option value="">Tous les statuts</option>
-                            @foreach($statutsSession as $statut)
-                                <option value="{{ $statut->id }}">{{ $statut->nom }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-            </div>
 
             <!-- Filtres avancés -->
             <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">

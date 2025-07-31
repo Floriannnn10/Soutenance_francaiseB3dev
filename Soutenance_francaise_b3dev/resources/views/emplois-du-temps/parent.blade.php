@@ -1,67 +1,59 @@
-@extends('layouts.app')
+<x-app-layout>
+    <x-slot name="header">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+            {{ __('Emploi du temps - Parent') }}
+        </h2>
+    </x-slot>
 
-@section('content')
-<div class="container mx-auto py-6">
-    <div class="flex justify-between items-center mb-6">
-        <h1 class="text-2xl font-bold">Emploi du temps de l'enfant</h1>
-        <div class="text-sm text-gray-600">
-            Année : {{ $anneeActive?->nom ?? 'Aucune année active' }} |
-            Semestre : {{ $semestreActif?->nom ?? 'Aucun semestre actif' }}
+    <div class="py-12">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                <div class="p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                        👨‍👩‍👧‍👦 Mes Enfants
+                    </h3>
+
+                    @if($enfants->count() > 0)
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            @foreach($enfants as $enfant)
+                                <div class="bg-white border border-gray-200 rounded-lg p-6">
+                                    <h4 class="text-lg font-semibold text-gray-900 mb-2">
+                                        {{ $enfant->prenom }} {{ $enfant->nom }}
+                                    </h4>
+                                    <p class="text-gray-600 mb-4">{{ $enfant->classe->nom ?? 'Classe non assignée' }}</p>
+
+                                    <div class="space-y-2 text-sm">
+                                        <div>📧 {{ $enfant->email }}</div>
+                                        @if($enfant->date_naissance)
+                                            <div>🎂 {{ $enfant->date_naissance->format('d/m/Y') }}</div>
+                                        @endif
+                                    </div>
+
+                                    <div class="mt-4 space-y-2">
+                                        <a href="{{ route('emplois-du-temps.enfants') }}"
+                                           class="block w-full bg-blue-600 hover:bg-blue-700 text-white text-center px-4 py-2 rounded text-sm">
+                                            Voir emploi du temps
+                                        </a>
+                                        <a href="{{ route('presences.enfants') }}"
+                                           class="block w-full bg-green-600 hover:bg-green-700 text-white text-center px-4 py-2 rounded text-sm">
+                                            Voir présences
+                                        </a>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <div class="text-center py-8">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-2">
+                                Aucun enfant trouvé
+                            </h3>
+                            <p class="text-gray-600">
+                                Vous n'avez pas encore d'enfants associés à votre compte parent.
+                            </p>
+                        </div>
+                    @endif
+                </div>
+            </div>
         </div>
     </div>
-    <div class="mb-4">
-        <span class="font-semibold">Enfant :</span>
-        {{ $etudiant->nom }} {{ $etudiant->prenom }}<br>
-        <span class="font-semibold">Classe :</span> {{ $etudiant->classe->nom ?? '-' }}
-    </div>
-
-    @if(Auth::user()->roles->first() && Auth::user()->roles->first()->nom === 'coordinateur')
-        <div class="mb-6">
-            <a href="{{ route('emplois-du-temps.create') }}" class="bg-blue-600 hover:bg-blue-800 text-white px-4 py-2 rounded">
-                Modifier l'emploi du temps
-            </a>
-        </div>
-    @endif
-
-    @if($sessions->count() > 0)
-        <div class="bg-white rounded-lg shadow-md overflow-hidden">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jour</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Heure</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Matière</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Enseignant</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                    @foreach($sessions as $session)
-                    <tr>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {{ \Carbon\Carbon::parse($session->start_time)->locale('fr')->isoFormat('dddd') }}
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {{ \Carbon\Carbon::parse($session->start_time)->format('H:i') }} - {{ \Carbon\Carbon::parse($session->end_time)->format('H:i') }}
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {{ $session->matiere->nom ?? '-' }}
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {{ $session->enseignant->nom ?? '-' }} {{ $session->enseignant->prenom ?? '' }}
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {{ $session->typeCours->nom ?? '-' }}
-                        </td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-    @else
-        <div class="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded mt-4">
-            Aucun cours planifié pour cette période.
-        </div>
-    @endif
-</div>
-@endsection
+</x-app-layout>

@@ -12,6 +12,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class EmploiDuTempsController extends Controller
 {
@@ -135,7 +136,7 @@ class EmploiDuTempsController extends Controller
         if ($anneeId) {
             $anneeActive = AnneeAcademique::find($anneeId);
         } else {
-            $anneeActive = $anneeAcademique;
+            $anneeActive = $anneesAcademiques->first();
         }
 
         if (!$anneeActive) {
@@ -154,13 +155,161 @@ class EmploiDuTempsController extends Controller
 
     private function indexEtudiant(Request $request, AnneeAcademique $anneeAcademique)
     {
+        $user = Auth::user();
+        $etudiant = $user->etudiant;
+
+        if (!$etudiant) {
+            return redirect()->back()->with('error', 'Profil étudiant non trouvé.');
+        }
+
         $sessions = SessionDeCours::with(['matiere', 'enseignant', 'typeCours', 'statutSession'])
-            ->where('classe_id', Auth::user()->etudiant->classe_id)
+            ->where('classe_id', $etudiant->classe_id)
             ->where('annee_academique_id', $anneeAcademique->id)
             ->orderBy('start_time')
             ->get();
 
-        return view('emplois-du-temps.etudiant', compact('sessions'));
+        $anneesAcademiques = AnneeAcademique::orderBy('date_debut', 'desc')->get();
+        $anneeActive = $anneeAcademique;
+
+        return view('emplois-du-temps.etudiant', compact('sessions', 'etudiant', 'anneesAcademiques', 'anneeActive'));
+    }
+
+    public function mesCours(Request $request)
+    {
+        $user = Auth::user();
+        $etudiant = $user->etudiant;
+
+        if (!$etudiant) {
+            return redirect()->back()->with('error', 'Profil étudiant non trouvé.');
+        }
+
+        $anneeActive = AnneeAcademique::getActive() ?? AnneeAcademique::orderBy('date_debut', 'desc')->first();
+
+        // Gérer les paramètres de filtrage
+        $anneeId = $request->get('annee_id');
+        if ($anneeId) {
+            $anneeActive = AnneeAcademique::find($anneeId) ?? $anneeActive;
+        }
+
+        $sessions = SessionDeCours::with(['matiere', 'enseignant', 'typeCours', 'statutSession', 'classe'])
+            ->where('classe_id', $etudiant->classe_id)
+            ->where('annee_academique_id', $anneeActive->id)
+            ->where('start_time', '>=', now())
+            ->orderBy('start_time')
+            ->get();
+
+        $anneesAcademiques = AnneeAcademique::orderBy('date_debut', 'desc')->get();
+
+        return view('etudiant.mes-cours', compact('sessions', 'etudiant', 'anneesAcademiques', 'anneeActive'));
+    }
+
+    public function mesPresences(Request $request)
+    {
+        $user = Auth::user();
+        $etudiant = $user->etudiant;
+
+        if (!$etudiant) {
+            return redirect()->back()->with('error', 'Profil étudiant non trouvé.');
+        }
+
+        $anneeActive = AnneeAcademique::getActive() ?? AnneeAcademique::orderBy('date_debut', 'desc')->first();
+
+        // Récupérer toutes les présences de l'étudiant
+        $presences = \App\Models\Presence::with(['sessionDeCours.matiere', 'sessionDeCours.typeCours', 'statutPresence'])
+            ->where('etudiant_id', $etudiant->id)
+            ->whereHas('sessionDeCours', function($query) use ($anneeActive) {
+                $query->where('annee_academique_id', $anneeActive->id);
+            })
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $statistiques = [
+            'total' => $presences->count(),
+            'present' => $presences->where('statutPresence.code', 'present')->count(),
+            'absent' => $presences->where('statutPresence.code', 'absent')->count(),
+            'justifie' => $presences->where('statutPresence.code', 'justifie')->count(),
+            'retard' => $presences->where('statutPresence.code', 'retard')->count(),
+        ];
+
+        $anneesAcademiques = AnneeAcademique::orderBy('date_debut', 'desc')->get();
+
+        return view('etudiant.mes-presences', compact('presences', 'statistiques', 'etudiant', 'anneesAcademiques', 'anneeActive'));
+    }
+
+    public function emploiSemaine(Request $request)
+    {
+        $user = Auth::user();
+        $etudiant = $user->etudiant;
+
+        if (!$etudiant) {
+            return redirect()->back()->with('error', 'Profil étudiant non trouvé.');
+        }
+
+        $anneeActive = AnneeAcademique::getActive() ?? AnneeAcademique::orderBy('date_debut', 'desc')->first();
+
+        // Gérer la semaine sélectionnée
+        $semaineSelectionnee = $request->get('week');
+        if ($semaineSelectionnee) {
+            $debutSemaine = \Carbon\Carbon::parse($semaineSelectionnee)->startOfWeek();
+        } else {
+            $debutSemaine = now()->startOfWeek();
+        }
+        $finSemaine = $debutSemaine->copy()->endOfWeek();
+
+        $sessions = SessionDeCours::with(['matiere', 'enseignant', 'typeCours', 'statutSession'])
+            ->where('classe_id', $etudiant->classe_id)
+            ->where('annee_academique_id', $anneeActive->id)
+            ->whereBetween('start_time', [$debutSemaine, $finSemaine])
+            ->orderBy('start_time')
+            ->get();
+
+        $emploiDuTemps = [];
+        $creneaux = [
+            '08:00-10:00' => '8:00',
+            '10:00-12:00' => '10:00',
+            '14:00-16:00' => '14:00',
+            '16:00-18:00' => '16:00'
+        ];
+
+        foreach ($creneaux as $horaire => $heure) {
+            $emploiDuTemps[$horaire] = [
+                'horaire' => $horaire,
+                'lundi' => null,
+                'mardi' => null,
+                'mercredi' => null,
+                'jeudi' => null,
+                'vendredi' => null,
+                'samedi' => null
+            ];
+
+            $joursAnglais = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+            $joursFrancais = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+
+            foreach ($joursAnglais as $index => $jourAnglais) {
+                $jourFrancais = $joursFrancais[$index];
+                $dateJour = $debutSemaine->copy()->next($jourAnglais);
+                $heureDebut = $dateJour->copy()->setTimeFromTimeString($heure);
+                $heureFin = $heureDebut->copy()->addHours(2);
+
+                $session = $sessions->where('start_time', '>=', $heureDebut->copy()->subMinutes(30))
+                    ->where('start_time', '<', $heureFin->copy()->addMinutes(30))
+                    ->first();
+
+                if ($session) {
+                    $emploiDuTemps[$horaire][$jourFrancais] = [
+                        'matiere' => $session->matiere->nom,
+                        'enseignant' => $session->enseignant->prenom . ' ' . $session->enseignant->nom,
+                        'type' => $session->typeCours->nom,
+                        'lieu' => $session->location ?? 'Non spécifié',
+                        'session_id' => $session->id
+                    ];
+                }
+            }
+        }
+
+        $anneesAcademiques = AnneeAcademique::orderBy('date_debut', 'desc')->get();
+
+        return view('etudiant.emploi-semaine', compact('emploiDuTemps', 'etudiant', 'anneesAcademiques', 'anneeActive', 'debutSemaine', 'finSemaine'));
     }
 
     public function store(Request $request)
@@ -301,11 +450,112 @@ class EmploiDuTempsController extends Controller
         $parent = $user->parent;
 
         if (!$parent) {
-            abort(404, 'Parent non trouvé');
+            return redirect()->back()->with('error', 'Accès non autorisé.');
         }
 
-        $enfants = $parent->etudiants()->with(['classe'])->get();
+        $enfants = $parent->etudiants;
+        $emploisDuTemps = [];
 
-        return view('emplois-du-temps.enfants', compact('enfants', 'parent'));
+        foreach ($enfants as $enfant) {
+            $sessions = SessionDeCours::with(['classe', 'matiere', 'enseignant', 'typeCours', 'statutSession'])
+                ->where('classe_id', $enfant->classe_id)
+                ->where('annee_academique_id', AnneeAcademique::getActive()->id)
+                ->orderBy('start_time')
+                ->get();
+
+            $emploisDuTemps[$enfant->id] = [
+                'etudiant' => $enfant,
+                'sessions' => $sessions
+            ];
+        }
+
+        return view('emplois-du-temps.enfants', compact('emploisDuTemps'));
+    }
+
+    public function exportEmploiDuTemps(Request $request)
+    {
+        try {
+            $user = Auth::user();
+            $etudiant = $user->etudiant;
+
+            if (!$etudiant) {
+                return response()->json(['success' => false, 'message' => 'Étudiant non trouvé'], 404);
+            }
+
+            $anneeActive = AnneeAcademique::getActive();
+            if (!$anneeActive) {
+                return response()->json(['success' => false, 'message' => 'Aucune année académique active'], 404);
+            }
+
+            // Récupérer les sessions de l'étudiant
+            $sessions = SessionDeCours::with(['classe', 'matiere', 'enseignant', 'typeCours', 'statutSession'])
+                ->where('classe_id', $etudiant->classe_id)
+                ->where('annee_academique_id', $anneeActive->id)
+                ->orderBy('start_time')
+                ->get();
+
+            // Récupérer le format demandé (png ou pdf)
+            $format = $request->get('format', 'png');
+
+            // Générer le nom du fichier
+            $filename = 'emploi_du_temps_' . $etudiant->prenom . '_' . $etudiant->nom . '_' . date('Y-m-d') . '.' . $format;
+
+            if ($format === 'pdf') {
+                return $this->generatePDF($sessions, $etudiant, $filename);
+            } else {
+                // Pour PNG, on utilise aussi DomPDF mais avec des paramètres différents
+                return $this->generatePNG($sessions, $etudiant, $filename);
+            }
+
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Erreur lors de l\'export: ' . $e->getMessage()], 500);
+        }
+    }
+
+    private function generatePDF($sessions, $etudiant, $filename)
+    {
+        try {
+            // Créer le contenu HTML pour le PDF
+            $html = view('exports.emploi-du-temps-pdf', compact('sessions', 'etudiant'))->render();
+
+            // Vérifier si DomPDF est disponible
+            if (class_exists('Barryvdh\DomPDF\Facade\Pdf')) {
+                return Pdf::loadHTML($html)->stream($filename);
+            } else {
+                // Fallback si DomPDF n'est pas installé
+                return response()->json([
+                    'success' => false,
+                    'message' => 'DomPDF n\'est pas installé. Veuillez installer le package: composer require barryvdh/laravel-dompdf',
+                    'html' => $html
+                ]);
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la génération du PDF: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    private function generatePNG($sessions, $etudiant, $filename)
+    {
+        try {
+            // Créer le contenu HTML pour l'image
+            $html = view('exports.emploi-du-temps-png', compact('sessions', 'etudiant'))->render();
+
+            // Pour PNG, on retourne les données pour conversion côté client
+            return response()->json([
+                'success' => true,
+                'html' => $html,
+                'filename' => $filename,
+                'format' => 'png'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la génération du PNG: ' . $e->getMessage()
+            ]);
+        }
     }
 }

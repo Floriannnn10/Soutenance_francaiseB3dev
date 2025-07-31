@@ -34,12 +34,12 @@
                                         <div class="space-y-2 text-sm text-gray-600">
                                             <div class="flex items-center">
                                                 <span class="font-medium">📅 Date:</span>
-                                                <span class="ml-2">{{ $session->start_time->format('d/m/Y') }}</span>
+                                                <span class="ml-2">{{ \Carbon\Carbon::parse($session->start_time)->format('d/m/Y') }}</span>
                                             </div>
 
                                             <div class="flex items-center">
                                                 <span class="font-medium">🕐 Heure:</span>
-                                                <span class="ml-2">{{ $session->start_time->format('H:i') }} - {{ $session->end_time->format('H:i') }}</span>
+                                                <span class="ml-2">{{ \Carbon\Carbon::parse($session->start_time)->format('H:i') }} - {{ \Carbon\Carbon::parse($session->end_time)->format('H:i') }}</span>
                                             </div>
 
                                             <div class="flex items-center">

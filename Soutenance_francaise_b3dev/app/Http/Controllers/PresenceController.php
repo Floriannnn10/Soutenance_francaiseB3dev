@@ -222,7 +222,7 @@ class PresenceController extends Controller
     /**
      * Affiche les présences des enfants du parent connecté
      */
-    public function presencesEnfants()
+    public function presencesEnfants(Request $request)
     {
         $user = Auth::user();
         $parent = $user->parent;
@@ -231,9 +231,55 @@ class PresenceController extends Controller
             abort(404, 'Parent non trouvé');
         }
 
-        $enfants = $parent->etudiants()->with(['classe', 'presences.sessionDeCours.matiere'])->get();
+        // Récupérer les enfants du parent
+        $enfants = $parent->etudiants()->with(['classe'])->get();
 
-        return view('presences.enfants', compact('enfants', 'parent'));
+        // Récupérer tous les IDs des enfants
+        $enfantsIds = $enfants->pluck('id');
+
+        // Construire la requête de base pour les présences
+        $query = Presence::with([
+            'etudiant.classe',
+            'sessionDeCours.matiere',
+            'sessionDeCours.enseignant',
+            'statutPresence'
+        ])->whereIn('etudiant_id', $enfantsIds);
+
+        // Filtre par enfant
+        if ($request->filled('enfant_id')) {
+            $query->where('etudiant_id', $request->enfant_id);
+        }
+
+        // Filtre par statut de présence
+        if ($request->filled('statut_id')) {
+            $query->where('statut_presence_id', $request->statut_id);
+        }
+
+        // Filtre par date de début
+        if ($request->filled('date_debut')) {
+            $query->whereDate('enregistre_le', '>=', $request->date_debut);
+        }
+
+        // Filtre par date de fin
+        if ($request->filled('date_fin')) {
+            $query->whereDate('enregistre_le', '<=', $request->date_fin);
+        }
+
+        // Validation des dates
+        if ($request->filled('date_debut') && $request->filled('date_fin')) {
+            if ($request->date_debut > $request->date_fin) {
+                return redirect()->back()->withErrors(['date_fin' => 'La date de fin ne peut pas être antérieure à la date de début.']);
+            }
+        }
+
+        // Pagination
+        $perPage = $request->get('per_page', 15);
+        $presences = $query->orderBy('enregistre_le', 'desc')->paginate($perPage);
+
+        // Récupérer les données pour les filtres
+        $statutsPresence = StatutPresence::orderBy('nom')->get();
+
+        return view('presences.enfants', compact('enfants', 'parent', 'presences', 'statutsPresence'));
     }
 
     /**

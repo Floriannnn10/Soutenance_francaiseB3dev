@@ -3,41 +3,68 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900">
-                    <h1 class="text-2xl font-bold mb-6">Test des Notifications DaisyUI</h1>
+                    <h2 class="text-2xl font-bold mb-6">🧪 Test des Notifications de Drop</h2>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                        <button onclick="window.showSuccess('Test de succès !')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">
-                            Test Succès (Vert)
-                        </button>
-
-                        <button onclick="window.showWarning('Test d\'avertissement !')" class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded">
-                            Test Avertissement (Orange)
-                        </button>
-
-                        <button onclick="window.showError('Test d\'erreur !')" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded">
-                            Test Erreur (Rouge)
-                        </button>
-
-                        <button onclick="window.showInfo('Test d\'information !')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
-                            Test Info (Bleu)
-                        </button>
+                    <!-- Informations sur les notifications -->
+                    <div class="mb-6 p-4 bg-blue-50 rounded-lg">
+                        <h3 class="text-lg font-semibold mb-2">📊 Statistiques des Notifications</h3>
+                        <p><strong>Notifications créées :</strong> {{ \App\Models\CustomNotification::count() }}</p>
+                        <p><strong>Drops créés :</strong> {{ \App\Models\EtudiantMatiereDropped::count() }}</p>
+                        <p><strong>Étudiants en situation de dropping :</strong> {{ \App\Models\Etudiant::where('email', 'like', '%dropped%')->count() }}</p>
                     </div>
 
-                    <div class="bg-gray-100 p-4 rounded-lg">
-                        <h2 class="text-lg font-semibold mb-2">Instructions de test :</h2>
-                        <ol class="list-decimal list-inside space-y-1">
-                            <li>Cliquez sur les boutons ci-dessus pour tester les notifications</li>
-                            <li>Ouvrez la console du navigateur (F12) pour voir les logs de debug</li>
-                            <li>Les notifications doivent apparaître en haut à droite</li>
-                            <li>Elles doivent disparaître automatiquement après 5 secondes</li>
-                        </ol>
-                    </div>
+                    <!-- Test manuel des notifications -->
+                    <div class="mb-6 p-4 bg-green-50 rounded-lg">
+                        <h3 class="text-lg font-semibold mb-2">🔧 Test Manuel</h3>
+                        <p class="mb-4">Cliquez sur les boutons ci-dessous pour tester les notifications :</p>
 
-                    <div class="mt-6">
-                        <h3 class="text-lg font-semibold mb-2">Debug Info :</h3>
-                        <div id="debug-info" class="bg-gray-200 p-3 rounded text-sm">
-                            Chargement...
+                        <div class="space-x-4">
+                            <button onclick="testWarningNotification()" class="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded">
+                                ⚠️ Test Warning (Drop)
+                            </button>
+
+                            <button onclick="testSuccessNotification()" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+                                ✅ Test Success
+                            </button>
+
+                            <button onclick="testErrorNotification()" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+                                ❌ Test Error
+                            </button>
                         </div>
+                    </div>
+
+                    <!-- Liste des notifications existantes -->
+                    <div class="mb-6 p-4 bg-gray-50 rounded-lg">
+                        <h3 class="text-lg font-semibold mb-2">📋 Notifications Existantes</h3>
+                        @php
+                            $notifications = \App\Models\CustomNotification::with('utilisateurs')->get();
+                        @endphp
+
+                        @if($notifications->count() > 0)
+                            <div class="space-y-2">
+                                @foreach($notifications as $notification)
+                                    <div class="p-3 bg-white rounded border">
+                                        <p><strong>Message :</strong> {{ $notification->message }}</p>
+                                        <p><strong>Type :</strong> {{ $notification->type }}</p>
+                                        <p><strong>Date :</strong> {{ $notification->created_at->format('d/m/Y H:i') }}</p>
+                                        <p><strong>Destinataires :</strong> {{ $notification->utilisateurs->count() }}</p>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @else
+                            <p class="text-gray-500">Aucune notification trouvée.</p>
+                        @endif
+                    </div>
+
+                    <!-- Instructions -->
+                    <div class="p-4 bg-yellow-50 rounded-lg">
+                        <h3 class="text-lg font-semibold mb-2">📝 Instructions</h3>
+                        <ol class="list-decimal list-inside space-y-1">
+                            <li>Connectez-vous avec un compte étudiant en situation de dropping</li>
+                            <li>Les notifications devraient s'afficher automatiquement au chargement de la page</li>
+                            <li>Si aucune notification n'apparaît, vérifiez la console du navigateur</li>
+                            <li>Utilisez les boutons de test pour vérifier que le système fonctionne</li>
+                        </ol>
                     </div>
                 </div>
             </div>
@@ -45,20 +72,40 @@
     </div>
 
     <script>
+        function testWarningNotification() {
+            if (typeof window.showNotification === 'function') {
+                window.showNotification('warning', 'Test de notification de drop - Vous avez été droppé de la matière "Mathématiques" le 30/07/2025 à 13:30. Vous devez reprendre ce cours l\'année prochaine.');
+            } else {
+                alert('Fonction showNotification non trouvée');
+            }
+        }
+
+        function testSuccessNotification() {
+            if (typeof window.showNotification === 'function') {
+                window.showNotification('success', 'Test de notification de succès');
+            } else {
+                alert('Fonction showNotification non trouvée');
+            }
+        }
+
+        function testErrorNotification() {
+            if (typeof window.showNotification === 'function') {
+                window.showNotification('error', 'Test de notification d\'erreur');
+            } else {
+                alert('Fonction showNotification non trouvée');
+            }
+        }
+
+        // Afficher les notifications de drop au chargement de la page
         document.addEventListener('DOMContentLoaded', function() {
-            const debugInfo = document.getElementById('debug-info');
-            debugInfo.innerHTML = `
-                <strong>Fonctions disponibles :</strong><br>
-                showNotification: ${typeof window.showNotification === 'function' ? '✅' : '❌'}<br>
-                showSuccess: ${typeof window.showSuccess === 'function' ? '✅' : '❌'}<br>
-                showError: ${typeof window.showError === 'function' ? '✅' : '❌'}<br>
-                showWarning: ${typeof window.showWarning === 'function' ? '✅' : '❌'}<br>
-                showInfo: ${typeof window.showInfo === 'function' ? '✅' : '❌'}<br>
-                <br>
-                <strong>DaisyUI disponible :</strong> ${typeof window.daisyui !== 'undefined' ? '✅' : '❌'}<br>
-                <strong>Body classes :</strong> ${document.body.className}<br>
-                <strong>Toast container :</strong> ${document.querySelector('.toast') ? '✅' : '❌'}
-            `;
+            console.log('Page de test chargée');
+
+            // Vérifier si window.showNotification existe
+            if (typeof window.showNotification === 'function') {
+                console.log('✅ Fonction showNotification disponible');
+            } else {
+                console.error('❌ Fonction showNotification non disponible');
+            }
         });
     </script>
 </x-app-layout>

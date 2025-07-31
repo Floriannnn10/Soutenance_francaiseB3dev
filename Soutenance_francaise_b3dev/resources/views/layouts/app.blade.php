@@ -21,6 +21,9 @@
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
+    <!-- html2canvas pour l'export PNG -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
     <!-- Sonner pour les toasts -->
     <script src="https://cdn.jsdelivr.net/npm/sonner@1.4.0/dist/index.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sonner@1.4.0/dist/index.css">
@@ -30,8 +33,20 @@
             // Vérifier si Sonner est chargé
             if (typeof window.toast === 'undefined') {
                 console.warn('Sonner non chargé correctement');
+                // Fallback pour les toasts
+                window.showToast = function(message, type = 'info') {
+                    alert(message);
+                };
             } else {
                 console.log('Sonner initialisé avec succès');
+                // Fonction helper pour les toasts
+                window.showToast = function(message, type = 'info') {
+                    if (window.toast) {
+                        window.toast[type](message);
+                    } else {
+                        alert(message);
+                    }
+                };
             }
         });
     </script>
@@ -108,15 +123,6 @@
 <body class="min-h-screen">
     <!-- Sonner Toaster -->
     <div id="sonner"></div>
-    <script>
-        // Initialiser Sonner - La bibliothèque expose directement window.toast
-        document.addEventListener('DOMContentLoaded', function() {
-            // Vérifier si Sonner est chargé
-            if (typeof window.toast === 'undefined') {
-                console.warn('Sonner toast non disponible, utilisation du fallback alert');
-            }
-        });
-    </script>
     @php
         $user = Auth::user();
         $roleCode = $user->roles->first()->code;
@@ -517,6 +523,19 @@
                     } else {
                         console.error('showNotification function not found');
                     }
+                @endforeach
+            @endif
+
+            <!-- Notifications de drop automatiques -->
+            @if(isset($dropNotifications) && $dropNotifications->count() > 0)
+                @foreach($dropNotifications as $notification)
+                    setTimeout(function() {
+                        if (typeof window.showNotification === 'function') {
+                            window.showNotification('warning', '{{ $notification->message }}');
+                        } else {
+                            console.error('showNotification function not found');
+                        }
+                    }, {{ $loop->index * 2000 }});
                 @endforeach
             @endif
         });
